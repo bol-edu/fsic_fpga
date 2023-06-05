@@ -31,7 +31,7 @@ This document defines the architecture for the IC validation platform, namely FS
 ### IC Validation System Block Diagram
 The following is the proposed IC validation system. 
 
-![eyr2DnW](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/da4173f7-7a3a-4b5f-97bb-57c48dc8ff53)
+![01](https://github.com/bol-edu/fsic_fpga/assets/98332019/442b4493-b25c-4712-a936-92d9a9efeca5)
 
 
 The system consists of three components, the Caravel chip, FPGA and remote Jupyter Notebook.  The Caravel chip hosts the user projects. There could be multiple user projects in the user area. The Caravel chip contains a prebuilt SOC design released from eFabless. For details, please refer to [Caravel Harness](https://caravel-harness.readthedocs.io/en/latest). 
@@ -41,8 +41,7 @@ The designer uses Jupyter Notebook web browser to access and control the remote 
 2. Develop FPGA test logics and download it into FPGA chip.
 3. Communicate with Caravel RISCV to conduct various testing functions.
 
-![PYNQ-Z2 FPGA Block Diagram](https://i.imgur.com/eIJLILc.jpg)
-
+![PYNQ-Z2 FPGA Block Diagram](https://github.com/bol-edu/fsic_fpga/assets/98332019/b0b6081a-1f12-4eea-af50-58f6c5cb4682)
 
 
 ## FSIC IC Validation System Function 
@@ -67,7 +66,7 @@ The following Refer to the course [Application Acceleration with High-Level Synt
 4.	The memory IO subsystem and kernel processing interface is the stream （axis）interface. 
 
 
-![](https://i.imgur.com/GRy3oal.png)
+![03](https://github.com/bol-edu/fsic_fpga/assets/98332019/460f2ab6-fddc-41a4-bae8-340e1314434a)
 
 ### Embed Accelerator Architecture into FSIC Architecture
 The two subsystems (IOP and PE)  of the accelerator architecture are partitioned in FPGA and Caravel chips. The Memory IO subsystem is implemented in the FPGA. And the kernel processing system is implemented in the Caravel SOC chip. 
@@ -84,7 +83,7 @@ The Processing part is implemented in Caravel chip.
 1. Kernel processing logic is in the user project area. Its interface is standard AXI interface, using Axilite, Axis. It interfaces with FPGA through stream (axis) interfaces or direct wires （GPIO pins). 
 2. Multiple kernel processing logics are wrapped in user project wrapper to interface with the standard Caravel interface, i.e. Wishbone and/or LogicAnalyzer. 
 
-![](https://i.imgur.com/H4lqF1O.png)
+![04](https://github.com/bol-edu/fsic_fpga/assets/98332019/fe558d4a-6615-41a1-8c81-9af1df8017a1)
 
 ### System Operation Paths
 The system supports three operation paths in the below figure. 
@@ -92,7 +91,7 @@ The system supports three operation paths in the below figure.
 2. RISCV communicates with the remote user through FPGA SOC
 3. Remote user program user projects in Caravel chip just like Caravel RISCV communicate with users project through Wishbone
 
-![](https://i.imgur.com/9rwMLGh.png)
+![05](https://github.com/bol-edu/fsic_fpga/assets/98332019/9d041f1d-3ed2-4f4c-8de3-e107bec5c9e2)
 
 #### Remote user downloads RISCV test code to spiflash 
 Remote user need to download RISC-V test code to spiflash on Caravel board before RISCV boots. Later the control is transferred to RISCV. Thus, the spiflash control is mixed between Caravel and the remote. In the eFabless Caravel board, the spiflash is mixed between the Caravel chip and USB. Refer to [Caravel_schematic](https://github.com/efabless/caravel_board/blob/main/docs/Caravel_schematic.pdf) We will use FPGA to replace USB. By properly controlling the IO enables of the Caravel chip and FPGA, we can have direct wire FPGA and Caravel flash control signals to spiflash.
@@ -105,8 +104,7 @@ In the case of a test chip without SOC built-in, the FPGA needs a way to act the
 
 ## **User Project Area**
 User project area is defined in the blue box in the following picture. It occupies about 10 mm^2^. 
-![](https://i.imgur.com/xP0W9CM.png)
-
+![06](https://github.com/bol-edu/fsic_fpga/assets/98332019/e3e79708-3268-4c93-8c6b-a181051a6413)
 
 
 ### User Projects (module:user_project)
@@ -118,17 +116,17 @@ We use a new user project interface which is different from Caravel chip. It has
 - axis_in/axis_out - AXI stream interface for data transfer. 
 
 The interface signals (control_in, status_out, axis_in, axis_out, and la_data, irq) can go through user_io_block which serializes to external modules. This applies the same IO seraialization machanism to reduce interconnection resources.
-![](https://i.imgur.com/4UFnRJv.png)
+![07](https://github.com/bol-edu/fsic_fpga/assets/98332019/639cbe10-3dcd-4deb-be1d-ecf44dd97007)
 
 #### User project IO serialization
 We apply the same IO serialization technique in **io_serdes** to reduce the interconnetion from user project to wrapper. Further the signals from multiple user projects are searilly transmitted. The user IO section is either a mux plus an optional flip-flop depending on the need of retiming. The mux select the signal either from the previous user_project or current project depends on if the current project is active project.
 
-![](https://i.imgur.com/iLH9tZR.png)
+![08](https://github.com/bol-edu/fsic_fpga/assets/98332019/03f16fea-ec91-4027-9ad2-09ce9a247ddd)
 
 ### New User Project Wrapper (module: user_project_wrapper)
 There will be multiple user projects wrapped in a user_projext warpper. 
 
-![](https://i.imgur.com/sFeVmdz.png)
+![09](https://github.com/bol-edu/fsic_fpga/assets/98332019/1bed4bb8-80c9-4598-bbd9-b152fba49369)
 
 The **User Project Wrapper** includes
 1. One or more user projects. There is only one active user project in a running system.
@@ -150,7 +148,7 @@ Inside **FPGA**
 - **Mailbox**
 - **Extended User Project** - this is the extension of user project which is not in the scope of the architecture.
 
-![FPGA Block Diagram](https://i.imgur.com/XopsEqc.png)
+![10](https://github.com/bol-edu/fsic_fpga/assets/98332019/5238e0db-da3b-415f-b176-a36c740819fc)
 
 
 ### Compatible with original Caravel User Wrapper
@@ -162,13 +160,13 @@ The design of the new **User Project Wrapper** needs to be compatible with exist
 - user_irq
 Note: the user_project_wrapper should be compatible with current Caravel SOC definition. 
 
-![](https://i.imgur.com/uVn8JQH.png)
+![11](https://github.com/bol-edu/fsic_fpga/assets/98332019/e8e05553-c822-4820-b519-bd65f8af3c5a)
 
 ### Supported AXI Signals
 FSIC architecture does not support full set of AXI signals. It only supports those signals that are sufficient to implement the necessary functions. 
 
 #### Table of Supported AXI Signals  
-![table](https://github.com/bol-edu/fsic-spec-dev/assets/11850122/3d8ae5fc-bf01-4045-834d-9b493fe105b4)
+![12](https://github.com/bol-edu/fsic_fpga/assets/98332019/65b1d927-0838-404c-baeb-90c45ba00f8d)
 
 The following highlights functions supported
 - 32-bit data width
@@ -209,7 +207,7 @@ It performs the following functions
 It is a 32-bit data bus and a 10-bit address + target_axilite_enable. The 10-bit address is an offset indexed to its configuration space, refer to memory_map. Thus, the configuration space of each IP is limited to 1KB. If we need more configuration space, we can expand number of address bits.
 
 Note: The user project wrapper is located in the address range from 'h3000_000' to 'h3fff_fff'.
-![](https://i.imgur.com/ry9mTdj.png)
+![13](https://github.com/bol-edu/fsic_fpga/assets/98332019/24f1f6fe-e656-4322-b429-49c232f6b007)
 
 
 ### Axis_Switch
@@ -226,12 +224,12 @@ The possible data producers and consumers include
 - AxiDMA (in FPGA)
 
 The following is Switch port mapping for both upstream and downstream data flow.
-![](https://i.imgur.com/jW9vXcq.png)
+![14](https://github.com/bol-edu/fsic_fpga/assets/98332019/cf11b344-4582-4628-8bc0-cdbe183db2bc)
 
 ## Axilite_Axis (Axilite Axis Protocol Conversion) Implementation Specification
 This module provides protocol conversion from Axilite to Axis and from Axis to Axilite, as shown below
 
-![](https://i.imgur.com/pmmb6N6.png)
+![15](https://github.com/bol-edu/fsic_fpga/assets/98332019/d36f4a84-ee25-4a70-b584-22852407ceb7)
 
 For protocol conversion from Axilite to Axis, it uses s_axilite (input) and m_axis(output).  
 For protocol conversion from Axis to Axilite, it uses s_axis(input) and m_axilite (output).
@@ -244,10 +242,10 @@ For axilite write, we use a simple 2 cycle of axis transaction, one cycle for ad
 The Caravel and FPGA share the same Caravel memory-map. If it conflicts with FPGA system memory-map address. FPGA side remapping scheme is needed. For example if user-project mmio 'h3000-0000'-'3fff_ffff' is used by FPGA, then we can remap to 'hf000-0000' - 'hffff-ffff' if it is available. 
 
 The following illustrates the flow for FPGA/ARM (as initiator) to program Caravel user projects.The FPGA/ARM use PS/GP ports to generate Axilite transaction. It, then, transalates to Axis transaction and passes to Caravel chip. In Caravel chip, the Axis transaction is converted to Axilite transaction, and passed to user project to perform the configuration.
-![](https://i.imgur.com/Ivw2ldR.png)
+![16](https://github.com/bol-edu/fsic_fpga/assets/98332019/77844290-ee6d-4f9b-afe1-c723062307a5)
 
 The following illustrates the flow for Caravel/RISC-V (as initiator) to communicate with FPGA/ARM by sending message to the mailbox. Caravel uses Wishbone bus, thus, a WB-Axilite bus conversion is used to generate Axilite. The Axilite is converted to Axis, and passed to FPGA. On the FPGA side, the Axis transation is converted to Axilite, and, in this case, to write to the Mailbox. 
-![](https://i.imgur.com/7Iy1Nlp.png)
+![17](https://github.com/bol-edu/fsic_fpga/assets/98332019/03f5f5f6-f1c1-4bb4-bcdc-63c81dafaba2)
 
 
 ### LogicAnalyzer
@@ -312,7 +310,7 @@ The function of aggregator is to combine multiple signals and multiplexed into o
 ### IO_Serdes
 The purpose of this module is to virtually increase the number of IO pins by ratioing the core clock and io clock. In the following diagram, there are m* core signals to IO, and there are n * io pins. To match its throughput, it needs to meet the equation, **m x core_clk = n x io_clk**. For example, if there are only 16 IO pins available for interconnetion between Caravel and FPGA, and the clock ratio m/n = 10, i.e. IO runs at 50Mhz, and core runs at 5Mhz. We virtual have 160 IO pins available. 
 
-![](https://i.imgur.com/BhmuNDY.png)
+![18](https://github.com/bol-edu/fsic_fpga/assets/98332019/dfe0230f-da11-47fb-9ce7-d28dc0653d72)
 
 
 In designing IO_Serdes, one design issue is that both Caravel and FPGA chip needs to agree on a common phase The IO_Serdes is implemented by shifters and muxes. Both transmission and receiving sides need to agree on a common phase states, i.e. counter value for the mux select. The initialization is done right after Caravel chip comes out reset state by sending a intialization patterns. After the initialization phase, both side runs synchronously afterward, until Caravel chip reset again. 
@@ -321,7 +319,7 @@ In designing IO_Serdes, one design issue is that both Caravel and FPGA chip need
 The AxiDMA is a reduced version of of the [Xilinx® LogiCORE™ IP AXI Direct Memory Access (AXI DMA) core](https://docs.xilinx.com/r/en-US/pg021_axi_dma/AXI-DMA-v7.1-LogiCORE-IP-Product-Guide). The AxiDMA provides high-bandwidth direct memory access between memory and AXI4-Stream target peripherals. 
 
 #### AxiDMA Block Diagram
-![](https://i.imgur.com/c2UDXCT.png)
+![19](https://github.com/bol-edu/fsic_fpga/assets/98332019/878d3c81-fcf4-41ef-a8f3-b58bd4a41b94)
 
 **Note:** To ease early design integration, we can instantiate [Xilinx® LogiCORE™ IP AXI Direct Memory Access (AXI DMA) core](https://docs.xilinx.com/r/en-US/pg021_axi_dma/AXI-DMA-v7.1-LogiCORE-IP-Product-Guide).
 
@@ -365,7 +363,7 @@ This defines memory map for FSIC IP implemented in user project wrapper and vali
 The FSIC validation system is consisted of two components FPGA and Caravel chip. The FPGA provides the system clock which is used for IO interface (io_clk). The system clock is balancedly fed into FPGA and Caravel. In the FPGA and Caravel chip, the system clock is divided by 8 for core_clk, the main clock for logic function. The following shows its system clocking scheme.
 
 
-![](https://i.imgur.com/nh9AzQV.png)
+![20](https://github.com/bol-edu/fsic_fpga/assets/98332019/729694e7-6bf3-4dc7-b804-d4cd89c80d0d)
 
 
 
@@ -373,7 +371,7 @@ clocking scheme for user project wrapper.
 There are two clocks defined in user project wrapper, core_clk, and io_clk which is corresponding to Caravel core_clk, and user_clk shown in the below picture.
 
 #### Caravel clocking scheme
-![FSIC Clocking Scheme](https://i.imgur.com/8NEdV5X.png)
+![21](https://github.com/bol-edu/fsic_fpga/assets/98332019/94017f96-44f8-433d-9a50-cd734236195a)
 
 The user_clk is x8 faster than core_clk. That means sel2 is div-1, sel is div-8. In the user_projet_wrapper, the user_clk is used for io_clk. 
 The io_clk is used for io_serdes, and serialize user_project signals (user_io) to IO. 
