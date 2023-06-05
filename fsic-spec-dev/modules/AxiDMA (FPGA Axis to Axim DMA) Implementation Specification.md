@@ -2,15 +2,14 @@
 The AxiDMA is a reduced version of of the [Xilinx® LogiCORE™ IP AXI Direct Memory Access (AXI DMA) core](https://docs.xilinx.com/r/en-US/pg021_axi_dma/AXI-DMA-v7.1-LogiCORE-IP-Product-Guide). The AxiDMA provides high-bandwidth direct memory access between memory and AXI4-Stream target peripherals. 
 
 #### AxiDMA Block Diagram
-![](https://i.imgur.com/c2UDXCT.png)
+![001](https://github.com/bol-edu/fsic_fpga/assets/98332019/b931ec17-be2b-4d20-bd28-51e6d8ecba61)
 
 **Note:** To ease early design integration, we can instantiate [Xilinx® LogiCORE™ IP AXI Direct Memory Access (AXI DMA) core](https://docs.xilinx.com/r/en-US/pg021_axi_dma/AXI-DMA-v7.1-LogiCORE-IP-Product-Guide).
 
 ## Interface Blocks
 Block diagram shows its interconnected module
 
-![](https://hackmd.io/_uploads/Sk5M2fZ83.bmp)
-
+![002](https://github.com/bol-edu/fsic_fpga/assets/98332019/82b03c1a-0807-4a5b-9ce9-165d723f440e)
 
 
 
@@ -158,15 +157,14 @@ A table shows register definitions
 ### Function 1:
 Description of the function 1, including 
 - block diagram
-- ![](https://hackmd.io/_uploads/SJmUnzW83.bmp)
-
+- ![003](https://github.com/bol-edu/fsic_fpga/assets/98332019/40947ae9-e3d1-4fb7-bafa-bd3bf81051e8)
 - read data flow (downstream):
    When Read fifo has a space size of read burst length, then MM2S Read Master can assert valid in the address channel to initiate a AXI read transaction. When Read FIFO stores the data byte number of burst legth, AXIS Master can assert valid and start to read out data from Read FIFO to initiates a burst write to AXIS Switch.
 - Write data flow (upstream): When AXIS Switch assert valid to initiates a axis burst write transaction to write data byte number of burst length to AXIS Slave Stream, after Write FIFO stores the data byte number of the burst length, S2MM Write Master will assert valid to initiate a AXI write data transaction.
 - Control flow
 - Logic structure
 - Read fifo will use a size 256x2x64 bits two port sram for AXI read with burst length of 256. Write fifo also use the smae size as Read fifo.<br><br>
-![](https://hackmd.io/_uploads/BJsiL8ZIn.bmp)
+![004](https://github.com/bol-edu/fsic_fpga/assets/98332019/a5dfa834-b4ff-4d8f-bc06-245f6962b1e9)
 
 ## Programming Guide
 - Code illustration to control the function
