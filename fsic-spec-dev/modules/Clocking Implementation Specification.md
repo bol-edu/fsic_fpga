@@ -5,13 +5,13 @@ In the FPGA and Caravel chip, the system clock is divided by 8 for core_clk, the
 
 #### system clocking scheme
 
-![](https://i.imgur.com/nh9AzQV.png)
+![a01](https://github.com/bol-edu/fsic_fpga/assets/98332019/35a0976c-bb1b-4a2c-876e-3e32678f6b53)
 
 clocking scheme for user project wrapper.
 There are two clocks defined in user project wrapper, core_clk, and io_clk which is corresponding to Caravel core_clk, and user_clk shown in the below picture.
 
 #### Caravel clocking scheme
-![FSIC Clocking Scheme](https://i.imgur.com/8NEdV5X.png)
+![a02](https://github.com/bol-edu/fsic_fpga/assets/98332019/6798c8af-cc9d-42fa-a3aa-07fd5fdc4c6f)
 
 The user_clk is x8 faster than core_clk. That means sel2 is div-1, sel is div-8. In the user_projet_wrapper, the user_clk is used for io_clk. 
 The io_clk is used for io_serdes, and serialize user_project signals (user_io) to IO. 
