@@ -12,7 +12,7 @@ The possible data producers and consumers include
 - AxiDMA (in FPGA)
 
 The following is Switch port mapping for both upstream and downstream data flow.
-![Switch port mapping](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/3d748dc1-cfcb-4f61-8e0c-d5fce98d38bd)
+![0001](https://github.com/bol-edu/fsic_fpga/assets/98332019/70311f70-d2c1-473b-a98a-5adae3883d32)
 
 
 
@@ -33,9 +33,9 @@ From above we can conclude:
 ## ==Interface Blocks==
 The following diagrams are that the interconnections of Axis_Switch with the other modules seperately on Caravel side and FPGA side.
 <br><br>
-![01](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/75cd3365-de36-4a70-86d3-f6283f3a3a8b)
+![0002](https://github.com/bol-edu/fsic_fpga/assets/98332019/9634a908-38cd-4e14-b5ca-9561cc91ee16)
 <br><br><br>
-![02](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/09464edc-cbf5-48ee-a7dd-1cae79bab2ab)
+![0003](https://github.com/bol-edu/fsic_fpga/assets/98332019/81fcc3f8-9013-4271-ba22-1b1ad6402363)
 
 
 
@@ -232,14 +232,14 @@ List of functions and features
 ## ==Function Description==
 
 1. ### Round Robin Arbitrator:
-![03](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/6b5f9525-93da-43ad-8201-8c1e13b6933a)
-![04](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/a51fd1d6-67ca-41ed-9ab2-779f128b83dc)
+![0004](https://github.com/bol-edu/fsic_fpga/assets/98332019/1ea5972f-4203-42bb-879f-262c3316d02c)
+![0005](https://github.com/bol-edu/fsic_fpga/assets/98332019/b8294423-03fd-4a9e-8f43-ca32a502010f)
 * Apply round-robin arbitration
 * Provide sideband signal connected with Logic Analyzer and User Project for high priority requests. For example, Logic Analyzer needs to pull the xx_hpri_req signal high to reduce the waiting time when its FIFO is almost full. When Axis_Switch module accept and process the high-priority request if the xx_hpri_req signal asserted, Axis_Switch module just accept other pending requests when xx_hpri_req signal desserted.
 
 2. ### Demultiplexer with TID:
-![05](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/5cb60ecb-a475-4aec-88b3-70fc075b2955)
-![06](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/58c5e6c7-aea1-4599-9c4e-2d7957034749)
+![006](https://github.com/bol-edu/fsic_fpga/assets/98332019/b1bd24f9-b9b3-436e-9a5f-589888e97305)
+![007](https://github.com/bol-edu/fsic_fpga/assets/98332019/00b9f98b-6fbd-48aa-a34c-d26fc82de7ca)
 
 * The Axis_Switch module of the destination side of Axi stream will use the TID information to dispatch the transaction to the corresponding receiver. 
 
