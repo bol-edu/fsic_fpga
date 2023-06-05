@@ -1,7 +1,7 @@
 # IO_Serdes Implementation Specification
 The purpose of this module is to virtually increase the number of IO pins by ratioing the core clock and io clock. In the following diagram, there are m* core signals to IO, and there are n * io pins. To match its throughput, it needs to meet the equation, **m x core_clk = n x io_clk**. For example, if there are only 16 IO pins available for interconnetion between Caravel and FPGA, and the clock ratio m/n = 10, i.e. IO runs at 50Mhz, and core runs at 5Mhz. We virtual have 160 IO pins available. 
 
-![](https://i.imgur.com/BhmuNDY.png)
+![c01](https://github.com/bol-edu/fsic_fpga/assets/98332019/007e8a7c-3d8f-42c9-bc2a-e3a94773c915)
 
 
 In designing IO_Serdes, one design issue is that both Caravel and FPGA chip needs to agree on a common phase. The IO_Serdes is implemented by shifters and muxes. Both transmission and receiving sides need to agree on a common phase states, i.e. counter value for the mux select. The initialization is done right after Caravel chip comes out reset state by sending a intialization patterns. After the initialization phase, both side runs synchronously afterward, until Caravel chip reset again. 
@@ -11,7 +11,7 @@ In designing IO_Serdes, one design issue is that both Caravel and FPGA chip need
 
 ### clk and rst tree balance
 
-![01](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/d1369c41-20ae-4724-be96-f43f0beffb93)
+![c02](https://github.com/bol-edu/fsic_fpga/assets/98332019/1431b614-bc49-40b8-849f-5b2060ce6081)
 
 
 
@@ -25,33 +25,33 @@ core_delay = 0, is to directly transfer the current shifter content to parallel 
 
 core_delay = 1, is to synchronize by core_clk before it is available.
 The following timing shows the timing sequence for the case io_delay = 2, core_delay = 0.
-![02](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/6ca9b3bc-c5c1-4ba6-bcd3-a7cfc8259268)
+![c03](https://github.com/bol-edu/fsic_fpga/assets/98332019/4c78a2e7-d433-4bab-bc80-f67fd6f9addc)
 
 
 #### add delay by delay-element ot constrain parameter in FPGA?
 
-![03](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/05b2d7e6-4021-4380-8392-e653e2aaba60)
+![c04](https://github.com/bol-edu/fsic_fpga/assets/98332019/d65e53a0-9683-40e1-a6ce-0cfa344ff3c7)
 #### The delay from transmiter output pad to receiver input pad timing.
 - Caravel to Remote Host
 
 
 use set_input_delay in FPGA(remote host)
 
-![04](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/5c98fd08-8969-4c7f-89c9-1193ef82e8bf)
+![c05](https://github.com/bol-edu/fsic_fpga/assets/98332019/e05465ed-2b97-48c0-a69a-3be1e77340ee)
     - reference https://blog.csdn.net/aaaaaaaa585/article/details/118859268
 - Remote Host to Caravel
 
-![05](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/f623bcdf-eaca-4f46-a03e-5761803fa24f)
+![c06](https://github.com/bol-edu/fsic_fpga/assets/98332019/28dd2db1-d697-48bd-8117-f18e37f16cfa)
     - reference https://blog.csdn.net/aaaaaaaa585/article/details/118862049
 
 
 
 #### rst not balance cause core_clk not sync
 
-![06](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/e92db60e-8747-4b10-9bd9-80b618458393)
+![c07](https://github.com/bol-edu/fsic_fpga/assets/98332019/210f4d5d-2ef3-4edc-afac-f4e2cd874ff5)
 
 #### add a counter to delay the rst for Divider
-![07](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/8517223d-ef2b-4acc-999b-792e3dac5103)
+![c08](https://github.com/bol-edu/fsic_fpga/assets/98332019/5263acad-e119-463c-ae48-2fd9a80dcc1e)
 
 #### add core_clk_count to counter the core_clk from 0 to 3
 
