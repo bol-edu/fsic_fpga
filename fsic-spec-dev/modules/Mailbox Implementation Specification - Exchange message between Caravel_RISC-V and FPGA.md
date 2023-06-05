@@ -22,7 +22,7 @@ The mailbox module is instantiated seprately in Caravel and FPGA. Its operation
 
 ## Interface Blocks
 Block diagram shows its interconnected module
-![](https://hackmd.io/_uploads/HJiqXT9L2.png)
+![image](https://drive.google.com/uc?export=view&id=1JJsYVHvTaw90FsLAUMLdrQPlJvF6oTIe)
 
 
 
@@ -70,8 +70,7 @@ A table shows register definitions
 
 |RegisterName|Offset Address| Description |
 |:----------:|:------------:| :-----------|
-|mprj_io_in[28:0]     |'h0             | R/W, mprj_io data for FPGA side |
-|mprj_io_out[28:0]     |'h4             | R/W, mprj_io data for Caravel side |
+||
 
 ## Function Description
 
