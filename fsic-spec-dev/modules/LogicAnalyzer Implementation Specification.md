@@ -108,7 +108,7 @@ For every 256 * data[71:0], LA will send a dummy data[71:0] = 72'b0 at the head 
 This method can let SW side to reset the start point of AXI data pack if there are something wrong.
 
 ## Interface Blocks
-![Interface Blocks](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/b0fbb5bc-fde9-4313-8165-74437b7f7747)
+![d01](https://github.com/bol-edu/fsic_fpga/assets/98332019/6a569101-18ef-452a-ab96-9134d91e39fa)
 
 ## Feature Lists
 1. Compress data from user project and send to AXIS Switch.
@@ -172,7 +172,7 @@ Use Run-Length-Encoding to compress data and save into buffer. Buffer size is 1K
 ### Configurable high/low threshold for internal buffer
 When buffer is near full, LA will send `la_hprj_req` to `Axis-switch` until buffer is near empty. User can confiure threshold from `la_hprj_high_th` and `la_hprj_low_th`.
 ## Block Diagram:
-![](https://hackmd.io/_uploads/rkDI5eWI3.png)
+![d02](https://github.com/bol-edu/fsic_fpga/assets/98332019/1a0ce19e-a577-4e4e-88a0-7e1154867a4d)
 
 
 ## Programming Guide
