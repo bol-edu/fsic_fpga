@@ -7,12 +7,12 @@ We use a new user project interface which is different from Caravel chip. It has
 - axis_in/axis_out - AXI stream interface for data transfer. 
 
 The interface signals (control_in, status_out, axis_in, axis_out, and la_data, irq) can go through user_io_block which serializes to external modules. This applies the same IO seraialization machanism to reduce interconnection resources.
-![](https://i.imgur.com/4UFnRJv.png)
+![f01](https://github.com/bol-edu/fsic_fpga/assets/98332019/9b316b61-4e7f-4370-bd78-894f6f1d342c)
 
 #### User project IO serialization
 We apply the same IO serialization technique in **io_serdes** to reduce the interconnetion from user project to wrapper. Further the signals from multiple user projects are searilly transmitted. The user IO section is either a mux plus an optional flip-flop depending on the need of retiming. The mux select the signal either from the previous user_project or current project depends on if the current project is active project.
 
-![](https://i.imgur.com/iLH9tZR.png)
+![f02](https://github.com/bol-edu/fsic_fpga/assets/98332019/652ec54f-545c-4921-854e-66684cbfa8cd)
 
 #### Example user project : FIR 
 We will implement FIR as an user project. The user project can be implementated in HLS or Verilog.
