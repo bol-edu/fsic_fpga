@@ -127,6 +127,8 @@ We apply the same IO serialization technique in **io_serdes** to reduce the inte
 There will be multiple user projects wrapped in a user_projext warpper. 
 
 ![09](https://github.com/bol-edu/fsic_fpga/assets/98332019/1bed4bb8-80c9-4598-bbd9-b152fba49369)
+![](https://hackmd.io/_uploads/rJrNhToU2.png)
+
 
 The **User Project Wrapper** includes
 1. One or more user projects. There is only one active user project in a running system.
