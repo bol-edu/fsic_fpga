@@ -28,12 +28,12 @@ Note:
 1. In case of read/write address ouside the decode range, read will return ‘hffff_ffff, write will direct complete.
 2. There is no cc_mb_enable signal due to Mailbox is direct attached behind the Axis_Axilite, the transaction toward to Mailbox will be forwarded to Axis_Axilite directly. Also, cc_aa_enable will assert in which case. Axis_Axilite must takes the responsability of Mailbox transaction.
 3. The address below are defined as debug registers in /caravel-soc/firmware/defs.h. For safty, that must not to be used.  
-![debug registers](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/111eb86a-7f2e-4063-90e8-ce82eb38b07b)
+![b01](https://github.com/bol-edu/fsic_fpga/assets/98332019/0cf3bde8-7d25-476e-970b-e9c08311f659)
 
-![](https://i.imgur.com/ry9mTdj.png)
+![b02](https://github.com/bol-edu/fsic_fpga/assets/98332019/0599e57f-8098-4d3a-b21e-e3d320bb0936)
 
 ## Interface Blocks
-![](https://i.imgur.com/cREhFAg.png)
+![b03](https://github.com/bol-edu/fsic_fpga/assets/98332019/a3cb182f-4453-49bf-b462-f9a41d3251e4)
 
 
 ## Feature Lists
@@ -161,7 +161,7 @@ Note: The address width of the AXI-Lite request from FPGA side may not support f
 ### Function 4 - User Projects Selection:
 In case of multiple User Projects, the Config_Ctrl's User Project Selection Control Register is used for User Project selection. The basic idea of the selection is to gate either clock or reset of the target user project with corresponding control signal (wired-AND with the corrsponding enable signal). This implementaion is not in scope of Config_Ctrl and User Project itself, it should be covered through in other modules of Top integration).
 - Example Control path  
-![Example Control path](https://github.com/bol-edu/fsic-spec-dev/assets/98332019/1e97a25f-3e49-40be-ada8-58341db64fd4)
+![Example Control path](https://github.com/bol-edu/fsic_fpga/assets/98332019/789f9ebc-1459-4f6a-b988-334c67a37e6c)
 
 ## Programming Guide
 ==(TBD)==
