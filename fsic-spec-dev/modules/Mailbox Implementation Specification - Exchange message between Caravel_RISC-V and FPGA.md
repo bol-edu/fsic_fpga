@@ -3,7 +3,7 @@ The mailbox is a set of registers which provides a communication channel between
 1. The mailbox registers are duplicated in Caravel chip and in FPGA.
 2. When one side (either Caravel or FPGA) write to mailbox, the transaction is passed to other side. 
 3. When the mailbox is updated, an interrupt is generated to the other side.
-4. The mailbox addresses is defined in the user address space in 'h3000_000 - 'h3fff_ffff.
+4. The mailbox addresses is defined in the user address space in 'h3300_000 - 'h33ff_ffff.
 
 One ready usage is to provide a test-bench enviornment as in existing Caravel verification environment. In current Caravel testbench, RISCV communicates with the Verilog test bench through mprj_io pins. Verilog testbench observes the mprj_io pins, to take different action. In mailbox scheme, we replace the mprj_io with the mailbox registers.
 
@@ -32,7 +32,7 @@ Block diagram shows its interconnected module
 List of functions and features
 1. Update Mailbox register when a avalidable write command occur. 
 2. Response Mailbox register data when a avalidable read command occur.
-3. ~~Send a interrupt signal after finish a write command which is from the remote side.~~
+
 
 
 ## Interface Signals
@@ -70,7 +70,14 @@ A table shows register definitions
 
 |RegisterName|Offset Address| Description |
 |:----------:|:------------:| :-----------|
-||
+|mb_reg_0[31:0]|'h0||
+|mb_reg_1[31:0]|'h4||
+|mb_reg_2[31:0]|'h8||
+|mb_reg_3[31:0]|'hc||
+|mb_reg_4[31:0]|'h10||
+|mb_reg_5[31:0]|'h14||
+|mb_reg_6[31:0]|'h18||
+|mb_reg_7[31:0]|'h1c||
 
 ## Function Description
 
