@@ -470,20 +470,30 @@ class sub_module:
     print_banner(fh)
     print("\n", file=fh)
 #   print(self.modu_name + " #() " + self.inst_name + " (", file=fh)
-    print(self.modu_name + " #(", file=fh, end='')
-    self.print_parm_ist(fh)
+    if( len(self.para_list) > 0 ):
+      print(self.modu_name + " #(", file=fh, end='')
+      self.print_parm_ist(fh)
+    else:
+      print(self.modu_name + "  ", file=fh, end='')
+
     print(self.inst_name + " (", file=fh)
 
     m_len = len(self.modu_name)
     i_len = len(self.inst_name)
     p_len = 0
 
-    for para in self.para_list:
-      if( p_len < len(para)):
-        p_len = len(para)
+    if( len(self.para_list) > 0 ):
+      for para in self.para_list:
+        if( p_len < len(para)):
+          p_len = len(para)
+    else:
+      p_len = 0
 
     # all preceeding space length
-    a_len = m_len + i_len + p_len + 11
+    if( len(self.para_list) > 0 ):
+      a_len = m_len + i_len + p_len + 11
+    else:
+      a_len = m_len + i_len + p_len + 4
 
     nlen = 0
 #   print("====")
@@ -1276,7 +1286,7 @@ def build_top_module(work_sheet, top_modu):
       pri_param = ""
       for cell in row:
         parm_str = str(cell.value)
-      # print(str(coln_idx) + "> "+ port_str + " <")
+      # print(str(coln_idx) + "> "+ parm_str + " <")
       # if( coln_idx > 0 and parm_str != "None" and modu_cord[coln_idx-1] < 2 ):                               # skip first colume (input module), skip empty
         if( coln_idx > 0 and parm_str != "None" ):
         # col_inst_name = modu_iord[coln_idx-1]
