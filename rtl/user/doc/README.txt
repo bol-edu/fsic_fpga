@@ -2,7 +2,7 @@
 
    https://docs.google.com/spreadsheets/d/1SDdqkm30S-wQFGwG1jO1C6Q2nti8NCJuuNXNiZhmS0w/edit?pli=1#gid=0
 
-   Download this file and feed it into the script "xls2vlog"
+   Download this file and feed it into the script "xls2vlog" or run script "gen_fsic"
 
    copy generated sub module file *.vo to your design rtl folder
 

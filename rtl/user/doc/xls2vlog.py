@@ -970,7 +970,11 @@ def build_top_module(work_sheet, top_modu):
                 first_inst_in_col = 0
               else:
                 # use the port_lst of left cell
-                port_lst = pri_port_lst
+                m = re.search('\/', port_lst[0])
+                if m:
+                  port_lst += ""      # do nothing
+                else:
+                  port_lst = pri_port_lst  # use left col cell string
 
             # ------------------------------------------------------------------------------
             # generic port name
@@ -991,7 +995,7 @@ def build_top_module(work_sheet, top_modu):
                 # ---------------------------------------------------------- 
                 # add input-port to current row-module, add post_str if duplicated, check left column is the same module or not, if the same, then current column module output should skip
               # print("input  of row module: " + dptn)
-              # print("row module inst: " + row_modo.inst_name)
+                print("row module inst: " + row_modo.inst_name + ", Port: " + dptn)
                 ip = row_modo.add_port(dptn)
                 if( wid != "0" ):
                   ip.is_wire("input ")
