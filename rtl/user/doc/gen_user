@@ -1,3 +1,4 @@
 #!/bin/bash
 
-  ./xls2vlog.py -i ./user_project_wrapper.xlsx           -s USERproject_SUBSYStem
+  ./xls2vlog.py -i ./user_project_wrapper.xlsx -s USERproject_SUBSYStem
+  cp ./user_subsys/user_subsys.vo   ../user_subsys/rtl
