@@ -53,7 +53,7 @@ module AXIL_SLAV #( parameter pADDR_WIDTH   = 12,
   input  wire                        axi_arvalid,
   input  wire  [(pADDR_WIDTH-1) : 0] axi_araddr,
   input  wire                        axi_wvalid,
-  input  wire                        axi_wstrb,
+  input  wire                 [3: 0] axi_wstrb,
   input  wire  [(pDATA_WIDTH-1) : 0] axi_wdata,
   input  wire                        axi_rready,
   input  wire                        cc_up_enable,
@@ -348,7 +348,7 @@ module USER_SUBSYS #( parameter pADDR_WIDTH   = 12,
   input  wire                        axi_arvalid,
   input  wire  [(pADDR_WIDTH-1) : 0] axi_araddr,
   input  wire                        axi_wvalid,
-  input  wire                        axi_wstrb,
+  input  wire                 [3: 0] axi_wstrb,
   input  wire  [(pDATA_WIDTH-1) : 0] axi_wdata,
   input  wire                        axi_rready,
   input  wire                        cc_up_enable,
@@ -530,7 +530,7 @@ AXIL_SLAV #(.pADDR_WIDTH( 12 ),
                                               .axi_arvalid  (axi_arvalid),             // I  
                                               .axi_araddr   (axi_araddr),              // I  pADDR_WIDTH
                                               .axi_wvalid   (axi_wvalid),              // I  
-                                              .axi_wstrb    (axi_wstrb),               // I  
+                                              .axi_wstrb    (axi_wstrb),               // I  4
                                               .axi_wdata    (axi_wdata),               // I  pDATA_WIDTH
                                               .axi_rready   (axi_rready),              // I  
                                               .cc_up_enable (cc_up_enable),            // I  

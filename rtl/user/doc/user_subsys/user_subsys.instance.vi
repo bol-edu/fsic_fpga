@@ -11,7 +11,7 @@ USER_SUBSYS #(.pADDR_WIDTH( 12 ),
                                     .axi_arvalid  (axi_arvalid),             // I  
                                     .axi_araddr   (axi_araddr),              // I  pADDR_WIDTH
                                     .axi_wvalid   (axi_wvalid),              // I  
-                                    .axi_wstrb    (axi_wstrb),               // I  
+                                    .axi_wstrb    (axi_wstrb),               // I  4
                                     .axi_wdata    (axi_wdata),               // I  pDATA_WIDTH
                                     .axi_rready   (axi_rready),              // I  
                                     .cc_up_enable (cc_up_enable),            // I  

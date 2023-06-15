@@ -463,6 +463,7 @@ USER_SUBSYS #(.pADDR_WIDTH( 12 ),
                                                   .la_up_data   (la_up_data),              // I  64
                                                   .low__pri_irq (low__pri_irq),            // O  
                                                   .high_pri_irq (high_pri_irq),            // O  
+                                                  .user_clock2  (user_clock2),             // I  
                                                   .axi_clk      (axi_clk),                 // I  
                                                   .axi_reset_n  (axi_reset_n),             // I  
                                                   .axis_clk     (axis_clk),                // I  
