@@ -22,7 +22,7 @@ Note: The user project wrapper is located in the address range from 32'h3000_000
 - User Projects (32'h3000_**0**000~32'h3000_**0**xxx)
 - Logic_Analyzer (32'h3000_**1**000~32'h3000_**1**xxx)
 - Axis_Axilite (32'h3000_**2**000~32'h3000_**2**xxx)
-    - Mailbox (32'h3000_**3**000~32'h0000_**3**xxx) 
+    - Mailbox (32'h3000_**3**000~32'h3000_**3**xxx)
 
 Note: 
 1. In case of read/write address ouside the decode range, read will return ‘hffff_ffff, write will direct complete.
@@ -64,17 +64,17 @@ List of functions and features
 | Port | in/out | Descriptiion |
 |:------:|:------:|:------------ |
 |axi_areset_n_i | in | AXI Reset, active-Low |
-|axi_aclk_i | in | AXI Clock |
+|axi_aclk_o | out | AXI Clock |
 ### ==AXI-Lite to Slaves (Config_Ctrl as Master)==
 AXI-Lite output from Control_Ctrl to each Slave are shared togehter.
 | Port | in/out | Descriptiion |
 |:------:|:------:|:------------ |
-|axi_awaddr[11:0] | out | AXI Write address |
+|axi_awaddr[31:0] | out | AXI Write address |
 |axi_awvalid | out | AXI Write Address valid |
 |axi_wdata[31:0]| out| AXI Write data |
 |axi_wstrb[3:0]| out | AXI Write data strobe |
 |axi_wvalid| out | AXI Write data valid |
-|axi_araddr[11:0] | out | AXI Read address |
+|axi_araddr[31:0] | out | AXI Read address |
 |axi_arvalid | out | AXI Read address valid |
 |axi_rready | out | AXI Read data ready |
 ### ==AXI-Lite from Slaves (Config_Ctrl as Master)==
@@ -140,7 +140,6 @@ AXI-Lite from each Slave will be isolated with crossponding enable singles. For 
 
 ## Function Description
 ### Function 1 - WISHBONE To AXI-Lite Translation:
-WISHBONE To AXI4-Lite Bridge Implementation <br>https://docs.google.com/presentation/d/1VsoJGATOF-RyZY9Dchg6uSQSpWnPPirxXyF8iNx94wc/edit?usp=share_link  
 Description of the function, including 
 - block diagram
 - Datapath flow
@@ -153,8 +152,8 @@ Basic idea of AXI-Lite request soruces (CaravelSoC Wishbone to Axilite and FPGA-
 The decoding is supprted for the following modules, and the corrsponding cc_?target?_enable will asserted.
 - User Projects (32’h3000_**0**000~32’h3000_**0**FFF), cc_up_enable
 - Logic_Analyzer (32’h3000_**1**000~32’h3000_**1**FFF), cc_la_enable
-- Axis_Axilite (32’h3000_**3**000~32’h0000_**3**FFF), cc_aa_enable
-    - Mailbox (32’h3000_**4**000~32’h0000_**4**FFF), cc_aa_enable
+- Axis_Axilite (32’h3000_**2**000~32’h0000_**2**FFF), cc_aa_enable
+    - Mailbox (32'h3000_**3**000~32'h3000_**3**xxx)
 
 Note: The address width of the AXI-Lite request from FPGA side may not support full 32bits. In this case, the minimal address width 15 should be mantained (axi_axaddr[15:12] for slave decode, and axi_axaddr[11:0] for register offset).
 
