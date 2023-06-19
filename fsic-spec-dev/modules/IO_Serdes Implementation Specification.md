@@ -8,56 +8,54 @@ In designing IO_Serdes, one design issue is that both Caravel and FPGA chip need
 
 ## Brief Explanation about the module function
 
+### clock and reset
+![](https://hackmd.io/_uploads/rJ6WvcaPh.png)
 
-### clk and rst tree balance
+### block diagram
 
-![c02](https://github.com/bol-edu/fsic_fpga/assets/98332019/1431b614-bc49-40b8-849f-5b2060ce6081)
+![](https://hackmd.io/_uploads/By2qI9Twh.png)
 
+### No Need Training Pattern
 
+#### txclock forward with data
+In default the txclk is off, when txen=1 then txclk is running and data is come with clock.
+In Rx side, the first data in RxFIFO is the txdata[0]. In this method no need Training Patter for symbol(4 bits) lock.
 
-### IO_Delay
-The delay from transmiter output pad to receiver input pad introduce larger delay. It is hard to control the IO delay, thus, a parameter io_delay (in unit of io_clk) is introduced. The IO data is received into a IO_FIFO, the parameter io_delay is the offset between the transmit and receive pointer. 
+### Tx(local) side provide txclk from ioclk and Rx(remote) side received it as rxclk
+- Tx side output serial_data align with txclk rising edge.
+- Rx side use rxclk negative edge to sample the serial_data
 
-### IO to core (Core_Delay)
-The serial data from the IO_FIFO is first shifted into a one of the two set of 8-bit shifters. The parameter core_delay is to control how to transfer from io_clk domain to core_clk domain. 
-
-core_delay = 0, is to directly transfer the current shifter content to parallel core data. This will suffer some input delay. The delay is estimated between io_delay to io_delay + 1.
-
-core_delay = 1, is to synchronize by core_clk before it is available.
-The following timing shows the timing sequence for the case io_delay = 2, core_delay = 0.
-![c03](https://github.com/bol-edu/fsic_fpga/assets/98332019/4c78a2e7-d433-4bab-bc80-f67fd6f9addc)
-
-
-#### add delay by delay-element ot constrain parameter in FPGA?
-
-![c04](https://github.com/bol-edu/fsic_fpga/assets/98332019/d65e53a0-9683-40e1-a6ce-0cfa344ff3c7)
-#### The delay from transmiter output pad to receiver input pad timing.
-- Caravel to Remote Host
+![](https://hackmd.io/_uploads/HyXAi5pwh.png)
 
 
-use set_input_delay in FPGA(remote host)
+### axis_data_fifo to Serial_Data_out
+![](https://hackmd.io/_uploads/S1n_o9aP3.png)
 
-![c05](https://github.com/bol-edu/fsic_fpga/assets/98332019/e05465ed-2b97-48c0-a69a-3be1e77340ee)
-    - reference https://blog.csdn.net/aaaaaaaa585/article/details/118859268
-- Remote Host to Caravel
+### Serial_Data_in to rxdata_out
+- Serial_Data_in to RxFIFO
+    - use w_ptr
+- RxFIFO to rx_shift_reg
+    - use r_ptr
+- rx_shift_reg to rx_data_out
+    - move when rx_shift_phase_cnt = 3
+![](https://hackmd.io/_uploads/Hy7YloTD3.png)
 
-![c06](https://github.com/bol-edu/fsic_fpga/assets/98332019/28dd2db1-d697-48bd-8117-f18e37f16cfa)
-    - reference https://blog.csdn.net/aaaaaaaa585/article/details/118862049
 
+### Init sequence
+- Step 1. system power on and reset de-assert
+- Step 2. rxen = 1 with in 100ms after reset de-assert
+    - rxen for avoid glitch issue when GPIO setting changed.
+- Step 3. Tx side provide txclk with data when txen =1. 
+    - Must wait enough time for Rx side reset de-assert and rxen=1
+    - Use negedge to generate txen to avoid glitch in txclk.
+    - For example : Tx side wait 200 ms after reset de-assert then set txen =1. 
+- Step 4. Rx side read Serial_data_in as below
+    - Step 4-1. Use rxclk to sample Serial_data_in to RxFIFO(deep=5)  by w_ptr
+        - Need 2 filp-flops for avoid metastable issue when read w_ptr (Gray code).
+- Step 4-2. Use ioclk to read RxFIFO and push to Rx_Shift_Reg 
+- Step 4-3. Use ioclk to move Rx_Shift_Reg to Rx_Sync_FIFO when Rx_Shift_Reg_Valid (4 bits  data ready in Rx_Shift_Reg)
+- Step 4-4. Use coreclk to get Rx_Sync_FIFO when Rx_Sync_FIFO_Valid
 
-
-#### rst not balance cause core_clk not sync
-
-![c07](https://github.com/bol-edu/fsic_fpga/assets/98332019/210f4d5d-2ef3-4edc-afac-f4e2cd874ff5)
-
-#### add a counter to delay the rst for Divider
-![c08](https://github.com/bol-edu/fsic_fpga/assets/98332019/5263acad-e119-463c-ae48-2fd9a80dcc1e)
-
-#### add core_clk_count to counter the core_clk from 0 to 3
-
-- io_clk = 4*Core_clk
-- Tx send data start from core_clk_count = 0
-- Rx received data from core_clk_count = 2 when (core_delay=1 and io_delay=2)
 
 ## Interface Blocks
 Block diagram shows its interconnected module
@@ -102,10 +100,18 @@ A table shows register definitions
 
 |RegisterName|Offset Address| Description |
 |:----------:|:------------:| :-----------|
-|Control     |'h0             | Control Register block Definition<br>bit 0: bit 0 function<br>bit 1: bit 1 function<br>bit 2: bit 2 function is<br>bit 3: bit 3 function |
-|Status      | 'h4          | Status register block definition<br>bit 0: bit 0 status is<br>bit 1: bit 1 interrupt status|
+|IO Serdes Control     |'h0             | Control Register block Definition<br>bit 0: rxen_ctl<br>FSIC FW set this bit to 1 when GPIO config setting is done for io serdes. set this bit within 100ms after reset de-assert<br>bit 1: txen_ctl<br>FSIC FW set this bit to 1 when remote side had enable rx. set this bit after 200ms after reset de-assert
+ |
+|Status      | 'h4          | Status register block definition<br>NA|
 
 ## Function Description
+
+### Flow Control by axis_switch
+- issue: the ready signal from local side need 2T to observed in remote side
+    - in below figure the data in axis_data_fifo in local side take 2T to axis_ad_out in remote side
+![](https://hackmd.io/_uploads/SyZXPTTvh.png)
+
+- axis_switch need implment a buffer, base on the thresh hold ( for example, available slot in buffer <= 2) to generate  ready signal to remote side.
 
 ### Function 1:
 Description of the function 1, including 
@@ -119,5 +125,6 @@ Description of the function 1, including
 - Code illustration to control the function
 
 ## Future Work
+
 
 
