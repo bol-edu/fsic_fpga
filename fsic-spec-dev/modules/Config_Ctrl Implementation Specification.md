@@ -5,6 +5,7 @@ All IP in the user project wrapper area uses Axilite interface. This module gene
 - Logic_Analyzer
 - Axis_Axilite
     - Mailbox
+- IO Serdes
 
 There are two initiators for the configuration transaction
 1. Caravel/RISC-V Wishbone bus
@@ -23,6 +24,7 @@ Note: The user project wrapper is located in the address range from 32'h3000_000
 - Logic_Analyzer (32'h3000_**1**000~32'h3000_**1**xxx)
 - Axis_Axilite (32'h3000_**2**000~32'h3000_**2**xxx)
     - Mailbox (32'h3000_**3**000~32'h3000_**3**xxx)
+- IO Serdes (32'h3000_**4**000~32'h3000_**4**xxx)
 
 Note: 
 1. In case of read/write address ouside the decode range, read will return ‘hffff_ffff, write will direct complete.
@@ -103,6 +105,14 @@ AXI-Lite from each Slave will be isolated with crossponding enable singles. For 
 |axi_arready | in | AXI Read address ready |
 |axi_rdata[31:0] | in | AXI Read data |
 |axi_rvalid | in | AXI Read valid |
+### ==Slave IO Serdes==
+| Port | in/out | Descriptiion |
+|:------:|:------:|:------------ |
+|axi_awready | in | AXI Write Address ready |
+|axi_wready | in | AXI Write data ready |
+|axi_arready | in | AXI Read address ready |
+|axi_rdata[31:0] | in | AXI Read data |
+|axi_rvalid | in | AXI Read valid |
 ### ==AXI-Lite from FPGA (Axis-Axilite as Master)==
 | Port | in/out | Descriptiion |
 |:------:|:------:|:------------ |
@@ -114,7 +124,7 @@ AXI-Lite from each Slave will be isolated with crossponding enable singles. For 
 |axi_araddr[31:0] | in | AXI Read address |
 |axi_arvalid | in | AXI Read address valid |
 |axi_rready | in | AXI Read data ready |
-### ==AXI-Lite to FPGA (Axis-Axilite as Master)==
+### ==AXI-Lite to FPGA (Config_Ctrl as Master)==
 | Port | in/out | Descriptiion |
 |:------:|:------:|:------------ |
 |axi_awready | out | AXI Write Address ready |
@@ -128,6 +138,7 @@ AXI-Lite from each Slave will be isolated with crossponding enable singles. For 
 |cc_up_enable | out | AXI Slave User project enable |
 |cc_la_enable | out | AXI Slave Logic-analyzer enable | 
 |cc_aa_enable | out | AXI Slave Axis_Axilite enable |
+|cc_is_enable | out | AXI Slave IO Serdes enable |
 ### ==Sideband - User Project Select (to Top or User Project Control)==
 | Port | in/out | Descriptiion |
 |:------:|:------:|:------------ |
