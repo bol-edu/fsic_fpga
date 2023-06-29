@@ -129,6 +129,7 @@ List of functions and features
 |axis_tlast  | out | Please see the above description. |1|
 |axis_tid    | out | It is the source of data stream identifier. |2|
 |axis_tuser  | out | Please see the above description. |2|
+
 #### Input stream
 | Port | in/out | Descriptiion | width |
 |:------:|:------:|:------------ |:--------|
@@ -140,6 +141,7 @@ List of functions and features
 |axis_tlast  | in  | Please see the above description. |1|
 |axis_tid    | in  | It is the source of data stream identifier. |2|
 |axis_tuser  | in  | Please see the above description. |2|
+
 
 ## 2. FPGA side
 * ### Common signal
