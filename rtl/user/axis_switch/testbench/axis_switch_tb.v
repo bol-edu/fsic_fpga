@@ -139,13 +139,8 @@ task axis_tx_hi_req;
         wait(valid_0 && ready_0);
         if(!hpri_req_in) begin
             valid_0 = #0 0;         
-            tlast_0 = 0;    //hurry for support last  
-        end else begin
-            if(tlast_in) begin
-                valid_0 = #0 0;     
-                tlast_0 = 0;
-            end
-        end                        
+            tlast_0 = 0;      
+        end                       
     end  
 endtask
 
@@ -198,7 +193,7 @@ task axis_tx_hi_req2;
         wait(valid_2 && ready_2);
         if(!hpri_req_in) begin
             valid_2 = #0 0;      
-            tlast_2 = 0;    //hurry for support last              
+            tlast_2 = 0;                
         end else begin
             if(tlast_in) begin
                 valid_2 = #0 0;      
@@ -347,25 +342,24 @@ task aa_axis_rx;
 endtask
 
 //for Arbiter Rx
-/*
+
 always @(posedge o_clk) begin
     if(o_rst_n)
         if(start_test == 1)
             #1 axis_rx;
 end
-*/
 
 //For Demux Rx
 always @(posedge o_clk) begin
     if(o_rst_n)
         if(start_test == 1)
-            #0 up_axis_rx;
+            #1 up_axis_rx;
 end
 
 always @(posedge o_clk) begin
     if(o_rst_n)
         if(start_test == 1)
-            #0 aa_axis_rx;
+            #1 aa_axis_rx;
 end
 
 initial
