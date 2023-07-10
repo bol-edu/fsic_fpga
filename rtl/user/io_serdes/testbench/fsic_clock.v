@@ -18,6 +18,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 //20230710
+// 2. use counter + FF
+//20230710
 // 1. using counter to avoid hold time issue when using 2 x clk->q delay from the clk.
 
 `define USE_BLOCK_ASSIGNMENT 1
@@ -32,17 +34,30 @@ module fsic_clock_div (
     input resetb;		// asynchronous reset (sense negative)
     output out;			// divided output clock
 
-	assign out = cnt[1];
-	reg [1:0] cnt;
+	assign out = clk_out;
+	reg cnt;     // use 1 bit for support div4
+	reg clk_out;
+
+	always @(posedge in or negedge resetb) begin
+		if ( !resetb ) begin
+		  cnt <= 0;
+        end		  
+		else  begin
+            cnt <= cnt + 1;
+		end
+	end
 
 `ifdef 	USE_BLOCK_ASSIGNMENT
 
 //for use block assigmnet to avoid race condition in simulation
 
 	always @(posedge in or negedge resetb) begin
-		if ( !resetb ) cnt = 0;
+		if ( !resetb ) begin
+		  clk_out = 1;
+        end		  
 		else  begin
-			cnt = cnt + 1;
+            if ( cnt == 0 ) clk_out = ~clk_out;
+            else clk_out = clk_out;
 		end
 	end
 
@@ -51,9 +66,12 @@ module fsic_clock_div (
 //for use non-block assigmnet
 
 	always @(posedge in or negedge resetb) begin
-		if ( !resetb ) cnt <= 0;
+		if ( !resetb ) begin
+		  clk_out <= 1;
+        end		  
 		else  begin
-			cnt <= cnt + 1;
+            if ( cnt == 0 ) clk_out <= ~clk_out;
+            else clk_out <= clk_out;
 		end
 	end
 
