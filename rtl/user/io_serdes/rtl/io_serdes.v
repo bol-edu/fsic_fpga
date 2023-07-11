@@ -115,105 +115,18 @@ module IO_SERDES #(
 	
 	//write addr channel
 	assign 	axi_awvalid_in	= axi_awvalid && cc_ls_enable;
-	reg	axi_waddr_buf_full;
 	wire axi_awready_out;
-	assign axi_awready_out = !axi_waddr_buf_full;
-	assign 	axi_awready = axi_awready_out;
-
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if (!axi_reset_n ) begin
-            axi_waddr_buf_full <= 0;
-        end
-        else begin
-			if (axi_awvalid_in && axi_awready_out) axi_waddr_buf_full <=1;
-			else begin
-				if (axi_w_state == WADDR_DATA_DONE) axi_waddr_buf_full <= 0;			//write to register
-				else axi_waddr_buf_full <= axi_waddr_buf_full;
-			end
-        end
-    end
-	
-	reg [11:0] axi_awaddr_in;
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_awaddr_in <= 0;
-        end
-        else begin
-			if (axi_awvalid_in && axi_awready_out) axi_awaddr_in <= axi_awaddr;
-			else	axi_awaddr_in <= axi_awaddr_in;	
-        end
-    end
+	assign axi_awready = axi_awready_out;
 	
 	//write data channel
 	assign 	axi_wvalid_in	= axi_wvalid && cc_ls_enable;
-	reg	axi_wdata_buf_full;
 	wire axi_wready_out;
-	assign axi_wready_out = !axi_wdata_buf_full;
-	assign 	axi_wready = axi_wready_out;
+	assign axi_wready = axi_wready_out;
+	
+	// if both axi_awvalid_in=1 and axi_wvalid_in=1 then output axi_awready_out = 1 and axi_wready_out = 1
+	assign axi_awready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;		
+	assign axi_wready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;		
 
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_wdata_buf_full <= 0;
-        end
-        else begin
-			if (axi_wvalid_in && axi_wready_out) axi_wdata_buf_full <=1;
-			else begin
-				if (axi_w_state == WADDR_DATA_DONE) axi_wdata_buf_full <= 0;			//write to register
-				else axi_wdata_buf_full <= axi_wdata_buf_full;
-			end
-        end
-    end
-	
-	reg [pDATA_WIDTH-1:0] axi_wdata_in;
-	reg [3:0] axi_wstrb_in;
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_wdata_in <= 0;
-			axi_wstrb_in <= 0;
-        end
-        else begin
-			if (axi_wvalid_in && axi_wready_out) begin
-				axi_wdata_in <= axi_wdata;
-				axi_wstrb_in <= axi_wstrb;
-			end
-			else	begin
-				axi_wdata_in <= axi_wdata_in;	
-				axi_wstrb_in <= axi_wstrb_in;	
-			end
-        end
-    end
-	
-localparam 	IDLE_STATE = 2'b00,
-			WADDR_DONE = 2'b01,
-			WADDR_DATA_DONE = 2'b10;
-	
-	//write state machine 
-	reg [1:0] axi_w_state;
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_w_state <= IDLE_STATE;
-        end
-        else begin
-			case (axi_w_state) 
-				IDLE_STATE:
-					if (axi_waddr_buf_full && axi_wdata_buf_full)	axi_w_state <= WADDR_DATA_DONE;
-					else  begin
-						if (axi_waddr_buf_full && !axi_wdata_buf_full)	axi_w_state <= WADDR_DONE;
-						else axi_w_state<= axi_w_state;
-					end
-				WADDR_DONE:
-					if (axi_wdata_buf_full)	axi_w_state <= WADDR_DATA_DONE;
-					else axi_w_state<= axi_w_state;
-				WADDR_DATA_DONE:
-					axi_w_state <= IDLE_STATE;
-			endcase
-        end
-    end	
-	
-	//register write
 	
     always @(posedge axi_clk or negedge axi_reset_n)  begin
         if ( !axi_reset_n ) begin
@@ -221,10 +134,10 @@ localparam 	IDLE_STATE = 2'b00,
             txen_ctl <= 0;
         end
         else begin
-			if ( axi_w_state == WADDR_DATA_DONE) begin
-				if (axi_awaddr_in == 12'h000 && (axi_wstrb_in[0] == 1) ) begin //offset 0
-					rxen_ctl <= axi_wdata_in[0];
-					txen_ctl <= axi_wdata_in[1];					
+			if ( axi_awvalid_in && axi_wvalid_in ) begin		//when axi_awvalid_in=1 and axi_wvalid_in=1 means axi_awready_out=1 and axi_wready_out=1
+				if (axi_awaddr == 12'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
+					rxen_ctl <= axi_wdata[0];
+					txen_ctl <= axi_wdata[1];					
 				end
 				else begin
 					rxen_ctl <= rxen_ctl;
@@ -234,97 +147,14 @@ localparam 	IDLE_STATE = 2'b00,
         end
     end		
 	
-
-	//read addr channel
-	assign 	axi_arvalid_in	= axi_arvalid && cc_ls_enable;
-	reg	axi_raddr_buf_full;
-	wire axi_arready_out;
-	assign axi_arready_out = !axi_raddr_buf_full;
-	assign 	axi_arready = axi_arready_out;
-
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_raddr_buf_full <= 0;
-        end
-        else begin
-			if (axi_arvalid_in && axi_arready_out) axi_raddr_buf_full <=1;
-			else begin
-				if (axi_r_state == RADDR_DONE) axi_raddr_buf_full <= 0;			//read from register
-				else axi_raddr_buf_full <= axi_raddr_buf_full;
-			end
-        end
-    end
 	
-	reg [11:0] axi_araddr_in;
+	// io serdes only support 2 register bits in offset 0. config control read other address offset is reserved.
+	// io serdes always output axi_arready = 1 and don't care the axi_arvalid & axi_araddr
+	assign axi_arready = 1;
+	// io serdes always output axi_rvalid = 1 and axi_rdata =  { 30'b0, txen_ctl, rxen_ctl }
+	assign axi_rvalid = 1;
+	assign axi_rdata =  { 30'b0, txen_ctl, rxen_ctl };
 	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_araddr_in <= 0;
-        end
-        else begin
-			if (axi_arvalid_in && axi_arready_out) axi_araddr_in <= axi_araddr;
-			else	axi_araddr_in <= axi_araddr_in;	
-        end
-    end
-
-localparam 	R_IDLE_STATE = 2'b00,
-			RADDR_DONE = 2'b01,
-			DATA_RESPONSE = 2'b10;
-	
-	//read state machine 
-	reg [1:0] axi_r_state;
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_r_state <= R_IDLE_STATE;
-        end
-        else begin
-			case (axi_r_state) 
-				R_IDLE_STATE:
-					if (axi_raddr_buf_full)	axi_r_state <= RADDR_DONE;
-					else axi_r_state<= axi_r_state;
-				RADDR_DONE:
-					axi_r_state <= DATA_RESPONSE;
-				DATA_RESPONSE:
-					if (axi_rvalid && axi_rready) axi_r_state <= R_IDLE_STATE;
-					else axi_r_state<= axi_r_state;
-			endcase
-        end
-    end	
-
-	//register read
-	reg [pDATA_WIDTH-1:0] axi_rdata_out;
-	
-	assign axi_rdata = axi_rdata_out;
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_rdata_out <= 0;
-        end
-        else begin
-			if ( axi_r_state == RADDR_DONE) begin
-				if (axi_araddr_in == 12'h000 ) begin //offset 0
-					axi_rdata_out <= { 30'b0, txen_ctl, rxen_ctl };
-				end
-				else begin
-					axi_rdata_out <= 0;
-				end
-			end
-        end
-    end		
-	
-	//read data channel
-	reg axi_rvalid_out;
-	assign axi_rvalid = axi_rvalid_out ;		//TODO : does axi_rvalid need check cc_ls_enable? don't care cc_ls_enable right now.
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_rvalid_out <= 0;
-        end
-        else begin
-			if (axi_r_state == DATA_RESPONSE) axi_rvalid_out <=1;
-			else axi_rvalid_out<=0;
-        end
-    end
 
 	
     assign txen_out = txen;
