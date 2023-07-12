@@ -17,10 +17,12 @@
 // Additional Comments:
 //
 //////////////////////////////////////////////////////////////////////////////////
+// 20230712
+// 1. axi_awaddr is DW address, pADDR_WIDTH change from 12 to 10
 
 
 module IO_SERDES #(
-		parameter pADDR_WIDTH   = 12,
+		parameter pADDR_WIDTH   = 10,
         parameter pDATA_WIDTH   = 32,
 		parameter pRxFIFO_DEPTH = 5,
 		parameter pCLK_RATIO =4
@@ -37,13 +39,13 @@ module IO_SERDES #(
 
 		//write addr channel
 		input 	axi_awvalid,
-		input 	[pADDR_WIDTH-1:0] axi_awaddr,
+		input 	[pADDR_WIDTH-1:0] axi_awaddr,		//axi_awaddr is DW address
 		output	axi_awready,
 		
 		//write data channel
 		input 	axi_wvalid,
 		input 	[pDATA_WIDTH-1:0] axi_wdata,
-		input 	[3:0] axi_wstrb,
+		input 	[(pDATA_WIDTH/8)-1:0] axi_wstrb,
 		output	axi_wready,
 		
 		//read addr channel
@@ -62,8 +64,8 @@ module IO_SERDES #(
 
         //TX path
 		input 	[pDATA_WIDTH-1:0] as_is_tdata,
-		input 	[3:0] as_is_tstrb,
-		input 	[3:0] as_is_tkeep,
+		input 	[(pDATA_WIDTH/8)-1:0] as_is_tstrb,
+		input 	[(pDATA_WIDTH/8)-1:0] as_is_tkeep,
 		input 	as_is_tlast,
 		input 	[1:0] as_is_tid,
 		input 	as_is_tvalid,
@@ -78,8 +80,8 @@ module IO_SERDES #(
 		input  wire  [11: 0] serial_rxd,
 		
 		output 	[pDATA_WIDTH-1:0] is_as_tdata,
-		output 	[3:0] is_as_tstrb,
-		output 	[3:0] is_as_tkeep,
+		output 	[(pDATA_WIDTH/8)-1:0] is_as_tstrb,
+		output 	[(pDATA_WIDTH/8)-1:0] is_as_tkeep,
 		output 	is_as_tlast,
 		output 	[1:0] is_as_tid,
 		output 	is_as_tvalid,
@@ -128,6 +130,7 @@ module IO_SERDES #(
 	assign axi_wready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;		
 
 	
+	//write register
     always @(posedge axi_clk or negedge axi_reset_n)  begin
         if ( !axi_reset_n ) begin
             rxen_ctl <= 0;
@@ -135,7 +138,7 @@ module IO_SERDES #(
         end
         else begin
 			if ( axi_awvalid_in && axi_wvalid_in ) begin		//when axi_awvalid_in=1 and axi_wvalid_in=1 means axi_awready_out=1 and axi_wready_out=1
-				if (axi_awaddr == 12'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
+				if (axi_awaddr == 10'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
 					rxen_ctl <= axi_wdata[0];
 					txen_ctl <= axi_wdata[1];					
 				end
@@ -148,8 +151,8 @@ module IO_SERDES #(
     end		
 	
 	
-	// io serdes only support 2 register bits in offset 0. config control read other address offset is reserved.
 	// io serdes always output axi_arready = 1 and don't care the axi_arvalid & axi_araddr
+	// io serdes only support 2 register bits in offset 0. config read other address offset is reserved.
 	assign axi_arready = 1;
 	// io serdes always output axi_rvalid = 1 and axi_rdata =  { 30'b0, txen_ctl, rxen_ctl }
 	assign axi_rvalid = 1;
@@ -208,10 +211,10 @@ module IO_SERDES #(
     end
 
     reg [pDATA_WIDTH-1:0] as_is_tdata_buf;
-    reg [3:0] as_is_tstrb_buf;
-    reg [3:0] as_is_tkeep_buf;
-    reg [3:0] as_is_tid_tuser_buf;
-    reg [3:0] as_is_tlast_tvalid_tready_buf;
+    reg [(pDATA_WIDTH/8)-1:0] as_is_tstrb_buf;
+    reg [(pDATA_WIDTH/8)-1:0] as_is_tkeep_buf;
+    reg [(pDATA_WIDTH/8)-1:0] as_is_tid_tuser_buf;
+    reg [(pDATA_WIDTH/8)-1:0] as_is_tlast_tvalid_tready_buf;
 
     always @(posedge coreclk or negedge axis_rst_n)  begin
         if ( !axis_rst_n || ~txen) begin
@@ -267,14 +270,14 @@ module IO_SERDES #(
 		end
 	endgenerate
 `else	//DEBUG_TDATA
-    wire [3:0] as_is_tdata_0;
-    wire [3:0] as_is_tdata_1;
-    wire [3:0] as_is_tdata_2;
-    wire [3:0] as_is_tdata_3;
-    wire [3:0] as_is_tdata_4;
-    wire [3:0] as_is_tdata_5;
-    wire [3:0] as_is_tdata_6;
-    wire [3:0] as_is_tdata_7;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_0;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_1;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_2;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_3;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_4;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_5;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_6;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_7;
 
     assign as_is_tdata_0 = as_is_tdata_buf[3:0];
     assign as_is_tdata_1 = as_is_tdata_buf[7:4];
@@ -355,7 +358,7 @@ module IO_SERDES #(
 		.ioclk(ioclk),
 		.coreclk(coreclk),
 		.Serial_Data_in(Serial_Data_In_tstrb),
-		.rxdata_out(is_as_tstrb[3:0])
+		.rxdata_out(is_as_tstrb)
 //		.rxdata_out_valid(rxdata_out_valid)
 	);
 
@@ -371,7 +374,7 @@ module IO_SERDES #(
 		.ioclk(ioclk),
 		.coreclk(coreclk),
 		.Serial_Data_in(Serial_Data_In_tkeep),
-		.rxdata_out(is_as_tkeep[3:0])
+		.rxdata_out(is_as_tkeep)
 //		.rxdata_out_valid(rxdata_out_valid)
 	);
 
