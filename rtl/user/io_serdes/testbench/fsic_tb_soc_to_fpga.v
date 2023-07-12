@@ -18,6 +18,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
+// 20230712
+// 1. check cfg read result
 // 20230711
 // 1. update cfg read/write
 // 2. replace #0 to non-block assigment in initial block.
@@ -80,6 +82,8 @@ module fsic_tb_soc_to_fpga #(
 	reg ioclk;
 	reg dlyclk;
 
+	reg [7:0] soc_compare_data;
+	
 	//write addr channel
 	reg soc_axi_awvalid;
 	reg [11:0] soc_axi_awaddr;
@@ -395,27 +399,39 @@ module fsic_tb_soc_to_fpga #(
 		soc_cc_ls_enable=1;
 
 		//burst write test
-		soc_cfg_write(0,0,1,0);
-		soc_cfg_write(0,1,1,0);
-		soc_cfg_write(0,2,1,0);
-		soc_cfg_write(0,3,1,0);
+		soc_cfg_write(0,0,1,0);		//write offset 0 = 0
+		soc_cfg_write(0,1,1,0);		//write offset 0 = 1
+		soc_cfg_write(0,2,1,0);		//write offset 0 = 2
+		soc_cfg_write(0,3,1,0);		//write offset 0 = 3
 
 		//burst read test
-		soc_cfg_read(0,0);
-		soc_cfg_read(4,0);
-		soc_cfg_read(8,0);
-		soc_cfg_read(8'hc,0);
+		soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+		soc_compare_data = 3;		//read offset 0 result should be 3, other offset is reserved and result equal to offset 0
+		soc_cfg_read(0,0);			//read offset 0 
+		soc_cfg_read(1,0);			//read offset 4
+		soc_cfg_read(2,0);			//read offset 8
+		soc_cfg_read(3,0);			//read offset 12
 
 
 		//burst write/read test
-		soc_cfg_write(0,0,1,0);
+		soc_cfg_write(0,0,1,0);		//write offset 0 = 0
+		soc_compare_data = 0;		//read offset 0 result should be 0
 		soc_cfg_read(0,0);
-		soc_cfg_write(0,1,1,0);
+		soc_cfg_write(0,1,1,0);		//write offset 0 = 1
+		soc_compare_data = 1;		//read offset 0 result should be 1
 		soc_cfg_read(0,0);
-		soc_cfg_write(0,2,1,0);
+		soc_cfg_write(0,2,1,0);		//write offset 0 = 2
+		soc_compare_data = 2;		//read offset 0 result should be 2
 		soc_cfg_read(0,0);
-		soc_cfg_write(0,3,1,0);
+		soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+		soc_compare_data = 3;		//read offset 0 result should be 3
 		soc_cfg_read(0,0);
+		
+		//write to offset 1, the data in offset 0 should no changed.
+		soc_cfg_write(0,3,1,0);	// write to offset 0, data = 3
+		soc_cfg_write(0,0,2,0);	// write to offset 1 (strobe = 4'b0010) , data = 0
+		soc_compare_data = 3;	// data should be 3 in offset 0
+		soc_cfg_read(0,0);		//read offset 0
 		
 `ifdef NotSupport_Test		
 		//no support below test in IO_SERDES module
@@ -461,6 +477,25 @@ module fsic_tb_soc_to_fpga #(
 
     end
 
+	// config register read result compare_data
+
+    initial begin
+		//$monitor($time, "=>fpga_is_as_tdata=%x, fpga_is_as_tvalid=%b", fpga_is_as_tdata, fpga_is_as_tvalid);
+		
+		while (1) begin
+			@ (posedge soc_coreclk);
+			if (soc_axi_rvalid && soc_axi_rready) begin
+				if (soc_axi_rdata == soc_compare_data)
+					$display($time, "=> soc soc_cfg_read data compare : [PASS], soc_axi_rdata= %x", soc_axi_rdata);
+				else 
+					$display($time, "=> soc soc_cfg_read data compare : [FAIL], soc_axi_rdata= %x, soc_compare_data=%x", soc_axi_rdata, soc_compare_data);
+
+			end
+		end
+
+    end
+	
+	
 	// test_sequence_control
 	reg [31:0] k;
 	reg [31:0]test_seq;
@@ -902,6 +937,7 @@ module fsic_tb_soc_to_fpga #(
 	task soc_cfg_read;		//input addr and valid_delay 
 		input [11:0] axi_araddr;
 		input [7:0] valid_delay;
+		//input [7:0] compare_data;
 		
 		begin
 	        soc_axi_araddr <= axi_araddr;
