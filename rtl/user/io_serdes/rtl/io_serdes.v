@@ -19,7 +19,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 // 20230712
 // 1. axi_awaddr is DW address, pADDR_WIDTH change from 12 to 10
+// 2. define USE_FOR_LOOP_Serial_Data_Out_tdata and update coding error in for loop
 
+`define USE_FOR_LOOP_Serial_Data_Out_tdata 1
 
 module IO_SERDES #(
 		parameter pADDR_WIDTH   = 10,
@@ -262,14 +264,14 @@ module IO_SERDES #(
 	assign txclk = ioclk&txen;		//use negedge to avoid glitch in txclk.
 
 
-`ifdef DEBUG_TDATA
+`ifdef USE_FOR_LOOP_Serial_Data_Out_tdata
 	genvar j;
 	generate 
-		for (j=0; i<8; j=j+1 ) begin
-			assign Serial_Data_Out_tdata[i] = as_is_tdata_buf[j*4+tx_shift_phase_cnt] & txen ;
+		for (j=0; j<8; j=j+1 ) begin
+			assign Serial_Data_Out_tdata[j] = as_is_tdata_buf[j*4+tx_shift_phase_cnt] & txen ;
 		end
 	endgenerate
-`else	//DEBUG_TDATA
+`else	//USE_FOR_LOOP_Serial_Data_Out_tdata
     wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_0;
     wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_1;
     wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_2;
@@ -296,7 +298,7 @@ module IO_SERDES #(
 	assign Serial_Data_Out_tdata[5] = as_is_tdata_5[tx_shift_phase_cnt] & txen ;
 	assign Serial_Data_Out_tdata[6] = as_is_tdata_6[tx_shift_phase_cnt] & txen ;
 	assign Serial_Data_Out_tdata[7] = as_is_tdata_7[tx_shift_phase_cnt] & txen ;
-`endif	//DEBUG_TDATA
+`endif	//USE_FOR_LOOP_Serial_Data_Out_tdata
 
 
 	assign Serial_Data_Out_tstrb = as_is_tstrb_buf[tx_shift_phase_cnt] & txen ;
