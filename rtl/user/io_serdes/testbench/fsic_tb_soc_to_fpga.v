@@ -18,6 +18,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
+// 20230712
+// 1. check cfg read result
+// 20230711
+// 1. update cfg read/write
+// 2. replace #0 to non-block assigment in initial block.
 // 20230706
 // 1. update test003 : simulation the behavior of fpga axis_switch rx buffer full
 // 2. using #0 to replace @negedge assign value in testbench
@@ -32,7 +37,7 @@
 // 20230630
 // 1. add task soc_delay_valid;		//input tdata and valid_delay 
 // 2. add register R/W interface
-// 3. add soc_axi_addr_data_read_delay_valid
+// 3. add soc_cfg_read
 // 20230629
 // 1. data transfer from Axis siwtch to io serdes when is_as_tready=1 and as_is_tvalid=1
 // 2. use posedge to update data in testbench
@@ -77,6 +82,8 @@ module fsic_tb_soc_to_fpga #(
 	reg ioclk;
 	reg dlyclk;
 
+	reg [7:0] soc_compare_data;
+	
 	//write addr channel
 	reg soc_axi_awvalid;
 	reg [11:0] soc_axi_awaddr;
@@ -391,23 +398,54 @@ module fsic_tb_soc_to_fpga #(
         #20;
 		soc_cc_ls_enable=1;
 
-		soc_axi_addr_data_write_delay_valid(0,0,1,0);
-		soc_axi_addr_data_read_delay_valid(0,0);
-		soc_axi_addr_data_write_delay_valid(0,1,1,0);
-		soc_axi_addr_data_read_delay_valid(0,0);
-		soc_axi_addr_data_write_delay_valid(0,2,1,0);
-		soc_axi_addr_data_read_delay_valid(0,0);
-		soc_axi_addr_data_write_delay_valid(0,3,1,0);
-		soc_axi_addr_data_read_delay_valid(0,0);
+		//burst write test
+		soc_cfg_write(0,0,1,0);		//write offset 0 = 0
+		soc_cfg_write(0,1,1,0);		//write offset 0 = 1
+		soc_cfg_write(0,2,1,0);		//write offset 0 = 2
+		soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+
+		//burst read test
+		soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+		soc_compare_data = 3;		//read offset 0 result should be 3, other offset is reserved and result equal to offset 0
+		soc_cfg_read(0,0);			//read offset 0 
+		soc_cfg_read(1,0);			//read offset 4
+		soc_cfg_read(2,0);			//read offset 8
+		soc_cfg_read(3,0);			//read offset 12
+
+
+		//burst write/read test
+		soc_cfg_write(0,0,1,0);		//write offset 0 = 0
+		soc_compare_data = 0;		//read offset 0 result should be 0
+		soc_cfg_read(0,0);
+		soc_cfg_write(0,1,1,0);		//write offset 0 = 1
+		soc_compare_data = 1;		//read offset 0 result should be 1
+		soc_cfg_read(0,0);
+		soc_cfg_write(0,2,1,0);		//write offset 0 = 2
+		soc_compare_data = 2;		//read offset 0 result should be 2
+		soc_cfg_read(0,0);
+		soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+		soc_compare_data = 3;		//read offset 0 result should be 3
+		soc_cfg_read(0,0);
 		
-		soc_axi_addr_write_delay_valid(0,0);
-		soc_axi_data_write_delay_valid(0,1,0);
-		soc_axi_addr_write_delay_valid(0,0);
-		soc_axi_data_write_delay_valid(1,1,0);
-		soc_axi_addr_write_delay_valid(0,0);
-		soc_axi_data_write_delay_valid(2,1,0);
-		soc_axi_addr_write_delay_valid(0,0);
-		soc_axi_data_write_delay_valid(3,1,0);
+		//write to offset 1, the data in offset 0 should no changed.
+		soc_cfg_write(0,3,1,0);	// write to offset 0, data = 3
+		soc_cfg_write(0,0,2,0);	// write to offset 1 (strobe = 4'b0010) , data = 0
+		soc_compare_data = 3;	// data should be 3 in offset 0
+		soc_cfg_read(0,0);		//read offset 0
+		
+`ifdef NotSupport_Test		
+		//no support below test in IO_SERDES module
+		//IO_SERDES output axi_awready_out = 1 and axi_wready_out = 1 when both axi_awvalid_in=1 and axi_wvalid_in=1
+		//it will cause dead lock if testbench set axi_awvalid=1 and wait for axi_awready
+		soc_cfg_write_addr(0,0);
+		soc_cfg_write_data(0,1,0);
+		soc_cfg_write_addr(0,0);
+		soc_cfg_write_data(1,1,0);
+		soc_cfg_write_addr(0,0);
+		soc_cfg_write_data(2,1,0);
+		soc_cfg_write_addr(0,0);
+		soc_cfg_write_data(3,1,0);
+`endif //NotSupport_Test		
 
     end
 
@@ -439,6 +477,25 @@ module fsic_tb_soc_to_fpga #(
 
     end
 
+	// config register read result compare_data
+
+    initial begin
+		//$monitor($time, "=>fpga_is_as_tdata=%x, fpga_is_as_tvalid=%b", fpga_is_as_tdata, fpga_is_as_tvalid);
+		
+		while (1) begin
+			@ (posedge soc_coreclk);
+			if (soc_axi_rvalid && soc_axi_rready) begin
+				if (soc_axi_rdata == soc_compare_data)
+					$display($time, "=> soc soc_cfg_read data compare : [PASS], soc_axi_rdata= %x", soc_axi_rdata);
+				else 
+					$display($time, "=> soc soc_cfg_read data compare : [FAIL], soc_axi_rdata= %x, soc_compare_data=%x", soc_axi_rdata, soc_compare_data);
+
+			end
+		end
+
+    end
+	
+	
 	// test_sequence_control
 	reg [31:0] k;
 	reg [31:0]test_seq;
@@ -481,33 +538,33 @@ module fsic_tb_soc_to_fpga #(
 
 			#40;
 			soc_cc_ls_enable=1;
-			soc_axi_addr_data_write_delay_valid(0,1,1,0);
+			soc_cfg_write(0,1,1,0);
 			$display($time, "=> soc rxen_ctl=1");
 			#400;
-			soc_axi_addr_data_write_delay_valid(0,3,1,0);
+			soc_cfg_write(0,3,1,0);
 			$display($time, "=> soc txen_ctl=1");
 			#200;
 			soc_as_is_tdata = 32'h5a5a5a5a;
 			#40;
 
 			
-			
+			@ (posedge soc_coreclk);
 			// wait util soc_is_as_tready == 1 then change data
 			for(idx1=0; idx1<16; idx1=idx1+1)begin
-				soc_as_is_tdata = #0 idx1 * 32'h11111111;
-				soc_as_is_tstrb = #0 idx1 * 4'h1;
-				soc_as_is_tkeep = #0 idx1 * 4'h1;
-				soc_as_is_tid = #0 idx1 * 2'h1;
-				soc_as_is_tuser = #0 idx1 * 2'h1;
-				soc_as_is_tlast = #0 idx1 * 1'h1;
-				soc_as_is_tvalid= #0 1;
+				soc_as_is_tdata <=  idx1 * 32'h11111111;
+				soc_as_is_tstrb <=  idx1 * 4'h1;
+				soc_as_is_tkeep <=  idx1 * 4'h1;
+				soc_as_is_tid <=  idx1 * 2'h1;
+				soc_as_is_tuser <=  idx1 * 2'h1;
+				soc_as_is_tlast <=  idx1 * 1'h1;
+				soc_as_is_tvalid <= 1;
 				
 				@ (posedge soc_coreclk);
 				while (soc_is_as_tready == 0) begin
 						@ (posedge soc_coreclk);
 				end
 			end
-			soc_as_is_tvalid= #0 0;
+			soc_as_is_tvalid <= 0;
 
 			#200;
 			
@@ -541,16 +598,17 @@ module fsic_tb_soc_to_fpga #(
 
 			#40;
 			fpga_cc_ls_enable=1;
-			fpga_axi_addr_data_write_delay_valid(0,1,1,0);
+			fpga_cfg_write(0,1,1,0);
 			$display($time, "=> fpga rxen_ctl=1");
 			#400;
-			fpga_axi_addr_data_write_delay_valid(0,3,1,0);
+			fpga_cfg_write(0,3,1,0);
 			$display($time, "=> fpga txen_ctl=1");
 			#200;
 
 			fpga_as_is_tdata = 32'h5a5a5a5a;
 			fpga_as_is_tready = 1;
 
+			@ (posedge fpga_coreclk);
 			//for Axis Switch Rx
 			for(idx2=0; idx2<16; idx2=idx2+1)begin
 				@ (posedge fpga_coreclk);
@@ -598,33 +656,32 @@ module fsic_tb_soc_to_fpga #(
 
 			#40;
 			soc_cc_ls_enable=1;
-			soc_axi_addr_data_write_delay_valid(0,1,1,0);
+			soc_cfg_write(0,1,1,0);
 			$display($time, "=> soc rxen_ctl=1");
 			#400;
-			soc_axi_addr_data_write_delay_valid(0,3,1,0);
+			soc_cfg_write(0,3,1,0);
 			$display($time, "=> soc txen_ctl=1");
 			#200;
 			soc_as_is_tdata = 32'h5a5a5a5a;
-			#40;
-
 			
+			@ (posedge soc_coreclk);
 			
 			// wait util soc_is_as_tready == 1 then change data
 			for(idx3=0; idx3<16; idx3=idx3+1)begin
-				soc_as_is_tdata = #0 idx3 * 32'h11111111;
-				soc_as_is_tstrb = #0 idx3 * 4'h1;
-				soc_as_is_tkeep = #0 idx3 * 4'h1;
-				soc_as_is_tid = #0 idx3 * 2'h1;
-				soc_as_is_tuser = #0 idx3 * 2'h1;
-				soc_as_is_tlast = #0 idx3 * 1'h1;
-				soc_as_is_tvalid= #0 1;
+				soc_as_is_tdata <=  idx3 * 32'h11111111;
+				soc_as_is_tstrb <=  idx3 * 4'h1;
+				soc_as_is_tkeep <=  idx3 * 4'h1;
+				soc_as_is_tid <=  idx3 * 2'h1;
+				soc_as_is_tuser <=  idx3 * 2'h1;
+				soc_as_is_tlast <=  idx3 * 1'h1;
+				soc_as_is_tvalid <= 1;
 				
 				@ (posedge soc_coreclk);
 				while (soc_is_as_tready == 0) begin
 						@ (posedge soc_coreclk);
 				end
 			end
-			soc_as_is_tvalid= #0 0;
+			soc_as_is_tvalid <= 0;
 
 			#200;
 			
@@ -660,10 +717,10 @@ module fsic_tb_soc_to_fpga #(
 
 			#40;
 			fpga_cc_ls_enable=1;
-			fpga_axi_addr_data_write_delay_valid(0,1,1,0);
+			fpga_cfg_write(0,1,1,0);
 			$display($time, "=> fpga rxen_ctl=1");
 			#400;
-			fpga_axi_addr_data_write_delay_valid(0,3,1,0);
+			fpga_cfg_write(0,3,1,0);
 			$display($time, "=> fpga txen_ctl=1");
 			#200;
 
@@ -681,12 +738,12 @@ module fsic_tb_soc_to_fpga #(
 					as_fifo_cnt = as_fifo_cnt + 1;
 					
 				if (as_fifo_cnt == 4 && fpga_is_as_tvalid )  begin
-						fpga_as_is_tready = #0 0;
+						fpga_as_is_tready <= 0;
 						repeat(20) @ (posedge fpga_coreclk); //wait for 20 coreclk
-						fpga_as_is_tready = #0 1;
+						fpga_as_is_tready <= 1;
 						as_fifo_cnt = as_fifo_cnt + 1;  //add as_fifo_cnt to avoid enter
 				end
-				else fpga_as_is_tready = #0 1;
+				else fpga_as_is_tready <= 1;
 
 				$display($time, "=> fpga fpga_as_is_tready=%b, idx4=%x, as_fifo_cnt=%x", fpga_as_is_tready, idx4, as_fifo_cnt);
 				@ (posedge fpga_coreclk);
@@ -756,71 +813,71 @@ module fsic_tb_soc_to_fpga #(
 		input [7:0] valid_delay;
 		
 		begin
-	        soc_as_is_tdata = #0 tdata;
-			soc_as_is_tvalid = #0 0;
+	        soc_as_is_tdata <= tdata;
+			soc_as_is_tvalid <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
 			//$display($time, "=> soc_delay_valid after  : valid_delay=%x", valid_delay); 
-			soc_as_is_tvalid = #0 1;
+			soc_as_is_tvalid <= 1;
 			@ (posedge soc_coreclk);
 			while (soc_is_as_tready == 0) begin
 					@ (posedge soc_coreclk);
 			end
 			$display($time, "=> soc_delay_valid : soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_is_as_tready=%b, valid_delay=%x", soc_as_is_tdata, soc_as_is_tvalid, soc_is_as_tready, valid_delay); 
 			@ (posedge soc_coreclk);
-			soc_as_is_tvalid = #0 0;
+			soc_as_is_tvalid <= 0;
 			
 		end
 		
 	endtask
 		
 
-	task soc_axi_addr_write_delay_valid;		//input addr and valid_delay 
+	task soc_cfg_write_addr;		//input addr and valid_delay 
 		input [11:0] axi_awaddr;
 		input [7:0] valid_delay;
 		
 		begin
-	        soc_axi_awaddr = #0 axi_awaddr;
-			soc_axi_awvalid = #0 0;
+	        soc_axi_awaddr <= axi_awaddr;
+			soc_axi_awvalid <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
 			//$display($time, "=> soc_delay_valid after  : valid_delay=%x", valid_delay); 
-			soc_axi_awvalid = #0 1;
+			soc_axi_awvalid <= 1;
 			@ (posedge soc_coreclk);
 			while (soc_axi_awready == 0) begin
 					@ (posedge soc_coreclk);
 			end
-			$display($time, "=> soc_axi_addr_write_delay_valid : soc_axi_awaddr=%x, soc_axi_awvalid=%b, soc_axi_awready=%b", soc_axi_awaddr, soc_axi_awvalid, soc_axi_awready); 
-			soc_axi_awvalid = #0 0;
+			$display($time, "=> soc_cfg_write_addr : soc_axi_awaddr=%x, soc_axi_awvalid=%b, soc_axi_awready=%b", soc_axi_awaddr, soc_axi_awvalid, soc_axi_awready); 
+			soc_axi_awvalid <= 0;
 		end
 		
 	endtask
 
-	task soc_axi_data_write_delay_valid;		//input data, strb and valid_delay 
+	task soc_cfg_write_data;		//input data, strb and valid_delay 
 		input [31:0] axi_wdata;
 		input [3:0] axi_wstrb;
 		
 		input [7:0] valid_delay;
 		
 		begin
-	        soc_axi_wdata = #0 axi_wdata;
-	        soc_axi_wstrb = #0 axi_wstrb;
-			soc_axi_wvalid = #0 0;
+	        soc_axi_wdata <= axi_wdata;
+	        soc_axi_wstrb <= axi_wstrb;
+			soc_axi_wvalid <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
 			//$display($time, "=> soc_delay_valid after  : valid_delay=%x", valid_delay); 
-			soc_axi_wvalid = #0 1;
+			soc_axi_wvalid <= 1;
 			@ (posedge soc_coreclk);
 			while (soc_axi_wready == 0) begin
 					@ (posedge soc_coreclk);
 			end
-			$display($time, "=> soc_axi_data_write_delay_valid : soc_axi_wdata=%x, axi_wstrb=%x, soc_axi_wvalid=%b, soc_axi_wready=%b", soc_axi_wdata, axi_wstrb, soc_axi_wvalid, soc_axi_wready); 
-			soc_axi_wvalid = #0 0;
+			$display($time, "=> soc_cfg_write_data : soc_axi_wdata=%x, axi_wstrb=%x, soc_axi_wvalid=%b, soc_axi_wready=%b", soc_axi_wdata, axi_wstrb, soc_axi_wvalid, soc_axi_wready); 
+			soc_axi_wvalid <= 0;
 		end
 		
 	endtask
 
-	task soc_axi_addr_data_write_delay_valid;		//input addr, data, strb and valid_delay 
+	task soc_cfg_write;		//input addr, data, strb and valid_delay 
 		input [11:0] axi_awaddr;
 		input [31:0] axi_wdata;
 		input [3:0] axi_wstrb;
@@ -828,85 +885,86 @@ module fsic_tb_soc_to_fpga #(
 		
 	
 		begin
-	        soc_axi_awaddr = #0 axi_awaddr;
-			soc_axi_awvalid = #0 0;
-	        soc_axi_wdata = #0 axi_wdata;
-	        soc_axi_wstrb = #0 axi_wstrb;
-			soc_axi_wvalid = #0 0;
+	        soc_axi_awaddr <= axi_awaddr;
+			soc_axi_awvalid <= 0;
+	        soc_axi_wdata <= axi_wdata;
+	        soc_axi_wstrb <= axi_wstrb;
+			soc_axi_wvalid <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
 			//$display($time, "=> soc_delay_valid after  : valid_delay=%x", valid_delay); 
-			soc_axi_awvalid = #0 1;
-			soc_axi_wvalid = #0 1;
+			soc_axi_awvalid <= 1;
+			soc_axi_wvalid <= 1;
 			@ (posedge soc_coreclk);
 			while (soc_axi_awready == 0) begin		//assume both soc_axi_awready and soc_axi_wready assert as the same time.
 					@ (posedge soc_coreclk);
 			end
-			$display($time, "=> soc_axi_addr_data_write_delay_valid : soc_axi_awaddr=%x, soc_axi_awvalid=%b, soc_axi_awready=%b, soc_axi_wdata=%x, axi_wstrb=%x, soc_axi_wvalid=%b, soc_axi_wready=%b", soc_axi_awaddr, soc_axi_awvalid, soc_axi_awready, soc_axi_wdata, axi_wstrb, soc_axi_wvalid, soc_axi_wready); 
-			soc_axi_awvalid = #0 0;
-			soc_axi_wvalid = #0 0;
+			$display($time, "=> soc_cfg_write : soc_axi_awaddr=%x, soc_axi_awvalid=%b, soc_axi_awready=%b, soc_axi_wdata=%x, axi_wstrb=%x, soc_axi_wvalid=%b, soc_axi_wready=%b", soc_axi_awaddr, soc_axi_awvalid, soc_axi_awready, soc_axi_wdata, axi_wstrb, soc_axi_wvalid, soc_axi_wready); 
+			soc_axi_awvalid <= 0;
+			soc_axi_wvalid <= 0;
 		end
 		
 	endtask
 
-	task fpga_axi_addr_data_write_delay_valid;		//input addr, data, strb and valid_delay 
+	task fpga_cfg_write;		//input addr, data, strb and valid_delay 
 		input [11:0] axi_awaddr;
 		input [31:0] axi_wdata;
 		input [3:0] axi_wstrb;
 		input [7:0] valid_delay;
 		
 		begin
-	        fpga_axi_awaddr = #0 axi_awaddr;
-			fpga_axi_awvalid = #0 0;
-	        fpga_axi_wdata = #0 axi_wdata;
-	        fpga_axi_wstrb = #0 axi_wstrb;
-			fpga_axi_wvalid = #0 0;
+	        fpga_axi_awaddr <= axi_awaddr;
+			fpga_axi_awvalid <= 0;
+	        fpga_axi_wdata <= axi_wdata;
+	        fpga_axi_wstrb <= axi_wstrb;
+			fpga_axi_wvalid <= 0;
 			//$display($time, "=> fpga_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge fpga_coreclk);
 			//$display($time, "=> fpga_delay_valid after  : valid_delay=%x", valid_delay); 
-			fpga_axi_awvalid = #0 1;
-			fpga_axi_wvalid = #0 1;
+			fpga_axi_awvalid <= 1;
+			fpga_axi_wvalid <= 1;
 			@ (posedge fpga_coreclk);
 			while (fpga_axi_awready == 0) begin		//assume both fpga_axi_awready and fpga_axi_wready assert as the same time.
 					@ (posedge fpga_coreclk);
 			end
-			$display($time, "=> fpga_axi_addr_data_write_delay_valid : fpga_axi_awaddr=%x, fpga_axi_awvalid=%b, fpga_axi_awready=%b, fpga_axi_wdata=%x, axi_wstrb=%x, fpga_axi_wvalid=%b, fpga_axi_wready=%b", fpga_axi_awaddr, fpga_axi_awvalid, fpga_axi_awready, fpga_axi_wdata, axi_wstrb, fpga_axi_wvalid, fpga_axi_wready); 
-			fpga_axi_awvalid = #0 0;
-			fpga_axi_wvalid = #0 0;
+			$display($time, "=> fpga_cfg_write : fpga_axi_awaddr=%x, fpga_axi_awvalid=%b, fpga_axi_awready=%b, fpga_axi_wdata=%x, axi_wstrb=%x, fpga_axi_wvalid=%b, fpga_axi_wready=%b", fpga_axi_awaddr, fpga_axi_awvalid, fpga_axi_awready, fpga_axi_wdata, axi_wstrb, fpga_axi_wvalid, fpga_axi_wready); 
+			fpga_axi_awvalid <= 0;
+			fpga_axi_wvalid <= 0;
 		end
 		
 	endtask
 
-	task soc_axi_addr_data_read_delay_valid;		//input addr and valid_delay 
+	task soc_cfg_read;		//input addr and valid_delay 
 		input [11:0] axi_araddr;
 		input [7:0] valid_delay;
+		//input [7:0] compare_data;
 		
 		begin
-	        soc_axi_araddr = #0 axi_araddr;
-			soc_axi_arvalid = #0 0;
-			soc_axi_rready = #0 0;
+	        soc_axi_araddr <= axi_araddr;
+			soc_axi_arvalid <= 0;
+			soc_axi_rready <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
 			//$display($time, "=> soc_delay_valid after  : valid_delay=%x", valid_delay); 
-			soc_axi_arvalid = #0 1;
+			soc_axi_arvalid <= 1;
 			@ (posedge soc_coreclk);
 			while (soc_axi_arready == 0) begin		
 					@ (posedge soc_coreclk);
 			end
-			$display($time, "=> soc_axi_addr_data_read_delay_valid : soc_axi_araddr=%x, soc_axi_arvalid=%b, soc_axi_arready=%b", soc_axi_araddr, soc_axi_arvalid, soc_axi_arready); 
+			$display($time, "=> soc_cfg_read : soc_axi_araddr=%x, soc_axi_arvalid=%b, soc_axi_arready=%b", soc_axi_araddr, soc_axi_arvalid, soc_axi_arready); 
 			
 			
-			soc_axi_arvalid = #0 0;
+			soc_axi_arvalid <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
 			//$display($time, "=> soc_delay_valid after  : valid_delay=%x", valid_delay); 
-			soc_axi_rready = #0 1;
+			soc_axi_rready <= 1;
 			@ (posedge soc_coreclk);
 			while (soc_axi_rvalid == 0) begin		
 					@ (posedge soc_coreclk);
 			end
-			$display($time, "=> soc_axi_addr_data_read_delay_valid : soc_axi_rdata=%x, soc_axi_rready=%b, soc_axi_rvalid=%b", soc_axi_rdata, soc_axi_rready, soc_axi_rvalid); 
-			soc_axi_rready = #0 0;
+			$display($time, "=> soc_cfg_read : soc_axi_rdata=%x, soc_axi_rready=%b, soc_axi_rvalid=%b", soc_axi_rdata, soc_axi_rready, soc_axi_rvalid); 
+			soc_axi_rready <= 0;
 
 		end
 		

@@ -17,10 +17,14 @@
 // Additional Comments:
 //
 //////////////////////////////////////////////////////////////////////////////////
+// 20230712
+// 1. axi_awaddr is DW address, pADDR_WIDTH change from 12 to 10
+// 2. define USE_FOR_LOOP_Serial_Data_Out_tdata and update coding error in for loop
 
+`define USE_FOR_LOOP_Serial_Data_Out_tdata 1
 
 module IO_SERDES #(
-		parameter pADDR_WIDTH   = 12,
+		parameter pADDR_WIDTH   = 10,
         parameter pDATA_WIDTH   = 32,
 		parameter pRxFIFO_DEPTH = 5,
 		parameter pCLK_RATIO =4
@@ -37,13 +41,13 @@ module IO_SERDES #(
 
 		//write addr channel
 		input 	axi_awvalid,
-		input 	[pADDR_WIDTH-1:0] axi_awaddr,
+		input 	[pADDR_WIDTH-1:0] axi_awaddr,		//axi_awaddr is DW address
 		output	axi_awready,
 		
 		//write data channel
 		input 	axi_wvalid,
 		input 	[pDATA_WIDTH-1:0] axi_wdata,
-		input 	[3:0] axi_wstrb,
+		input 	[(pDATA_WIDTH/8)-1:0] axi_wstrb,
 		output	axi_wready,
 		
 		//read addr channel
@@ -62,8 +66,8 @@ module IO_SERDES #(
 
         //TX path
 		input 	[pDATA_WIDTH-1:0] as_is_tdata,
-		input 	[3:0] as_is_tstrb,
-		input 	[3:0] as_is_tkeep,
+		input 	[(pDATA_WIDTH/8)-1:0] as_is_tstrb,
+		input 	[(pDATA_WIDTH/8)-1:0] as_is_tkeep,
 		input 	as_is_tlast,
 		input 	[1:0] as_is_tid,
 		input 	as_is_tvalid,
@@ -78,8 +82,8 @@ module IO_SERDES #(
 		input  wire  [11: 0] serial_rxd,
 		
 		output 	[pDATA_WIDTH-1:0] is_as_tdata,
-		output 	[3:0] is_as_tstrb,
-		output 	[3:0] is_as_tkeep,
+		output 	[(pDATA_WIDTH/8)-1:0] is_as_tstrb,
+		output 	[(pDATA_WIDTH/8)-1:0] is_as_tkeep,
 		output 	is_as_tlast,
 		output 	[1:0] is_as_tid,
 		output 	is_as_tvalid,
@@ -115,116 +119,30 @@ module IO_SERDES #(
 	
 	//write addr channel
 	assign 	axi_awvalid_in	= axi_awvalid && cc_ls_enable;
-	reg	axi_waddr_buf_full;
 	wire axi_awready_out;
-	assign axi_awready_out = !axi_waddr_buf_full;
-	assign 	axi_awready = axi_awready_out;
-
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if (!axi_reset_n ) begin
-            axi_waddr_buf_full <= 0;
-        end
-        else begin
-			if (axi_awvalid_in && axi_awready_out) axi_waddr_buf_full <=1;
-			else begin
-				if (axi_w_state == WADDR_DATA_DONE) axi_waddr_buf_full <= 0;			//write to register
-				else axi_waddr_buf_full <= axi_waddr_buf_full;
-			end
-        end
-    end
-	
-	reg [11:0] axi_awaddr_in;
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_awaddr_in <= 0;
-        end
-        else begin
-			if (axi_awvalid_in && axi_awready_out) axi_awaddr_in <= axi_awaddr;
-			else	axi_awaddr_in <= axi_awaddr_in;	
-        end
-    end
+	assign axi_awready = axi_awready_out;
 	
 	//write data channel
 	assign 	axi_wvalid_in	= axi_wvalid && cc_ls_enable;
-	reg	axi_wdata_buf_full;
 	wire axi_wready_out;
-	assign axi_wready_out = !axi_wdata_buf_full;
-	assign 	axi_wready = axi_wready_out;
+	assign axi_wready = axi_wready_out;
+	
+	// if both axi_awvalid_in=1 and axi_wvalid_in=1 then output axi_awready_out = 1 and axi_wready_out = 1
+	assign axi_awready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;		
+	assign axi_wready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;		
 
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_wdata_buf_full <= 0;
-        end
-        else begin
-			if (axi_wvalid_in && axi_wready_out) axi_wdata_buf_full <=1;
-			else begin
-				if (axi_w_state == WADDR_DATA_DONE) axi_wdata_buf_full <= 0;			//write to register
-				else axi_wdata_buf_full <= axi_wdata_buf_full;
-			end
-        end
-    end
 	
-	reg [pDATA_WIDTH-1:0] axi_wdata_in;
-	reg [3:0] axi_wstrb_in;
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_wdata_in <= 0;
-			axi_wstrb_in <= 0;
-        end
-        else begin
-			if (axi_wvalid_in && axi_wready_out) begin
-				axi_wdata_in <= axi_wdata;
-				axi_wstrb_in <= axi_wstrb;
-			end
-			else	begin
-				axi_wdata_in <= axi_wdata_in;	
-				axi_wstrb_in <= axi_wstrb_in;	
-			end
-        end
-    end
-	
-localparam 	IDLE_STATE = 2'b00,
-			WADDR_DONE = 2'b01,
-			WADDR_DATA_DONE = 2'b10;
-	
-	//write state machine 
-	reg [1:0] axi_w_state;
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_w_state <= IDLE_STATE;
-        end
-        else begin
-			case (axi_w_state) 
-				IDLE_STATE:
-					if (axi_waddr_buf_full && axi_wdata_buf_full)	axi_w_state <= WADDR_DATA_DONE;
-					else  begin
-						if (axi_waddr_buf_full && !axi_wdata_buf_full)	axi_w_state <= WADDR_DONE;
-						else axi_w_state<= axi_w_state;
-					end
-				WADDR_DONE:
-					if (axi_wdata_buf_full)	axi_w_state <= WADDR_DATA_DONE;
-					else axi_w_state<= axi_w_state;
-				WADDR_DATA_DONE:
-					axi_w_state <= IDLE_STATE;
-			endcase
-        end
-    end	
-	
-	//register write
-	
+	//write register
     always @(posedge axi_clk or negedge axi_reset_n)  begin
         if ( !axi_reset_n ) begin
             rxen_ctl <= 0;
             txen_ctl <= 0;
         end
         else begin
-			if ( axi_w_state == WADDR_DATA_DONE) begin
-				if (axi_awaddr_in == 12'h000 && (axi_wstrb_in[0] == 1) ) begin //offset 0
-					rxen_ctl <= axi_wdata_in[0];
-					txen_ctl <= axi_wdata_in[1];					
+			if ( axi_awvalid_in && axi_wvalid_in ) begin		//when axi_awvalid_in=1 and axi_wvalid_in=1 means axi_awready_out=1 and axi_wready_out=1
+				if (axi_awaddr == 10'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
+					rxen_ctl <= axi_wdata[0];
+					txen_ctl <= axi_wdata[1];					
 				end
 				else begin
 					rxen_ctl <= rxen_ctl;
@@ -234,97 +152,14 @@ localparam 	IDLE_STATE = 2'b00,
         end
     end		
 	
-
-	//read addr channel
-	assign 	axi_arvalid_in	= axi_arvalid && cc_ls_enable;
-	reg	axi_raddr_buf_full;
-	wire axi_arready_out;
-	assign axi_arready_out = !axi_raddr_buf_full;
-	assign 	axi_arready = axi_arready_out;
-
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_raddr_buf_full <= 0;
-        end
-        else begin
-			if (axi_arvalid_in && axi_arready_out) axi_raddr_buf_full <=1;
-			else begin
-				if (axi_r_state == RADDR_DONE) axi_raddr_buf_full <= 0;			//read from register
-				else axi_raddr_buf_full <= axi_raddr_buf_full;
-			end
-        end
-    end
 	
-	reg [11:0] axi_araddr_in;
+	// io serdes always output axi_arready = 1 and don't care the axi_arvalid & axi_araddr
+	// io serdes only support 2 register bits in offset 0. config read other address offset is reserved.
+	assign axi_arready = 1;
+	// io serdes always output axi_rvalid = 1 and axi_rdata =  { 30'b0, txen_ctl, rxen_ctl }
+	assign axi_rvalid = 1;
+	assign axi_rdata =  { 30'b0, txen_ctl, rxen_ctl };
 	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_araddr_in <= 0;
-        end
-        else begin
-			if (axi_arvalid_in && axi_arready_out) axi_araddr_in <= axi_araddr;
-			else	axi_araddr_in <= axi_araddr_in;	
-        end
-    end
-
-localparam 	R_IDLE_STATE = 2'b00,
-			RADDR_DONE = 2'b01,
-			DATA_RESPONSE = 2'b10;
-	
-	//read state machine 
-	reg [1:0] axi_r_state;
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_r_state <= R_IDLE_STATE;
-        end
-        else begin
-			case (axi_r_state) 
-				R_IDLE_STATE:
-					if (axi_raddr_buf_full)	axi_r_state <= RADDR_DONE;
-					else axi_r_state<= axi_r_state;
-				RADDR_DONE:
-					axi_r_state <= DATA_RESPONSE;
-				DATA_RESPONSE:
-					if (axi_rvalid && axi_rready) axi_r_state <= R_IDLE_STATE;
-					else axi_r_state<= axi_r_state;
-			endcase
-        end
-    end	
-
-	//register read
-	reg [pDATA_WIDTH-1:0] axi_rdata_out;
-	
-	assign axi_rdata = axi_rdata_out;
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_rdata_out <= 0;
-        end
-        else begin
-			if ( axi_r_state == RADDR_DONE) begin
-				if (axi_araddr_in == 12'h000 ) begin //offset 0
-					axi_rdata_out <= { 30'b0, txen_ctl, rxen_ctl };
-				end
-				else begin
-					axi_rdata_out <= 0;
-				end
-			end
-        end
-    end		
-	
-	//read data channel
-	reg axi_rvalid_out;
-	assign axi_rvalid = axi_rvalid_out ;		//TODO : does axi_rvalid need check cc_ls_enable? don't care cc_ls_enable right now.
-	
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            axi_rvalid_out <= 0;
-        end
-        else begin
-			if (axi_r_state == DATA_RESPONSE) axi_rvalid_out <=1;
-			else axi_rvalid_out<=0;
-        end
-    end
 
 	
     assign txen_out = txen;
@@ -378,10 +213,10 @@ localparam 	R_IDLE_STATE = 2'b00,
     end
 
     reg [pDATA_WIDTH-1:0] as_is_tdata_buf;
-    reg [3:0] as_is_tstrb_buf;
-    reg [3:0] as_is_tkeep_buf;
-    reg [3:0] as_is_tid_tuser_buf;
-    reg [3:0] as_is_tlast_tvalid_tready_buf;
+    reg [(pDATA_WIDTH/8)-1:0] as_is_tstrb_buf;
+    reg [(pDATA_WIDTH/8)-1:0] as_is_tkeep_buf;
+    reg [(pDATA_WIDTH/8)-1:0] as_is_tid_tuser_buf;
+    reg [(pDATA_WIDTH/8)-1:0] as_is_tlast_tvalid_tready_buf;
 
     always @(posedge coreclk or negedge axis_rst_n)  begin
         if ( !axis_rst_n || ~txen) begin
@@ -429,22 +264,22 @@ localparam 	R_IDLE_STATE = 2'b00,
 	assign txclk = ioclk&txen;		//use negedge to avoid glitch in txclk.
 
 
-`ifdef DEBUG_TDATA
+`ifdef USE_FOR_LOOP_Serial_Data_Out_tdata
 	genvar j;
 	generate 
-		for (j=0; i<8; j=j+1 ) begin
-			assign Serial_Data_Out_tdata[i] = as_is_tdata_buf[j*4+tx_shift_phase_cnt] & txen ;
+		for (j=0; j<8; j=j+1 ) begin
+			assign Serial_Data_Out_tdata[j] = as_is_tdata_buf[j*4+tx_shift_phase_cnt] & txen ;
 		end
 	endgenerate
-`else	//DEBUG_TDATA
-    wire [3:0] as_is_tdata_0;
-    wire [3:0] as_is_tdata_1;
-    wire [3:0] as_is_tdata_2;
-    wire [3:0] as_is_tdata_3;
-    wire [3:0] as_is_tdata_4;
-    wire [3:0] as_is_tdata_5;
-    wire [3:0] as_is_tdata_6;
-    wire [3:0] as_is_tdata_7;
+`else	//USE_FOR_LOOP_Serial_Data_Out_tdata
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_0;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_1;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_2;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_3;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_4;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_5;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_6;
+    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_7;
 
     assign as_is_tdata_0 = as_is_tdata_buf[3:0];
     assign as_is_tdata_1 = as_is_tdata_buf[7:4];
@@ -463,7 +298,7 @@ localparam 	R_IDLE_STATE = 2'b00,
 	assign Serial_Data_Out_tdata[5] = as_is_tdata_5[tx_shift_phase_cnt] & txen ;
 	assign Serial_Data_Out_tdata[6] = as_is_tdata_6[tx_shift_phase_cnt] & txen ;
 	assign Serial_Data_Out_tdata[7] = as_is_tdata_7[tx_shift_phase_cnt] & txen ;
-`endif	//DEBUG_TDATA
+`endif	//USE_FOR_LOOP_Serial_Data_Out_tdata
 
 
 	assign Serial_Data_Out_tstrb = as_is_tstrb_buf[tx_shift_phase_cnt] & txen ;
@@ -525,7 +360,7 @@ localparam 	R_IDLE_STATE = 2'b00,
 		.ioclk(ioclk),
 		.coreclk(coreclk),
 		.Serial_Data_in(Serial_Data_In_tstrb),
-		.rxdata_out(is_as_tstrb[3:0])
+		.rxdata_out(is_as_tstrb)
 //		.rxdata_out_valid(rxdata_out_valid)
 	);
 
@@ -541,7 +376,7 @@ localparam 	R_IDLE_STATE = 2'b00,
 		.ioclk(ioclk),
 		.coreclk(coreclk),
 		.Serial_Data_in(Serial_Data_In_tkeep),
-		.rxdata_out(is_as_tkeep[3:0])
+		.rxdata_out(is_as_tkeep)
 //		.rxdata_out_valid(rxdata_out_valid)
 	);
 
@@ -593,291 +428,4 @@ localparam 	R_IDLE_STATE = 2'b00,
 
 endmodule
 
-
-module fsic_io_serdes_rx#(
-		parameter pRxFIFO_DEPTH = 5,
-		parameter pCLK_RATIO =4
-	) (
-		input 	axis_rst_n,
-		input 	rxclk,
-		input   rxen,
-		input 	ioclk,
-		input 	coreclk,
-		input 	Serial_Data_in,
-		output 	[pCLK_RATIO-1:0] rxdata_out,
-		output 	rxdata_out_valid
-	);
-
-
-	reg [$clog2(pRxFIFO_DEPTH)-1:0] w_ptr;
-	reg w_ptr_pre;
-	reg w_ptr_sync;
-
-	wire w_ptr_graycode_bit0;
-
-	assign w_ptr_graycode_bit0 = w_ptr[1] ^  w_ptr[0];
-
-    always @(negedge rxclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n || !rxen ) begin
-            w_ptr <= 0;
-        end
-        else begin
-            if (w_ptr == 4)
-                w_ptr <= 0;
-            else
-                w_ptr <= w_ptr+1;
-        end
-    end
-
-
-	reg [pRxFIFO_DEPTH-1:0] RxFifo;
-
-
-    always @(negedge rxclk or negedge axis_rst_n) begin
-        if ( !axis_rst_n || !rxen ) begin
-            RxFifo <= 0;
-        end
-        else begin
-            RxFifo[w_ptr] <= Serial_Data_in;
-        end
-    end
-
-
-
-    always @(posedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            w_ptr_pre <= 0;
-            w_ptr_sync <= 0;
-        end
-        else begin
-            w_ptr_pre <= w_ptr_graycode_bit0;       //use gray code
-            w_ptr_sync <= w_ptr_pre;		//avoid metastable issue
-        end
-    end
-
-	reg rx_start;
-    always @(posedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            rx_start <= 0;
-        end
-        else begin
-			if (w_ptr_sync != 0 )
-				rx_start <= 1;
-			else
-				rx_start <= rx_start;
-        end
-    end
-
-
-	reg [$clog2(pRxFIFO_DEPTH)-1:0] r_ptr;
-
-    always @(posedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            r_ptr <= 0;
-        end
-        else begin
-			if (rx_start) begin
-                if ( r_ptr == 4 )
-                    r_ptr <= 0;
-                else
-				    r_ptr <= r_ptr + 1;
-            end
-			else
-				r_ptr <= r_ptr;
-        end
-    end
-
-	reg [pCLK_RATIO-1:0] rx_shift_reg;
-
-    always @(posedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            rx_shift_reg <= 0;
-        end
-        else begin
-			if (rx_start) begin
-				rx_shift_reg[3] <= RxFifo[r_ptr];       //r_ptr get from LSB to MSB
-				rx_shift_reg[2:0] <= rx_shift_reg[3:1];
-			end
-        end
-    end
-
-	reg [$clog2(pCLK_RATIO)-1:0] rx_shift_phase_cnt;
-
-    always @(posedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            rx_shift_phase_cnt <= pCLK_RATIO-1;
-        end
-        else begin
-			if (rx_start)
-				rx_shift_phase_cnt <= rx_shift_phase_cnt+1;
-			else
-				rx_shift_phase_cnt <= rx_shift_phase_cnt;
-        end
-    end
-
-	reg [2:0] rx_start_delay;
-
-    always @(posedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            rx_start_delay <= 0;
-        end
-        else begin
-			rx_start_delay[0] <= rx_start;
-			rx_start_delay[2:1] <= rx_start_delay[1:0];
-        end
-    end
-
-	assign rx_shift_reg_valid = (rx_shift_phase_cnt == pCLK_RATIO-1) && rx_start_delay[2] ; //rx_shift_reg is ready to move.
-
-	//write by ioclk in negedge and read by coreclk in posedge then simulation result is ok.
-
-	reg [pCLK_RATIO-1:0] rx_sync_fifo;
-	reg rx_sync_fifo_valid;
-
-    //always @(negedge ioclk or negedge axis_rst_n)  begin		//use negedge, simulation result is ok.
-	always @(posedge ioclk or negedge axis_rst_n)  begin		//use posedge, the simulation result is early 1T in rxdata
-	                                                    // - This issue is fixed by use block assigment in clock divider to avoid race condition in simulation       
-        if ( !axis_rst_n ) begin
-            rx_sync_fifo <= 0;
-            rx_sync_fifo_valid <= 0;
-        end
-        else begin
-			if (rx_start && rx_shift_reg_valid)  begin
-				rx_sync_fifo <= rx_shift_reg;
-				rx_sync_fifo_valid <= 1;
-			end
-			else begin
-				rx_sync_fifo <= rx_sync_fifo;
-				rx_sync_fifo_valid <= rx_sync_fifo_valid;
-			end
-        end
-    end
-
-	reg [pCLK_RATIO-1:0] rxdata;
-	reg rxdata_valid;
-
-	assign rxdata_out = rxdata;
-	assign rxdata_out_valid = rxdata_valid;
-
-    always @(posedge coreclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            rxdata <= 0;
-            rxdata_valid <= 0;
-        end
-        else begin
-				rxdata <= rx_sync_fifo;
-				rxdata_valid <= rx_sync_fifo_valid;
-        end
-    end
-
-
-
-endmodule
-
-module fsic_io_serdes_tx#(
-		parameter TxFIFO_DEPTH = 4,
-		parameter pCLK_RATIO =4
-	) (
-		input 	axis_rst_n,
-		output 	txclk,
-		input 	ioclk,
-		input 	coreclk,
-		output 	Serial_Data_Out,
-		input 	[pCLK_RATIO-1:0] txdata_in
-	);
-
-	reg	tx_en;
-	reg	[7:0] tx_en_phase_cnt;
-
-    always @(negedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            tx_en_phase_cnt <= 0;
-        end
-        else begin
-				tx_en_phase_cnt <= tx_en_phase_cnt+1;
-        end
-    end
-
-
-    always @(negedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            tx_en <= 0;
-        end
-        else begin
-			if (tx_en_phase_cnt > 82)	//100T
-				tx_en <= 1;
-			else
-				tx_en <= tx_en;
-        end
-    end
-
-	reg [$clog2(pCLK_RATIO)-1:0] tx_shift_phase_cnt;
-
-
-    always @(posedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            tx_shift_phase_cnt <= 3;
-        end
-        else begin
-			if (tx_en)
-				tx_shift_phase_cnt <= tx_shift_phase_cnt + 1;
-			else
-				tx_shift_phase_cnt <= tx_shift_phase_cnt;
-        end
-    end
-
-	assign Serial_Data_Out= txdata_in[tx_shift_phase_cnt] & tx_en ;
-	assign txclk = ioclk&tx_en;		//use negedge to avoid glitch in txclk.
-
-endmodule
-
-
-module fsic_coreclk_phase_cnt#(
-		parameter pCLK_RATIO =4
-	) (
-		input 	axis_rst_n,
-		input 	ioclk,
-		input 	coreclk,
-		output 	[$clog2(pCLK_RATIO)-1:0] phase_cnt_out
-	);
-
-    assign phase_cnt_out = phase_cnt;
-
-	reg core_clk_toggle;
-    always @(posedge coreclk or negedge axis_rst_n) begin
-        if ( !axis_rst_n ) begin
-            core_clk_toggle <= 0;
-        end
-        else begin
-            core_clk_toggle <= ~core_clk_toggle;
-        end
-    end
-
-    reg [pCLK_RATIO-1:0] clk_seq;
-    reg [$clog2(pCLK_RATIO)-1:0] phase_cnt;
-
-    always @(posedge ioclk or negedge axis_rst_n) begin
-        if ( !axis_rst_n ) begin
-            clk_seq <= 0;
-        end
-        else begin
-            clk_seq[pCLK_RATIO-1:1] <=  clk_seq[pCLK_RATIO-2:0];
-            clk_seq[0] <=  core_clk_toggle;
-        end
-    end
-
-
-    always @(posedge ioclk or negedge axis_rst_n) begin
-        if ( !axis_rst_n) begin
-            phase_cnt <= 0;
-        end
-        else begin
-            if ( (clk_seq == 4'h8) || (clk_seq == 4'h7) )
-                phase_cnt <= 0;
-            else
-                phase_cnt <= phase_cnt + 1;
-        end
-    end
-
-endmodule
 
