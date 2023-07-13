@@ -36,7 +36,7 @@ module axilite_slave(
     input [31:0] bk_rdata,
     input bk_rdone,
 
-    input cc_aa_enable // ????????????????????????
+    input cc_aa_enable //ConfigControl assert it when the request is forwarding to AA.
 );
 
     // backend interface
@@ -107,7 +107,8 @@ module axilite_slave(
 
         case(axi_wr_state)
             WR_WAIT_ADDR:
-                if(axi_awvalid)begin
+                if(axi_awvalid && cc_aa_enable)begin //Add cc_aa_enable
+                //if(axi_awvalid)begin
                     axi_wr_next_state = WR_WRITE_ADDR;
                 end
             WR_WRITE_ADDR:
@@ -163,7 +164,8 @@ module axilite_slave(
 
         case(axi_rd_state)
             RD_WAIT_ADDR:
-                if(axi_arvalid)begin
+                if(axi_arvalid && cc_aa_enable)begin //Add cc_aa_enable
+                //if(axi_arvalid)begin
                     axi_rd_next_state = RD_READ_ADDR;
                 end
             RD_READ_ADDR:
@@ -209,16 +211,6 @@ module axilite_slave(
             cache_rdata <= 32'b0;
         end
         else begin
-            // wdone is not used to gate slave
-            //if(bk_wdone == 1'b1) begin
-            //    cache_wdone <= bk_wdone;
-            //end
-
-            // Due to slave doesn't waitting for the wdone, just clear it in wait address state.
-            //if((axi_wr_state == WR_WAIT_ADDR) && (axi_wr_next_state == WR_WAIT_ADDR)) begin
-            //    cache_wdone <= 0;
-            //end
-
             if(bk_rdone == 1'b1) begin
                 cache_rdone <= bk_rdone;
                 cache_rdata <= bk_rdata;
@@ -227,11 +219,11 @@ module axilite_slave(
             // Slave return data, and master claim it: axi_rvalid = 1, axi_rready = 1
             if((axi_rd_state == RD_READ_DATA) && (axi_rd_next_state == RD_WAIT_ADDR)) begin
                 cache_rdone <= 0;
-            end 
+            end
         end
     end
 
-     // backend interface, combinational logic   
+    // backend interface, combinational logic
     always_comb begin
         bk_waddr = 15'b0;
         bk_wdata = 32'b0;
