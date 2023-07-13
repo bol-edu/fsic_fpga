@@ -25,10 +25,10 @@
 
 module IO_SERDES #(
 		parameter pADDR_WIDTH   = 10,
-        parameter pDATA_WIDTH   = 32,
+		parameter pDATA_WIDTH   = 32,
 		parameter pRxFIFO_DEPTH = 5,
 		parameter pCLK_RATIO =4
-    ) (
+	) (
 
 
 		input 	ioclk,
@@ -64,7 +64,7 @@ module IO_SERDES #(
 		
 		
 
-        //TX path
+		//TX path
 		input 	[pDATA_WIDTH-1:0] as_is_tdata,
 		input 	[(pDATA_WIDTH/8)-1:0] as_is_tstrb,
 		input 	[(pDATA_WIDTH/8)-1:0] as_is_tkeep,
@@ -74,11 +74,11 @@ module IO_SERDES #(
 		input 	[1:0] as_is_tuser,
 		input 	as_is_tready,		//when local side axis switch Rxfifo size <= threshold then as_is_tready=0, this flow control mechanism is for notify remote side do not provide data with is_as_tvalid=1
 
-		output wire          serial_tclk,
+		output wire		  serial_tclk,
 		output wire  [11: 0] serial_txd,
 
-        //Rx path
-		input  wire          serial_rclk,
+		//Rx path
+		input  wire		  serial_rclk,
 		input  wire  [11: 0] serial_rxd,
 		
 		output 	[pDATA_WIDTH-1:0] is_as_tdata,
@@ -90,7 +90,7 @@ module IO_SERDES #(
 		output 	[1:0] is_as_tuser,
 		output 	is_as_tready		//when remote side axis switch Rxfifo size <= threshold then is_as_tready=0, this flow control mechanism is for notify local side do not provide data with as_is_tvalid=1
 
-    );
+	);
 
 	assign coreclk = axis_clk;
 	assign serial_tclk = txclk;
@@ -133,12 +133,12 @@ module IO_SERDES #(
 
 	
 	//write register
-    always @(posedge axi_clk or negedge axi_reset_n)  begin
-        if ( !axi_reset_n ) begin
-            rxen_ctl <= 0;
-            txen_ctl <= 0;
-        end
-        else begin
+	always @(posedge axi_clk or negedge axi_reset_n)  begin
+		if ( !axi_reset_n ) begin
+			rxen_ctl <= 0;
+			txen_ctl <= 0;
+		end
+		else begin
 			if ( axi_awvalid_in && axi_wvalid_in ) begin		//when axi_awvalid_in=1 and axi_wvalid_in=1 means axi_awready_out=1 and axi_wready_out=1
 				if (axi_awaddr == 10'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
 					rxen_ctl <= axi_wdata[0];
@@ -149,8 +149,8 @@ module IO_SERDES #(
 					txen_ctl <= txen_ctl;
 				end
 			end
-        end
-    end		
+		end
+	end		
 	
 	
 	// io serdes always output axi_arready = 1 and don't care the axi_arvalid & axi_araddr
@@ -162,19 +162,19 @@ module IO_SERDES #(
 	
 
 	
-    assign txen_out = txen;
+	assign txen_out = txen;
 
-    wire [$clog2(pCLK_RATIO)-1:0] phase_cnt;
+	wire [$clog2(pCLK_RATIO)-1:0] phase_cnt;
 
-    fsic_coreclk_phase_cnt  #(
+	fsic_coreclk_phase_cnt  #(
 		.pCLK_RATIO(pCLK_RATIO)
-    )
-    fsic_coreclk_phase_cnt_0(
-    	.axis_rst_n(axis_rst_n),
-    	.ioclk(ioclk),
-    	.coreclk(coreclk),
-    	.phase_cnt_out(phase_cnt)
-    );
+	)
+	fsic_coreclk_phase_cnt_0(
+		.axis_rst_n(axis_rst_n),
+		.ioclk(ioclk),
+		.coreclk(coreclk),
+		.phase_cnt_out(phase_cnt)
+	);
 
 
 // For Tx Path
@@ -182,11 +182,11 @@ module IO_SERDES #(
 	reg	txen;
 
 
-    always @(negedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            txen <= 0;
-        end
-        else begin
+	always @(negedge ioclk or negedge axis_rst_n)  begin
+		if ( !axis_rst_n ) begin
+			txen <= 0;
+		end
+		else begin
 			if ( (txen_ctl || rx_received_data) && phase_cnt == 3   )	// set txen=1 when timeout or rx_received_data==1
 																			// if rx_received_data==1 before timeout, it means remote side txen is ealry then local side. 
 																			// then we should set local site txen=1 to allow local site provide ready signal to remote side in tx path.
@@ -194,39 +194,39 @@ module IO_SERDES #(
 				txen <= 1;
 			else
 				txen <= txen;
-        end
-    end
+		end
+	end
 
 	reg [$clog2(pCLK_RATIO)-1:0] tx_shift_phase_cnt;
 
 
-    always @(posedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            tx_shift_phase_cnt <= 3;
-        end
-        else begin
+	always @(posedge ioclk or negedge axis_rst_n)  begin
+		if ( !axis_rst_n ) begin
+			tx_shift_phase_cnt <= 3;
+		end
+		else begin
 			if (txen)
 				tx_shift_phase_cnt <= tx_shift_phase_cnt + 1;
 			else
 				tx_shift_phase_cnt <= tx_shift_phase_cnt;
-        end
-    end
+		end
+	end
 
-    reg [pDATA_WIDTH-1:0] as_is_tdata_buf;
-    reg [(pDATA_WIDTH/8)-1:0] as_is_tstrb_buf;
-    reg [(pDATA_WIDTH/8)-1:0] as_is_tkeep_buf;
-    reg [(pDATA_WIDTH/8)-1:0] as_is_tid_tuser_buf;
-    reg [(pDATA_WIDTH/8)-1:0] as_is_tlast_tvalid_tready_buf;
+	reg [pDATA_WIDTH-1:0] as_is_tdata_buf;
+	reg [(pDATA_WIDTH/8)-1:0] as_is_tstrb_buf;
+	reg [(pDATA_WIDTH/8)-1:0] as_is_tkeep_buf;
+	reg [(pDATA_WIDTH/8)-1:0] as_is_tid_tuser_buf;
+	reg [(pDATA_WIDTH/8)-1:0] as_is_tlast_tvalid_tready_buf;
 
-    always @(posedge coreclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n || ~txen) begin
-            as_is_tdata_buf <= 0;
+	always @(posedge coreclk or negedge axis_rst_n)  begin
+		if ( !axis_rst_n || ~txen) begin
+			as_is_tdata_buf <= 0;
 			as_is_tstrb_buf <= 0;
 			as_is_tkeep_buf <= 0;
 			as_is_tid_tuser_buf <= 0;
 			as_is_tlast_tvalid_tready_buf <= 0;
-        end
-        else begin
+		end
+		else begin
 			if (is_as_tready && as_is_tvalid) begin			//data transfer from Axis siwtch to io serdes when is_as_tready=1 and as_is_tvalid=1
 				as_is_tdata_buf <= as_is_tdata;
 				as_is_tstrb_buf <= as_is_tstrb;
@@ -258,8 +258,8 @@ module IO_SERDES #(
 				as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
 `endif// DEBUG_is_as_tready				
 			end
-        end
-    end
+		end
+	end
 
 	assign txclk = ioclk&txen;		//use negedge to avoid glitch in txclk.
 
@@ -272,23 +272,23 @@ module IO_SERDES #(
 		end
 	endgenerate
 `else	//USE_FOR_LOOP_Serial_Data_Out_tdata
-    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_0;
-    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_1;
-    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_2;
-    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_3;
-    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_4;
-    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_5;
-    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_6;
-    wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_7;
+	wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_0;
+	wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_1;
+	wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_2;
+	wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_3;
+	wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_4;
+	wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_5;
+	wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_6;
+	wire [(pDATA_WIDTH/8)-1:0] as_is_tdata_7;
 
-    assign as_is_tdata_0 = as_is_tdata_buf[3:0];
-    assign as_is_tdata_1 = as_is_tdata_buf[7:4];
-    assign as_is_tdata_2 = as_is_tdata_buf[11:8];
-    assign as_is_tdata_3 = as_is_tdata_buf[15:12];
-    assign as_is_tdata_4 = as_is_tdata_buf[19:16];
-    assign as_is_tdata_5 = as_is_tdata_buf[23:20];
-    assign as_is_tdata_6 = as_is_tdata_buf[27:24];
-    assign as_is_tdata_7 = as_is_tdata_buf[31:28];
+	assign as_is_tdata_0 = as_is_tdata_buf[3:0];
+	assign as_is_tdata_1 = as_is_tdata_buf[7:4];
+	assign as_is_tdata_2 = as_is_tdata_buf[11:8];
+	assign as_is_tdata_3 = as_is_tdata_buf[15:12];
+	assign as_is_tdata_4 = as_is_tdata_buf[19:16];
+	assign as_is_tdata_5 = as_is_tdata_buf[23:20];
+	assign as_is_tdata_6 = as_is_tdata_buf[27:24];
+	assign as_is_tdata_7 = as_is_tdata_buf[31:28];
 
 	assign Serial_Data_Out_tdata[0] = as_is_tdata_0[tx_shift_phase_cnt] & txen ;
 	assign Serial_Data_Out_tdata[1] = as_is_tdata_1[tx_shift_phase_cnt] & txen ;
@@ -313,17 +313,17 @@ module IO_SERDES #(
 
 	reg	rxen;
 
-    always @(negedge ioclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n ) begin
-            rxen <= 0;
-        end
-        else begin
+	always @(negedge ioclk or negedge axis_rst_n)  begin
+		if ( !axis_rst_n ) begin
+			rxen <= 0;
+		end
+		else begin
 			if (rxen_ctl)
 				rxen <= 1;
 			else
 				rxen <= rxen;
-        end
-    end
+		end
+	end
 
 
 	genvar i;
@@ -395,7 +395,7 @@ module IO_SERDES #(
 //		.rxdata_out_valid(rxdata_out_valid)
 	);
 
-    wire	rx_received_data;		
+	wire	rx_received_data;		
 
 	fsic_io_serdes_rx  #(
 		.pRxFIFO_DEPTH(pRxFIFO_DEPTH),
@@ -408,22 +408,22 @@ module IO_SERDES #(
 		.ioclk(ioclk),
 		.coreclk(coreclk),
 		.Serial_Data_in(Serial_Data_In_tlast_tvalid_tready),
-		.rxdata_out( {is_as_tlast, is_as_tvalid, is_as_tready_remote}),      // only connect [2:0]
+		.rxdata_out( {is_as_tlast, is_as_tvalid, is_as_tready_remote}),	  // only connect [2:0]
 		.rxdata_out_valid(rx_received_data)
 	);
 
 	reg is_as_tready_out;
 	assign is_as_tready = is_as_tready_out;
 	
-    always @(posedge coreclk or negedge axis_rst_n)  begin
-        if ( !axis_rst_n || !txen ) begin
-            is_as_tready_out <= 0;				//set is_as_tready_out=0 when txen == 0
-        end
-        else begin
+	always @(posedge coreclk or negedge axis_rst_n)  begin
+		if ( !axis_rst_n || !txen ) begin
+			is_as_tready_out <= 0;				//set is_as_tready_out=0 when txen == 0
+		end
+		else begin
 			if (rx_received_data == 0) is_as_tready_out <= 1;		// when txen==1 and still not recevies data from remote side then set is_as_tready_out=1 to avoid dead lock issue.
 			else	is_as_tready_out <= is_as_tready_remote;				// when txen == 1 and rx_received_data==1 (received data from remote side) then is_as_tready_out come from is_as_tready_remote (remote side)
-        end
-    end
+		end
+	end
 
 
 endmodule

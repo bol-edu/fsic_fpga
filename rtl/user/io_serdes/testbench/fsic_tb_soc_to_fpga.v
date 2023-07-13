@@ -41,11 +41,11 @@
 // 20230629
 // 1. data transfer from Axis siwtch to io serdes when is_as_tready=1 and as_is_tvalid=1
 // 2. use posedge to update data in testbench
-//     - get data_send error 
-//          1060=> data_send     : soc_as_is_tdata=22222222, soc_as_is_tvalid=1, soc_is_as_tready=1
+//	 - get data_send error 
+//		  1060=> data_send	 : soc_as_is_tdata=22222222, soc_as_is_tvalid=1, soc_is_as_tready=1
 // 3. use delay to workaround get data_send incorrect issue
-//    1059=> data_send     : soc_as_is_tdata=11111111, soc_as_is_tvalid=1, soc_is_as_tready=1
-//    1060=>soc_as_is_tdata=22222222, soc_as_is_tvalid=1, soc_is_as_tready=1
+//	1059=> data_send	 : soc_as_is_tdata=11111111, soc_as_is_tvalid=1, soc_is_as_tready=1
+//	1060=>soc_as_is_tdata=22222222, soc_as_is_tvalid=1, soc_is_as_tready=1
 // 4. use negedge to update data in testbench, remove item 2 & 3
 // 20230628
 // 1. update interface to axis switch
@@ -54,25 +54,25 @@
 //test001 : soc side register R/W test
 //test002 : soc to fpga TX/RX test with change coreclk phase
 module fsic_tb_soc_to_fpga #(
-        parameter IOCLK_Period	= 10,
-        parameter DLYCLK_Period	= 1,
-        parameter SHIFT_DEPTH = 5,
+		parameter IOCLK_Period	= 10,
+		parameter DLYCLK_Period	= 1,
+		parameter SHIFT_DEPTH = 5,
 		parameter RxFIFO_DEPTH = 5,
 		parameter CLK_RATIO = 4
 	)
 	(
 
-    );
+	);
 
-        localparam TEST002_START	= 1;
-        localparam TEST002_CNT	= 4;
-        localparam TEST003_START	= TEST002_START + TEST002_CNT;
-        localparam TEST003_CNT	= 4;
-        localparam TOTAL_TEST_LOOP	= TEST003_START + TEST003_CNT;
+		localparam TEST002_START	= 1;
+		localparam TEST002_CNT	= 4;
+		localparam TEST003_START	= TEST002_START + TEST002_CNT;
+		localparam TEST003_CNT	= 4;
+		localparam TOTAL_TEST_LOOP	= TEST003_START + TEST003_CNT;
 
-    real ioclk_pd = IOCLK_Period;
-    real coreclk_pd = IOCLK_Period*4;
-    real dlyclk_pd = DLYCLK_Period;
+	real ioclk_pd = IOCLK_Period;
+	real coreclk_pd = IOCLK_Period*4;
+	real dlyclk_pd = DLYCLK_Period;
 
 	reg soc_rst;
 	reg fpga_rst;
@@ -194,30 +194,30 @@ module fsic_tb_soc_to_fpga #(
 	//assign #4 Serial_Data_Out_ad_delay = Serial_Data_Out_ad_delay1;
 	//assign #4 txclk_delay = txclk_delay1;
 
-    fsic_clock_div soc_clock_div (
+	fsic_clock_div soc_clock_div (
 	.resetb(soc_resetb),
 	.in(ioclk),
 	.out(soc_coreclk)
-    );
+	);
 
-    fsic_clock_div fpga_clock_div (
+	fsic_clock_div fpga_clock_div (
 	.resetb(fpga_resetb),
 	.in(ioclk),
 	.out(fpga_coreclk)
-    );
+	);
 
 
-    IO_SERDES  #(
+	IO_SERDES  #(
 		.RxFIFO_DEPTH(RxFIFO_DEPTH),
 		.CLK_RATIO(CLK_RATIO)
-    )
-    soc_fsic_io_serdes(
-    	.axis_rst_n(~soc_rst),
-    	.axi_reset_n(~soc_rst),
-    	.serial_tclk(soc_txclk),
-    	.serial_rclk(fpga_txclk),
-    	.ioclk(ioclk),
-    	.axis_clk(soc_coreclk),
+	)
+	soc_fsic_io_serdes(
+		.axis_rst_n(~soc_rst),
+		.axi_reset_n(~soc_rst),
+		.serial_tclk(soc_txclk),
+		.serial_rclk(fpga_txclk),
+		.ioclk(ioclk),
+		.axis_clk(soc_coreclk),
 		.axi_clk(soc_coreclk),
 		
 		//write addr channel
@@ -243,37 +243,37 @@ module fsic_tb_soc_to_fpga #(
 		
 		.cc_ls_enable(soc_cc_ls_enable),
 		
-    	.as_is_tdata(soc_as_is_tdata),
-    	.as_is_tstrb(soc_as_is_tstrb),
-    	.as_is_tkeep(soc_as_is_tkeep),
-    	.as_is_tlast(soc_as_is_tlast),
-    	.as_is_tid(soc_as_is_tid),
-    	.as_is_tvalid(soc_as_is_tvalid),
-    	.as_is_tuser(soc_as_is_tuser),
-    	.as_is_tready(soc_as_is_tready),
+		.as_is_tdata(soc_as_is_tdata),
+		.as_is_tstrb(soc_as_is_tstrb),
+		.as_is_tkeep(soc_as_is_tkeep),
+		.as_is_tlast(soc_as_is_tlast),
+		.as_is_tid(soc_as_is_tid),
+		.as_is_tvalid(soc_as_is_tvalid),
+		.as_is_tuser(soc_as_is_tuser),
+		.as_is_tready(soc_as_is_tready),
 		.serial_txd(soc_serial_txd),
 		.serial_rxd(fpga_serial_txd),
-    	.is_as_tdata(soc_is_as_tdata),
-    	.is_as_tstrb(soc_is_as_tstrb),
-    	.is_as_tkeep(soc_is_as_tkeep),
-    	.is_as_tlast(soc_is_as_tlast),
-    	.is_as_tid(soc_is_as_tid),
-    	.is_as_tvalid(soc_is_as_tvalid),
-    	.is_as_tuser(soc_is_as_tuser),
-    	.is_as_tready(soc_is_as_tready)
-    );
+		.is_as_tdata(soc_is_as_tdata),
+		.is_as_tstrb(soc_is_as_tstrb),
+		.is_as_tkeep(soc_is_as_tkeep),
+		.is_as_tlast(soc_is_as_tlast),
+		.is_as_tid(soc_is_as_tid),
+		.is_as_tvalid(soc_is_as_tvalid),
+		.is_as_tuser(soc_is_as_tuser),
+		.is_as_tready(soc_is_as_tready)
+	);
 
-    IO_SERDES  #(
+	IO_SERDES  #(
 		.RxFIFO_DEPTH(RxFIFO_DEPTH),
 		.CLK_RATIO(CLK_RATIO)
-    )
-    fpga_fsic_io_serdes(
-    	.axis_rst_n(~fpga_rst),
-    	.axi_reset_n(~fpga_rst),
-    	.serial_tclk(fpga_txclk),
-    	.serial_rclk(soc_txclk),
-    	.ioclk(ioclk),
-    	.axis_clk(fpga_coreclk),
+	)
+	fpga_fsic_io_serdes(
+		.axis_rst_n(~fpga_rst),
+		.axi_reset_n(~fpga_rst),
+		.serial_tclk(fpga_txclk),
+		.serial_rclk(soc_txclk),
+		.ioclk(ioclk),
+		.axis_clk(fpga_coreclk),
 		.axi_clk(fpga_coreclk),
 		
 		//write addr channel
@@ -300,25 +300,25 @@ module fsic_tb_soc_to_fpga #(
 		.cc_ls_enable(fpga_cc_ls_enable),
 
 
-    	.as_is_tdata(fpga_as_is_tdata),
-    	.as_is_tstrb(fpga_as_is_tstrb),
-    	.as_is_tkeep(fpga_as_is_tkeep),
-    	.as_is_tlast(fpga_as_is_tlast),
-    	.as_is_tid(fpga_as_is_tid),
-    	.as_is_tvalid(fpga_as_is_tvalid),
-    	.as_is_tuser(fpga_as_is_tuser),
-    	.as_is_tready(fpga_as_is_tready),
+		.as_is_tdata(fpga_as_is_tdata),
+		.as_is_tstrb(fpga_as_is_tstrb),
+		.as_is_tkeep(fpga_as_is_tkeep),
+		.as_is_tlast(fpga_as_is_tlast),
+		.as_is_tid(fpga_as_is_tid),
+		.as_is_tvalid(fpga_as_is_tvalid),
+		.as_is_tuser(fpga_as_is_tuser),
+		.as_is_tready(fpga_as_is_tready),
 		.serial_txd(fpga_serial_txd),
 		.serial_rxd(soc_serial_txd),
-    	.is_as_tdata(fpga_is_as_tdata),
-    	.is_as_tstrb(fpga_is_as_tstrb),
-    	.is_as_tkeep(fpga_is_as_tkeep),
-    	.is_as_tlast(fpga_is_as_tlast),
-    	.is_as_tid(fpga_is_as_tid),
-    	.is_as_tvalid(fpga_is_as_tvalid),
-    	.is_as_tuser(fpga_is_as_tuser),
-    	.is_as_tready(fpga_is_as_tready)
-    );
+		.is_as_tdata(fpga_is_as_tdata),
+		.is_as_tstrb(fpga_is_as_tstrb),
+		.is_as_tkeep(fpga_is_as_tkeep),
+		.is_as_tlast(fpga_is_as_tlast),
+		.is_as_tid(fpga_is_as_tid),
+		.is_as_tvalid(fpga_is_as_tvalid),
+		.is_as_tuser(fpga_is_as_tuser),
+		.is_as_tready(fpga_is_as_tready)
+	);
 
 
 
@@ -326,9 +326,9 @@ module fsic_tb_soc_to_fpga #(
 
 
 	// init and reset
-    initial begin
-        ioclk = 1;
-        dlyclk = 1;
+	initial begin
+		ioclk = 1;
+		dlyclk = 1;
 		
 		//write addr channel
 		soc_axi_awvalid=0;
@@ -387,15 +387,15 @@ module fsic_tb_soc_to_fpga #(
 		fpga_as_is_tready=0;
 
 
-    end
+	end
 
 	// test001 : soc side register R/W test
-    initial begin
+	initial begin
 		//$monitor($time, "=>soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_as_is_tready=%b, soc_is_as_tready=%b", soc_as_is_tdata, soc_as_is_tvalid, soc_as_is_tready, soc_is_as_tready);
 		$display("test001 : soc side register test");
 		soc_apply_reset(40,40);
 
-        #20;
+		#20;
 		soc_cc_ls_enable=1;
 
 		//burst write test
@@ -447,24 +447,24 @@ module fsic_tb_soc_to_fpga #(
 		soc_cfg_write_data(3,1,0);
 `endif //NotSupport_Test		
 
-    end
+	end
 
 	//Dump data_send
-    initial begin
+	initial begin
 		//$monitor($time, "=>soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_is_as_tready=%b", soc_as_is_tdata, soc_as_is_tvalid, soc_is_as_tready);
 		
 		while (1) begin
 			@ (posedge soc_coreclk);
-			//#39;                 //use delay to workaround get data_send incorrect issue
+			//#39;				 //use delay to workaround get data_send incorrect issue
 			if (soc_as_is_tvalid && soc_is_as_tready) begin
-				$display($time, "=> soc data_send     : soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_is_as_tready=%b, %x, %x, %b, %x, %x", soc_as_is_tdata, soc_as_is_tvalid, soc_is_as_tready, soc_as_is_tstrb, soc_as_is_tkeep, soc_as_is_tlast, soc_as_is_tid, soc_as_is_tuser);
+				$display($time, "=> soc data_send	 : soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_is_as_tready=%b, %x, %x, %b, %x, %x", soc_as_is_tdata, soc_as_is_tvalid, soc_is_as_tready, soc_as_is_tstrb, soc_as_is_tkeep, soc_as_is_tlast, soc_as_is_tid, soc_as_is_tuser);
 			end
 		end
 
-    end
+	end
 
 	//Dump data_received
-    initial begin
+	initial begin
 		//$monitor($time, "=>fpga_is_as_tdata=%x, fpga_is_as_tvalid=%b", fpga_is_as_tdata, fpga_is_as_tvalid);
 		
 		while (1) begin
@@ -475,11 +475,11 @@ module fsic_tb_soc_to_fpga #(
 			end
 		end
 
-    end
+	end
 
 	// config register read result compare_data
 
-    initial begin
+	initial begin
 		//$monitor($time, "=>fpga_is_as_tdata=%x, fpga_is_as_tvalid=%b", fpga_is_as_tdata, fpga_is_as_tvalid);
 		
 		while (1) begin
@@ -493,14 +493,14 @@ module fsic_tb_soc_to_fpga #(
 			end
 		end
 
-    end
+	end
 	
 	
 	// test_sequence_control
 	reg [31:0] k;
 	reg [31:0]test_seq;
 	
-    initial begin
+	initial begin
 		
 		for (k=0;k<(TOTAL_TEST_LOOP+1);k=k+1) begin
 			test_seq = k;
@@ -522,7 +522,7 @@ module fsic_tb_soc_to_fpga #(
 	// test002_partA : soc side - TX/RX test
 	reg[31:0]idx1;
 	reg[31:0] i;
-    initial begin
+	initial begin
 		//$monitor($time, "=>soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_as_is_tready=%b, soc_is_as_tready=%b", soc_as_is_tdata, soc_as_is_tvalid, soc_as_is_tready, soc_is_as_tready);
 		
 		#2000;
@@ -575,13 +575,13 @@ module fsic_tb_soc_to_fpga #(
 
 		//$finish;
 
-    end
+	end
 
 	// test002_partB : fpga side RX/TX test
 	reg[31:0]idx2;
 	reg[31:0] j;
 	
-    initial begin
+	initial begin
 		//$monitor($time, "=>fpga_as_is_tdata=%x, fpga_as_is_tvalid=%b, fpga_as_is_tready=%b, as_fifo_cnt=%d, fpga_is_as_tready=%b, fpga_is_as_tvalid=%b",fpga_as_is_tdata, fpga_as_is_tvalid, fpga_as_is_tready, as_fifo_cnt, fpga_is_as_tready, fpga_is_as_tvalid);
 		#2000;
 		
@@ -625,7 +625,7 @@ module fsic_tb_soc_to_fpga #(
 
 		//$finish;
 
-    end
+	end
 
 
 	// test003 : simulation the behavior of fpga axis_switch rx buffer full
@@ -640,7 +640,7 @@ module fsic_tb_soc_to_fpga #(
 	reg[31:0] test003_partA_done, test003_partB_done;
 	reg[31:0]idx3;
 	reg[31:0] m;
-    initial begin
+	initial begin
 		//$monitor($time, "=>soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_as_is_tready=%b, soc_is_as_tready=%b", soc_as_is_tdata, soc_as_is_tvalid, soc_as_is_tready, soc_is_as_tready);
 		#2000;
 		
@@ -692,13 +692,13 @@ module fsic_tb_soc_to_fpga #(
 
 		//$finish;
 
-    end
+	end
 
 	// test003_partB : fpga side RX/TX test
 	reg[31:0]idx4;
 	reg[7:0]as_fifo_cnt;
 	reg[31:0] n;
-    initial begin
+	initial begin
 		//$monitor($time, "=>fpga_as_is_tdata=%x, fpga_as_is_tvalid=%b, fpga_as_is_tready=%b, as_fifo_cnt=%d, fpga_is_as_tready=%b, fpga_is_as_tvalid=%b",fpga_as_is_tdata, fpga_as_is_tvalid, fpga_as_is_tready, as_fifo_cnt, fpga_is_as_tready, fpga_is_as_tvalid);
 		#2000;
 		
@@ -758,13 +758,13 @@ module fsic_tb_soc_to_fpga #(
 
 		//$finish;
 
-    end
+	end
 
 	
 
-    always #(ioclk_pd/2) ioclk = ~ioclk;
+	always #(ioclk_pd/2) ioclk = ~ioclk;
 
-    always #(dlyclk_pd/2) dlyclk = ~dlyclk;
+	always #(dlyclk_pd/2) dlyclk = ~dlyclk;
 	
 
 	//apply reset
@@ -813,7 +813,7 @@ module fsic_tb_soc_to_fpga #(
 		input [7:0] valid_delay;
 		
 		begin
-	        soc_as_is_tdata <= tdata;
+			soc_as_is_tdata <= tdata;
 			soc_as_is_tvalid <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
@@ -837,7 +837,7 @@ module fsic_tb_soc_to_fpga #(
 		input [7:0] valid_delay;
 		
 		begin
-	        soc_axi_awaddr <= axi_awaddr;
+			soc_axi_awaddr <= axi_awaddr;
 			soc_axi_awvalid <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
@@ -860,8 +860,8 @@ module fsic_tb_soc_to_fpga #(
 		input [7:0] valid_delay;
 		
 		begin
-	        soc_axi_wdata <= axi_wdata;
-	        soc_axi_wstrb <= axi_wstrb;
+			soc_axi_wdata <= axi_wdata;
+			soc_axi_wstrb <= axi_wstrb;
 			soc_axi_wvalid <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
@@ -885,10 +885,10 @@ module fsic_tb_soc_to_fpga #(
 		
 	
 		begin
-	        soc_axi_awaddr <= axi_awaddr;
+			soc_axi_awaddr <= axi_awaddr;
 			soc_axi_awvalid <= 0;
-	        soc_axi_wdata <= axi_wdata;
-	        soc_axi_wstrb <= axi_wstrb;
+			soc_axi_wdata <= axi_wdata;
+			soc_axi_wstrb <= axi_wstrb;
 			soc_axi_wvalid <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge soc_coreclk);
@@ -913,10 +913,10 @@ module fsic_tb_soc_to_fpga #(
 		input [7:0] valid_delay;
 		
 		begin
-	        fpga_axi_awaddr <= axi_awaddr;
+			fpga_axi_awaddr <= axi_awaddr;
 			fpga_axi_awvalid <= 0;
-	        fpga_axi_wdata <= axi_wdata;
-	        fpga_axi_wstrb <= axi_wstrb;
+			fpga_axi_wdata <= axi_wdata;
+			fpga_axi_wstrb <= axi_wstrb;
 			fpga_axi_wvalid <= 0;
 			//$display($time, "=> fpga_delay_valid before : valid_delay=%x", valid_delay); 
 			repeat (valid_delay) @ (posedge fpga_coreclk);
@@ -940,7 +940,7 @@ module fsic_tb_soc_to_fpga #(
 		//input [7:0] compare_data;
 		
 		begin
-	        soc_axi_araddr <= axi_araddr;
+			soc_axi_araddr <= axi_araddr;
 			soc_axi_arvalid <= 0;
 			soc_axi_rready <= 0;
 			//$display($time, "=> soc_delay_valid before : valid_delay=%x", valid_delay); 
