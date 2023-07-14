@@ -114,6 +114,7 @@ module IO_SERDES #(
 	
 	assign {Serial_Data_In_tlast_tvalid_tready, Serial_Data_In_tid_tuser, Serial_Data_In_tkeep, Serial_Data_In_tstrb, Serial_Data_In_tdata[7:0] } = serial_rxd[11:0];
 
+	reg	txen;
 
 	//register offset 0
 	reg rxen_ctl;	//bit 0	
@@ -181,7 +182,7 @@ module IO_SERDES #(
 
 // For Tx Path
 
-	reg	txen;
+	wire	rx_received_data;		
 
 
 	always @(negedge ioclk or negedge axis_rst_n)  begin
@@ -397,7 +398,6 @@ module IO_SERDES #(
 //		.rxdata_out_valid(rxdata_out_valid)
 	);
 
-	wire	rx_received_data;		
 
 	fsic_io_serdes_rx  #(
 		.pRxFIFO_DEPTH(pRxFIFO_DEPTH),

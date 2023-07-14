@@ -34,9 +34,9 @@ module fsic_clock_div (
 	input resetb;		// asynchronous reset (sense negative)
 	output out;			// divided output clock
 
+	reg clk_out;
 	assign out = clk_out;
 	reg cnt;	 // use 1 bit for support div4
-	reg clk_out;
 
 	always @(posedge in or negedge resetb) begin
 		if ( !resetb ) begin
