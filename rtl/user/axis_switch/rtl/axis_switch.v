@@ -104,9 +104,9 @@ localparam last_support = 3'b000; //last signal support for hi request
 
 //for Demux
 // FIFO depth
-localparam  FIFO_DEPTH = 8;   
+localparam  FIFO_DEPTH = 16;   
 //FIFO threshold setting
-localparam TH = 4;    
+localparam TH = 6;    
 //FIFO address width
 localparam ADDR_WIDTH   = $clog2(FIFO_DEPTH);
 //field offset for mem unit 
@@ -357,28 +357,23 @@ end
 
 // Read logic
 always @(posedge axis_clk) begin
-    if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
-        if (wr_ptr_reg != pre_rd_ptr_reg) begin                 
+    if (wr_ptr_reg != pre_rd_ptr_reg) begin  
+        if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
             as_up_tvalid_reg <= 1;
             rd_ptr_reg<=pre_rd_ptr_reg;
             if(up_as_tready) 
                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
             else
                pre_rd_ptr_reg <= pre_rd_ptr_reg;
-        end else begin
-            as_up_tvalid_reg <= 0;
-        end                                    
-    end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin
-        if (wr_ptr_reg != pre_rd_ptr_reg) begin         
+        end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin
+  
             as_aa_tvalid_reg <= 1;
             rd_ptr_reg<=pre_rd_ptr_reg;
             if(aa_as_tready)
                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
             else
                pre_rd_ptr_reg <= pre_rd_ptr_reg;
-        end else begin
-            as_aa_tvalid_reg <= 0;
-        end         
+        end               
     end else begin
         as_up_tvalid_reg <= 0;
         as_aa_tvalid_reg <= 0;

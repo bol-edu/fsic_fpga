@@ -80,7 +80,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	// Top AXI-Lite Signals //
 	//////////////////////////		
 	input  wire          user_clock2,
-	output wire          axi_clk,
+	input  wire          axi_clk,
 	input  wire          axi_reset_n
 );
 
@@ -206,8 +206,6 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	
 	assign wbs_ack = wbs_ack_o;
 	assign wbs_rdata = wbs_rdata_o;
-
-	assign axi_clk = wb_clk; 	// Output clock
 	
 	//////////////////////////// 	// Local paramaters begin //
 	//////////////////////////// 	
@@ -556,7 +554,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 				begin	
 					axi_arready4 <= 1'b0;
 					if (cc_s_addr == 0)
-						axi_rdata4[4:0] <= user_prj_sel_o;
+						axi_rdata4 <= { 27'b0, user_prj_sel_o };
 					else
 						axi_rdata4 <= 32'hFFFFFFFF;
 					axi_rvalid4 <= 1'b1;
