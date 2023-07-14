@@ -7,12 +7,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 module axi_fifo#(WIDTH=8, DEPTH=8)(
-    input logic clk,
-    input logic rst_n,
-    input logic wr_vld,
-    input logic rd_rdy,
-    input logic clear,
-    input logic [WIDTH - 1:0] data_in,
+    input wire clk,
+    input wire rst_n,
+    input wire wr_vld,
+    input wire rd_rdy,
+    input wire clear,
+    input wire [WIDTH - 1:0] data_in,
     output logic [WIDTH - 1:0] data_out,
     output logic wr_rdy,
     output logic rd_vld
@@ -99,18 +99,18 @@ endmodule
 
 module axis_master(
     // backend source to trigger the axis master transaction
-    input logic bk_start,
-    input logic [31:0] bk_data,
-    input logic [3:0] bk_tstrb,
-    input logic [3:0] bk_tkeep,
-    //input logic [1:0] bk_tid,
-    input logic [1:0] bk_user,
+    input wire bk_start,
+    input wire [31:0] bk_data,
+    input wire [3:0] bk_tstrb,
+    input wire [3:0] bk_tkeep,
+    //input wire [1:0] bk_tid,
+    input wire [1:0] bk_user,
     output logic bk_nordy,
     output logic bk_done,
 
     // frontend - axis master
-    input logic axi_aclk,
-    input logic axi_aresetn,
+    input wire axi_aclk,
+    input wire axi_aresetn,
     output logic axis_tvalid,
     output logic [31:0] axis_tdata,
     output logic [3:0] axis_tstrb,
@@ -118,7 +118,7 @@ module axis_master(
     output logic axis_tlast,
     //output logic [1:0] axis_tid,
     output logic [1:0] axis_tuser,
-    input logic axis_tready
+    input wire axis_tready
 );
 
     // backend interface
