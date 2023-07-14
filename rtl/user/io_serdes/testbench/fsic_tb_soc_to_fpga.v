@@ -21,6 +21,7 @@
 // 20230714
 // 1. add pADDR_WIDTH and pDATA_WIDTH
 // 2. change [pADDR_WIDTH+1:2] *_axi_awaddr to [pADDR_WIDTH+1:2] *_axi_awaddr for DW base address
+// 3. update coding error and add pSERIALIO_TDATA_WIDTH
 // 20230712
 // 1. check cfg read result
 // 20230711
@@ -57,6 +58,7 @@
 //test001 : soc side register R/W test
 //test002 : soc to fpga TX/RX test with change coreclk phase
 module fsic_tb_soc_to_fpga #(
+		parameter pSERIALIO_WIDTH   = 12,
 		parameter pADDR_WIDTH   = 10,
 		parameter pDATA_WIDTH   = 32,
 		parameter IOCLK_Period	= 10,
@@ -146,7 +148,7 @@ module fsic_tb_soc_to_fpga #(
 	reg [1:0] soc_as_is_tuser;
 	reg soc_as_is_tready;		//when local side axis switch Rxfifo size <= threshold then as_is_tready=0; this flow control mechanism is for notify remote side do not provide data with is_as_tvalid=1
 
-	wire [pADDR_WIDTH+1:2] soc_serial_txd;
+	wire [pSERIALIO_WIDTH-1:0] soc_serial_txd;
 //	wire [7:0] soc_Serial_Data_Out_tdata;
 //	wire soc_Serial_Data_Out_tstrb;
 //	wire soc_Serial_Data_Out_tkeep;
@@ -171,7 +173,7 @@ module fsic_tb_soc_to_fpga #(
 	reg [1:0] fpga_as_is_tuser;
 	reg fpga_as_is_tready;		//when local side axis switch Rxfifo size <= threshold then as_is_tready=0; this flow control mechanism is for notify remote side do not provide data with is_as_tvalid=1
 
-	wire [pADDR_WIDTH+1:2] fpga_serial_txd;
+	wire [pSERIALIO_WIDTH-1:0] fpga_serial_txd;
 //	wire [7:0] fpga_Serial_Data_Out_tdata;
 //	wire fpga_Serial_Data_Out_tstrb;
 //	wire fpga_Serial_Data_Out_tkeep;
@@ -213,6 +215,7 @@ module fsic_tb_soc_to_fpga #(
 
 
 	IO_SERDES  #(
+		.pSERIALIO_WIDTH(pSERIALIO_WIDTH),
 		.pADDR_WIDTH(pADDR_WIDTH),
 		.pDATA_WIDTH(pDATA_WIDTH),
 		.RxFIFO_DEPTH(RxFIFO_DEPTH),
@@ -271,6 +274,7 @@ module fsic_tb_soc_to_fpga #(
 	);
 
 	IO_SERDES  #(
+		.pSERIALIO_WIDTH(pSERIALIO_WIDTH),
 		.pADDR_WIDTH(pADDR_WIDTH),
 		.pDATA_WIDTH(pDATA_WIDTH),
 		.RxFIFO_DEPTH(RxFIFO_DEPTH),

@@ -19,6 +19,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // 20230714
 // 1. change [pADDR_WIDTH+1:2] axi_awaddr to [pADDR_WIDTH+1:2] axi_awaddr for DW base address
+// 2. add pSERIALIO_WIDTH and pSERIALIO_TDATA_WIDTH
 // 20230712
 // 1. axi_awaddr is DW address, pADDR_WIDTH change from 12 to 10
 // 2. define USE_FOR_LOOP_Serial_Data_Out_tdata and update coding error in for loop
@@ -26,6 +27,7 @@
 `define USE_FOR_LOOP_Serial_Data_Out_tdata 1
 
 module IO_SERDES #(
+		parameter pSERIALIO_WIDTH   = 12,
 		parameter pADDR_WIDTH   = 10,
 		parameter pDATA_WIDTH   = 32,
 		parameter pRxFIFO_DEPTH = 5,
@@ -77,11 +79,11 @@ module IO_SERDES #(
 		input 	as_is_tready,		//when local side axis switch Rxfifo size <= threshold then as_is_tready=0, this flow control mechanism is for notify remote side do not provide data with is_as_tvalid=1
 
 		output wire		  serial_tclk,
-		output wire  [11: 0] serial_txd,
+		output wire  [pSERIALIO_WIDTH-1: 0] serial_txd,
 
 		//Rx path
 		input  wire		  serial_rclk,
-		input  wire  [11: 0] serial_rxd,
+		input  wire  [pSERIALIO_WIDTH-1: 0] serial_rxd,
 		
 		output 	[pDATA_WIDTH-1:0] is_as_tdata,
 		output 	[(pDATA_WIDTH/8)-1:0] is_as_tstrb,
@@ -94,6 +96,8 @@ module IO_SERDES #(
 
 	);
 
+	localparam pSERIALIO_TDATA_WIDTH	= pADDR_WIDTH/pCLK_RATIO;
+	
 	assign coreclk = axis_clk;
 	assign serial_tclk = txclk;
 	assign rxclk = serial_rclk;
@@ -102,17 +106,17 @@ module IO_SERDES #(
 	wire Serial_Data_Out_tid_tuser;
 	wire Serial_Data_Out_tkeep;
 	wire Serial_Data_Out_tstrb;
-	wire [7:0] Serial_Data_Out_tdata;
+	wire [pSERIALIO_TDATA_WIDTH-1:0] Serial_Data_Out_tdata;
 
-	assign 	serial_txd[11:0] = {Serial_Data_Out_tlast_tvalid_tready, Serial_Data_Out_tid_tuser, Serial_Data_Out_tkeep, Serial_Data_Out_tstrb, Serial_Data_Out_tdata[7:0]};
+	assign 	serial_txd[pSERIALIO_WIDTH-1:0] = {Serial_Data_Out_tlast_tvalid_tready, Serial_Data_Out_tid_tuser, Serial_Data_Out_tkeep, Serial_Data_Out_tstrb, Serial_Data_Out_tdata[pSERIALIO_TDATA_WIDTH-1:0]};
 	
 	wire Serial_Data_In_tlast_tvalid_tready;
 	wire Serial_Data_In_tid_tuser;
 	wire Serial_Data_In_tkeep;
 	wire Serial_Data_In_tstrb;
-	wire [7:0] Serial_Data_In_tdata;
+	wire [pSERIALIO_TDATA_WIDTH-1:0] Serial_Data_In_tdata;
 	
-	assign {Serial_Data_In_tlast_tvalid_tready, Serial_Data_In_tid_tuser, Serial_Data_In_tkeep, Serial_Data_In_tstrb, Serial_Data_In_tdata[7:0] } = serial_rxd[11:0];
+	assign {Serial_Data_In_tlast_tvalid_tready, Serial_Data_In_tid_tuser, Serial_Data_In_tkeep, Serial_Data_In_tstrb, Serial_Data_In_tdata[pSERIALIO_TDATA_WIDTH-1:0] } = serial_rxd[pSERIALIO_WIDTH-1:0];
 
 	reg	txen;
 
@@ -270,7 +274,7 @@ module IO_SERDES #(
 `ifdef USE_FOR_LOOP_Serial_Data_Out_tdata
 	genvar j;
 	generate 
-		for (j=0; j<8; j=j+1 ) begin
+		for (j=0; j<pSERIALIO_TDATA_WIDTH; j=j+1 ) begin
 			assign Serial_Data_Out_tdata[j] = as_is_tdata_buf[j*4+tx_shift_phase_cnt] & txen ;
 		end
 	endgenerate
@@ -331,7 +335,7 @@ module IO_SERDES #(
 
 	genvar i;
 	generate 
-		for (i=0; i<8; i=i+1 ) begin
+		for (i=0; i<pSERIALIO_TDATA_WIDTH; i=i+1 ) begin
 		
 			fsic_io_serdes_rx  #(
 				.pRxFIFO_DEPTH(pRxFIFO_DEPTH),
