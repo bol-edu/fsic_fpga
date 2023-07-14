@@ -161,6 +161,7 @@ module IO_SERDES #(
 	assign axi_rdata =  { 30'b0, txen_ctl, rxen_ctl };
 	
 
+	reg	txen;
 	
 	assign txen_out = txen;
 
@@ -179,8 +180,7 @@ module IO_SERDES #(
 
 // For Tx Path
 
-	reg	txen;
-
+	wire	rx_received_data;		
 
 	always @(negedge ioclk or negedge axis_rst_n)  begin
 		if ( !axis_rst_n ) begin
@@ -395,7 +395,6 @@ module IO_SERDES #(
 //		.rxdata_out_valid(rxdata_out_valid)
 	);
 
-	wire	rx_received_data;		
 
 	fsic_io_serdes_rx  #(
 		.pRxFIFO_DEPTH(pRxFIFO_DEPTH),

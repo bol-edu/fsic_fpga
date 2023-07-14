@@ -1,1 +1,1 @@
-axis_switch.v
+../rtl/axis_switch.v
