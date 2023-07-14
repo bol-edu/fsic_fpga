@@ -98,6 +98,8 @@ module tb_top;
 
 	wire axi_awvalid_in;
 	wire axi_wvalid_in;
+	
+	assign axi_clk = wb_clk;
 
 	assign axi_awvalid_in = axi_awvalid && cc_is_enable;
 	assign axi_wvalid_in = axi_wvalid && cc_is_enable;
