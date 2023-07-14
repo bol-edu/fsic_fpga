@@ -42,7 +42,7 @@ AXIS_SW #(.pADDR_WIDTH( 10 ),
                                         .up_as_tvalid (m_tvalid_up_as_tvalid),   // I  
                                         .up_as_tuser  (m_tuser_up_as_tuser),     // I  2
                                         .up_as_tready (s_tready_up_as_tready),   // I  
-                                        .up_hpri_req  (up_hpri_req),             // I  
+                                        .up_hpri_req  (high_pri_irq_up_hpri_req),// I  
                                         .as_is_tdata  (as_is_tdata),             // O  32
                                         .as_is_tstrb  (as_is_tstrb),             // O  4
                                         .as_is_tkeep  (as_is_tkeep),             // O  4

@@ -18,7 +18,7 @@ USER_SUBSYS #(.pADDR_WIDTH( 10 ),
                                                   .m_tvalid     (m_tvalid_up_as_tvalid),   // O  
                                                   .m_tuser      (m_tuser_up_as_tuser),     // O  2
                                                   .s_tready     (s_tready_up_as_tready),   // O  
-                                                  .up_hpri_req  (up_hpri_req),             // O  
+                                                  .high_pri_irq (high_pri_irq_up_hpri_req),// O  
                                                   .up_la_data   (up_la_data),              // O  64
                                                   .axi_awvalid  (axi_awvalid_s_awvalid),   // I  
                                                   .axi_awaddr   (axi_awaddr_s_awaddr),     // I  12
@@ -39,7 +39,6 @@ USER_SUBSYS #(.pADDR_WIDTH( 10 ),
                                                   .m_tready     (as_up_tready_m_tready),   // I  
                                                   .la_up_data   (la_up_data),              // I  64
                                                   .low__pri_irq (low__pri_irq),            // O  
-                                                  .high_pri_irq (high_pri_irq),            // O  
                                                   .user_clock2  (user_clock2),             // I  
                                                   .axi_clk      (axi_clk),                 // I  
                                                   .axi_reset_n  (axi_reset_n),             // I  

@@ -110,7 +110,7 @@ wire           m_tlast_up_as_tlast;
 wire           m_tvalid_up_as_tvalid;
 wire    [1: 0] m_tuser_up_as_tuser;
 wire           s_tready_up_as_tready;
-wire           up_hpri_req;
+wire           high_pri_irq_up_hpri_req;
 wire           cc_is_enable;
 wire   [31: 0] as_is_tdata;
 wire    [3: 0] as_is_tstrb;
@@ -138,7 +138,6 @@ wire           as_up_tready_m_tready;
 wire   [63: 0] la_up_data;
 wire           mb_irq;
 wire           low__pri_irq;
-wire           high_pri_irq;
 wire   [11: 0] serial_txd;
 wire           serial_tclk;
 wire           axi_clk;
@@ -318,7 +317,7 @@ AXIS_SW #(.pADDR_WIDTH( 10 ),
                                         .up_as_tvalid (m_tvalid_up_as_tvalid),   // I  
                                         .up_as_tuser  (m_tuser_up_as_tuser),     // I  2
                                         .up_as_tready (s_tready_up_as_tready),   // I  
-                                        .up_hpri_req  (up_hpri_req),             // I  
+                                        .up_hpri_req  (high_pri_irq_up_hpri_req),// I  
                                         .as_is_tdata  (as_is_tdata),             // O  32
                                         .as_is_tstrb  (as_is_tstrb),             // O  4
                                         .as_is_tkeep  (as_is_tkeep),             // O  4
@@ -457,7 +456,7 @@ USER_SUBSYS #(.pADDR_WIDTH( 10 ),
                                                   .m_tvalid     (m_tvalid_up_as_tvalid),   // O  
                                                   .m_tuser      (m_tuser_up_as_tuser),     // O  2
                                                   .s_tready     (s_tready_up_as_tready),   // O  
-                                                  .up_hpri_req  (up_hpri_req),             // O  
+                                                  .high_pri_irq (high_pri_irq_up_hpri_req),// O  
                                                   .up_la_data   (up_la_data),              // O  64
                                                   .axi_awvalid  (axi_awvalid_s_awvalid),   // I  
                                                   .axi_awaddr   (axi_awaddr_s_awaddr),     // I  12
@@ -478,7 +477,6 @@ USER_SUBSYS #(.pADDR_WIDTH( 10 ),
                                                   .m_tready     (as_up_tready_m_tready),   // I  
                                                   .la_up_data   (la_up_data),              // I  64
                                                   .low__pri_irq (low__pri_irq),            // O  
-                                                  .high_pri_irq (high_pri_irq),            // O  
                                                   .user_clock2  (user_clock2),             // I  
                                                   .axi_clk      (axi_clk),                 // I  
                                                   .axi_reset_n  (axi_reset_n),             // I  
@@ -498,7 +496,7 @@ FSIC_CLKRST  U_FSIC_CLKRST0 (
                              .user_prj_sel (user_prj_sel),            // I  5
                              .mb_irq       (mb_irq),                  // I  
                              .low__pri_irq (low__pri_irq),            // I  
-                             .high_pri_irq (high_pri_irq),            // I  
+                             .high_pri_irq (high_pri_irq_up_hpri_req),// I  
                              .wb_rst       (wb_rst),                  // I  
                              .wb_clk       (wb_clk),                  // I  
                              .user_irq     (user_irq),                // O  3

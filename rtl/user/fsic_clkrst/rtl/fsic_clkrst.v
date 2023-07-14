@@ -11,6 +11,9 @@ module FSIC_CLKRST (
   input  wire         wb_clk,
   output wire  [2: 0] user_irq,
 
+  input  wire         low__pri_irq,
+  input  wire         high_pri_irq,
+
   input  wire         user_clock2,
   output wire         uck2_rst_n,
 
