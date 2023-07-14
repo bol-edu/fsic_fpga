@@ -17,6 +17,8 @@
 // Additional Comments:
 //
 //////////////////////////////////////////////////////////////////////////////////
+// 20230714
+// 1. change [pADDR_WIDTH+1:2] axi_awaddr to [pADDR_WIDTH+1:2] axi_awaddr for DW base address
 // 20230712
 // 1. axi_awaddr is DW address, pADDR_WIDTH change from 12 to 10
 // 2. define USE_FOR_LOOP_Serial_Data_Out_tdata and update coding error in for loop
@@ -41,7 +43,7 @@ module IO_SERDES #(
 
 		//write addr channel
 		input 	axi_awvalid,
-		input 	[pADDR_WIDTH-1:0] axi_awaddr,		//axi_awaddr is DW address
+		input 	[pADDR_WIDTH+1:2] axi_awaddr,		//axi_awaddr is DW address
 		output	axi_awready,
 		
 		//write data channel
@@ -52,7 +54,7 @@ module IO_SERDES #(
 		
 		//read addr channel
 		input 	axi_arvalid,
-		input 	[pADDR_WIDTH-1:0] axi_araddr,
+		input 	[pADDR_WIDTH+1:2] axi_araddr,
 		output 	axi_arready,
 		
 		//read data channel
