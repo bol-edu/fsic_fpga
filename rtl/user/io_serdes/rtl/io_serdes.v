@@ -18,8 +18,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 // 20230714
-// 1. change [pADDR_WIDTH+1:2] axi_awaddr to [pADDR_WIDTH+1:2] axi_awaddr for DW base address
+// 1. change [pADDR_WIDTH-1:0] axi_awaddr to [pADDR_WIDTH+1:2] axi_awaddr for DW base address
 // 2. add pSERIALIO_WIDTH and pSERIALIO_TDATA_WIDTH
+// 3. add is_as_dummy for remove WARNING message
+// 4. update typo in pSERIALIO_TDATA_WIDTH  
+// 5. update tpyo, change cc_ls_enable to cc_is_enable
 // 20230712
 // 1. axi_awaddr is DW address, pADDR_WIDTH change from 12 to 10
 // 2. define USE_FOR_LOOP_Serial_Data_Out_tdata and update coding error in for loop
@@ -64,7 +67,7 @@ module IO_SERDES #(
 		output 	[pDATA_WIDTH-1:0] axi_rdata,
 		input 	axi_rready,
 		
-		input 	cc_ls_enable,		//axi_lite enable
+		input 	cc_is_enable,		//axi_lite enable
 		
 		
 
@@ -96,7 +99,7 @@ module IO_SERDES #(
 
 	);
 
-	localparam pSERIALIO_TDATA_WIDTH	= pADDR_WIDTH/pCLK_RATIO;
+	localparam pSERIALIO_TDATA_WIDTH	= pDATA_WIDTH/pCLK_RATIO;
 	
 	assign coreclk = axis_clk;
 	assign serial_tclk = txclk;
@@ -125,12 +128,12 @@ module IO_SERDES #(
 	reg txen_ctl;	//bit 1
 	
 	//write addr channel
-	assign 	axi_awvalid_in	= axi_awvalid && cc_ls_enable;
+	assign 	axi_awvalid_in	= axi_awvalid && cc_is_enable;
 	wire axi_awready_out;
 	assign axi_awready = axi_awready_out;
 	
 	//write data channel
-	assign 	axi_wvalid_in	= axi_wvalid && cc_ls_enable;
+	assign 	axi_wvalid_in	= axi_wvalid && cc_is_enable;
 	wire axi_wready_out;
 	assign axi_wready = axi_wready_out;
 	
@@ -399,6 +402,7 @@ module IO_SERDES #(
 //		.rxdata_out_valid(rxdata_out_valid)
 	);
 
+    wire is_as_dummy;
 
 	fsic_io_serdes_rx  #(
 		.pRxFIFO_DEPTH(pRxFIFO_DEPTH),
@@ -411,7 +415,7 @@ module IO_SERDES #(
 		.ioclk(ioclk),
 		.coreclk(coreclk),
 		.Serial_Data_in(Serial_Data_In_tlast_tvalid_tready),
-		.rxdata_out( {is_as_tlast, is_as_tvalid, is_as_tready_remote}),	  // only connect [2:0]
+		.rxdata_out( {is_as_dummy, is_as_tlast, is_as_tvalid, is_as_tready_remote}),	  // only connect [2:0]
 		.rxdata_out_valid(rx_received_data)
 	);
 

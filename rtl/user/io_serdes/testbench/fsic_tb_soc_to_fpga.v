@@ -22,6 +22,7 @@
 // 1. add pADDR_WIDTH and pDATA_WIDTH
 // 2. change [pADDR_WIDTH+1:2] *_axi_awaddr to [pADDR_WIDTH+1:2] *_axi_awaddr for DW base address
 // 3. update coding error and add pSERIALIO_TDATA_WIDTH
+// 4. update tpyo, change cc_is_enable to cc_is_enable
 // 20230712
 // 1. check cfg read result
 // 20230711
@@ -64,8 +65,8 @@ module fsic_tb_soc_to_fpga #(
 		parameter IOCLK_Period	= 10,
 		parameter DLYCLK_Period	= 1,
 		parameter SHIFT_DEPTH = 5,
-		parameter RxFIFO_DEPTH = 5,
-		parameter CLK_RATIO = 4
+		parameter pRxFIFO_DEPTH = 5,
+		parameter pCLK_RATIO = 4
 	)
 	(
 
@@ -112,7 +113,7 @@ module fsic_tb_soc_to_fpga #(
 	wire 	[pDATA_WIDTH-1:0] soc_axi_rdata;
 	reg 	soc_axi_rready;
 	
-	reg 	soc_cc_ls_enable;		//axi_lite enable
+	reg 	soc_cc_is_enable;		//axi_lite enable
 
 
 	//write addr channel
@@ -136,7 +137,7 @@ module fsic_tb_soc_to_fpga #(
 	wire 	[pDATA_WIDTH-1:0] fpga_axi_rdata;
 	reg 	fpga_axi_rready;
 	
-	reg 	fpga_cc_ls_enable;		//axi_lite enable
+	reg 	fpga_cc_is_enable;		//axi_lite enable
 
 
 	reg [pDATA_WIDTH-1:0] soc_as_is_tdata;
@@ -218,8 +219,8 @@ module fsic_tb_soc_to_fpga #(
 		.pSERIALIO_WIDTH(pSERIALIO_WIDTH),
 		.pADDR_WIDTH(pADDR_WIDTH),
 		.pDATA_WIDTH(pDATA_WIDTH),
-		.RxFIFO_DEPTH(RxFIFO_DEPTH),
-		.CLK_RATIO(CLK_RATIO)
+		.pRxFIFO_DEPTH(pRxFIFO_DEPTH),
+		.pCLK_RATIO(pCLK_RATIO)
 	)
 	soc_fsic_io_serdes(
 		.axis_rst_n(~soc_rst),
@@ -251,7 +252,7 @@ module fsic_tb_soc_to_fpga #(
 		.axi_rdata(soc_axi_rdata),
 		.axi_rready(soc_axi_rready),
 		
-		.cc_ls_enable(soc_cc_ls_enable),
+		.cc_is_enable(soc_cc_is_enable),
 		
 		.as_is_tdata(soc_as_is_tdata),
 		.as_is_tstrb(soc_as_is_tstrb),
@@ -277,8 +278,8 @@ module fsic_tb_soc_to_fpga #(
 		.pSERIALIO_WIDTH(pSERIALIO_WIDTH),
 		.pADDR_WIDTH(pADDR_WIDTH),
 		.pDATA_WIDTH(pDATA_WIDTH),
-		.RxFIFO_DEPTH(RxFIFO_DEPTH),
-		.CLK_RATIO(CLK_RATIO)
+		.pRxFIFO_DEPTH(pRxFIFO_DEPTH),
+		.pCLK_RATIO(pCLK_RATIO)
 	)
 	fpga_fsic_io_serdes(
 		.axis_rst_n(~fpga_rst),
@@ -310,7 +311,7 @@ module fsic_tb_soc_to_fpga #(
 		.axi_rdata(fpga_axi_rdata),
 		.axi_rready(fpga_axi_rready),
 		
-		.cc_ls_enable(fpga_cc_ls_enable),
+		.cc_is_enable(fpga_cc_is_enable),
 
 
 		.as_is_tdata(fpga_as_is_tdata),
@@ -359,7 +360,7 @@ module fsic_tb_soc_to_fpga #(
 		//read data channel
 		soc_axi_rready=0;
 		
-		soc_cc_ls_enable=0;
+		soc_cc_is_enable=0;
 
 
 		soc_as_is_tdata=0;
@@ -388,7 +389,7 @@ module fsic_tb_soc_to_fpga #(
 		//read data channel
 		fpga_axi_rready=0;
 		
-		fpga_cc_ls_enable=0;
+		fpga_cc_is_enable=0;
 
 		fpga_as_is_tdata=0;
 		fpga_as_is_tstrb=0;
@@ -409,7 +410,7 @@ module fsic_tb_soc_to_fpga #(
 		soc_apply_reset(40,40);
 
 		#20;
-		soc_cc_ls_enable=1;
+		soc_cc_is_enable=1;
 
 		//burst write test
 		soc_cfg_write(0,0,1,0);		//write offset 0 = 0
@@ -550,7 +551,7 @@ module fsic_tb_soc_to_fpga #(
 			soc_apply_reset(40+i*10, 40);			//change coreclk phase in soc
 
 			#40;
-			soc_cc_ls_enable=1;
+			soc_cc_is_enable=1;
 			soc_cfg_write(0,1,1,0);
 			$display($time, "=> soc rxen_ctl=1");
 			#400;
@@ -610,7 +611,7 @@ module fsic_tb_soc_to_fpga #(
 			
 
 			#40;
-			fpga_cc_ls_enable=1;
+			fpga_cc_is_enable=1;
 			fpga_cfg_write(0,1,1,0);
 			$display($time, "=> fpga rxen_ctl=1");
 			#400;
@@ -668,7 +669,7 @@ module fsic_tb_soc_to_fpga #(
 			soc_apply_reset(40+m*10, 40);			//change coreclk phase in soc
 
 			#40;
-			soc_cc_ls_enable=1;
+			soc_cc_is_enable=1;
 			soc_cfg_write(0,1,1,0);
 			$display($time, "=> soc rxen_ctl=1");
 			#400;
@@ -729,7 +730,7 @@ module fsic_tb_soc_to_fpga #(
 			as_fifo_cnt = 0;
 
 			#40;
-			fpga_cc_ls_enable=1;
+			fpga_cc_is_enable=1;
 			fpga_cfg_write(0,1,1,0);
 			$display($time, "=> fpga rxen_ctl=1");
 			#400;

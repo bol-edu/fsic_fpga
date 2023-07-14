@@ -8,8 +8,8 @@
 // ../mprj_io/rtl/mprj_io.dummy_io.vd
 -f ../mprj_io/rtl/rtl.f
 
-// ../user_subsys/rtl/user_subsys.all.v
--f ../user_subsys/rtl/rtl.f
+   ../user_subsys/rtl/user_subsys.all.v
+// -f ../user_subsys/rtl/rtl.f
 
 ../rtl/fsic.vo
 ../rtl/user_project_wrapper.v

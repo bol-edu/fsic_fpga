@@ -556,7 +556,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 				begin	
 					axi_arready4 <= 1'b0;
 					if (cc_s_addr == 0)
-						axi_rdata4[4:0] <= user_prj_sel_o;
+						axi_rdata4 <= { 27'b0, user_prj_sel_o };
 					else
 						axi_rdata4 <= 32'hFFFFFFFF;
 					axi_rvalid4 <= 1'b1;
