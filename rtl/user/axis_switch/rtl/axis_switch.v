@@ -104,9 +104,9 @@ localparam last_support = 3'b000; //last signal support for hi request
 
 //for Demux
 // FIFO depth
-localparam  FIFO_DEPTH = 8;   
+localparam  FIFO_DEPTH = 16;   
 //FIFO threshold setting
-localparam TH = 4;    
+localparam TH = 6;    
 //FIFO address width
 localparam ADDR_WIDTH   = $clog2(FIFO_DEPTH);
 //field offset for mem unit 
