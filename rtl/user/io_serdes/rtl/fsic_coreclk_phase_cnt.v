@@ -2,21 +2,21 @@
 //////////////////////////////////////////////////////////////////////////////////
 // Author : Tony Ho
 //
-// 
+//
 // Create Date: 07/10/2023 11:39:49 AM
-// Design Name: 
+// Design Name:
 // Module Name: fsic_coreclk_phase_cnt
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
+// Project Name:
+// Target Devices:
+// Tool Versions:
+// Description:
+//
+// Dependencies:
+//
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
-// 
+//
 //////////////////////////////////////////////////////////////////////////////////
 
 
@@ -29,6 +29,8 @@ module fsic_coreclk_phase_cnt#(
 		output 	[$clog2(pCLK_RATIO)-1:0] phase_cnt_out
 	);
 
+    reg [pCLK_RATIO-1:0] clk_seq;
+    reg [$clog2(pCLK_RATIO)-1:0] phase_cnt;
     assign phase_cnt_out = phase_cnt;
 
 	reg core_clk_toggle;
@@ -41,8 +43,6 @@ module fsic_coreclk_phase_cnt#(
         end
     end
 
-    reg [pCLK_RATIO-1:0] clk_seq;
-    reg [$clog2(pCLK_RATIO)-1:0] phase_cnt;
 
     always @(posedge ioclk or negedge axis_rst_n) begin
         if ( !axis_rst_n ) begin
