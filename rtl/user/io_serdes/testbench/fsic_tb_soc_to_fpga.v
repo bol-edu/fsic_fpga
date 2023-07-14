@@ -18,6 +18,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
+// 20230714
+// 1. add pADDR_WIDTH and pDATA_WIDTH
+// 2. change [pADDR_WIDTH+1:2] *_axi_awaddr to [pADDR_WIDTH+1:2] *_axi_awaddr for DW base address
+// 3. update coding error and add pSERIALIO_TDATA_WIDTH
 // 20230712
 // 1. check cfg read result
 // 20230711
@@ -54,6 +58,9 @@
 //test001 : soc side register R/W test
 //test002 : soc to fpga TX/RX test with change coreclk phase
 module fsic_tb_soc_to_fpga #(
+		parameter pSERIALIO_WIDTH   = 12,
+		parameter pADDR_WIDTH   = 10,
+		parameter pDATA_WIDTH   = 32,
 		parameter IOCLK_Period	= 10,
 		parameter DLYCLK_Period	= 1,
 		parameter SHIFT_DEPTH = 5,
@@ -86,23 +93,23 @@ module fsic_tb_soc_to_fpga #(
 	
 	//write addr channel
 	reg soc_axi_awvalid;
-	reg [11:0] soc_axi_awaddr;
+	reg [pADDR_WIDTH+1:2] soc_axi_awaddr;
 	wire soc_axi_awready;
 	
 	//write data channel
 	reg 	soc_axi_wvalid;
-	reg 	[31:0] soc_axi_wdata;
+	reg 	[pDATA_WIDTH-1:0] soc_axi_wdata;
 	reg 	[3:0] soc_axi_wstrb;
 	wire	soc_axi_wready;
 	
 	//read addr channel
 	reg 	soc_axi_arvalid;
-	reg 	[11:0] soc_axi_araddr;
+	reg 	[pADDR_WIDTH+1:2] soc_axi_araddr;
 	wire 	soc_axi_arready;
 	
 	//read data channel
 	wire 	soc_axi_rvalid;
-	wire 	[31:0] soc_axi_rdata;
+	wire 	[pDATA_WIDTH-1:0] soc_axi_rdata;
 	reg 	soc_axi_rready;
 	
 	reg 	soc_cc_ls_enable;		//axi_lite enable
@@ -110,29 +117,29 @@ module fsic_tb_soc_to_fpga #(
 
 	//write addr channel
 	reg fpga_axi_awvalid;
-	reg [11:0] fpga_axi_awaddr;
+	reg [pADDR_WIDTH+1:2] fpga_axi_awaddr;
 	wire fpga_axi_awready;
 	
 	//write data channel
 	reg 	fpga_axi_wvalid;
-	reg 	[31:0] fpga_axi_wdata;
+	reg 	[pDATA_WIDTH-1:0] fpga_axi_wdata;
 	reg 	[3:0] fpga_axi_wstrb;
 	wire	fpga_axi_wready;
 	
 	//read addr channel
 	reg 	fpga_axi_arvalid;
-	reg 	[11:0] fpga_axi_araddr;
+	reg 	[pADDR_WIDTH+1:2] fpga_axi_araddr;
 	wire 	fpga_axi_arready;
 	
 	//read data channel
 	wire 	fpga_axi_rvalid;
-	wire 	[31:0] fpga_axi_rdata;
+	wire 	[pDATA_WIDTH-1:0] fpga_axi_rdata;
 	reg 	fpga_axi_rready;
 	
 	reg 	fpga_cc_ls_enable;		//axi_lite enable
 
 
-	reg [31:0] soc_as_is_tdata;
+	reg [pDATA_WIDTH-1:0] soc_as_is_tdata;
 	reg [3:0] soc_as_is_tstrb;
 	reg [3:0] soc_as_is_tkeep;
 	reg soc_as_is_tlast;
@@ -141,14 +148,14 @@ module fsic_tb_soc_to_fpga #(
 	reg [1:0] soc_as_is_tuser;
 	reg soc_as_is_tready;		//when local side axis switch Rxfifo size <= threshold then as_is_tready=0; this flow control mechanism is for notify remote side do not provide data with is_as_tvalid=1
 
-	wire [11:0] soc_serial_txd;
+	wire [pSERIALIO_WIDTH-1:0] soc_serial_txd;
 //	wire [7:0] soc_Serial_Data_Out_tdata;
 //	wire soc_Serial_Data_Out_tstrb;
 //	wire soc_Serial_Data_Out_tkeep;
 //	wire soc_Serial_Data_Out_tid_tuser;	// tid and tuser	
 //	wire soc_Serial_Data_Out_tlast_tvalid_tready;		//flowcontrol
 
-	wire [31:0] soc_is_as_tdata;
+	wire [pDATA_WIDTH-1:0] soc_is_as_tdata;
 	wire [3:0] soc_is_as_tstrb;
 	wire [3:0] soc_is_as_tkeep;
 	wire soc_is_as_tlast;
@@ -157,7 +164,7 @@ module fsic_tb_soc_to_fpga #(
 	wire [1:0] soc_is_as_tuser;
 	wire soc_is_as_tready;		//when remote side axis switch Rxfifo size <= threshold then is_as_tready=0; this flow control mechanism is for notify local side do not provide data with as_is_tvalid=1
 
-	reg [31:0] fpga_as_is_tdata;
+	reg [pDATA_WIDTH-1:0] fpga_as_is_tdata;
 	reg [3:0] fpga_as_is_tstrb;
 	reg [3:0] fpga_as_is_tkeep;
 	reg fpga_as_is_tlast;
@@ -166,14 +173,14 @@ module fsic_tb_soc_to_fpga #(
 	reg [1:0] fpga_as_is_tuser;
 	reg fpga_as_is_tready;		//when local side axis switch Rxfifo size <= threshold then as_is_tready=0; this flow control mechanism is for notify remote side do not provide data with is_as_tvalid=1
 
-	wire [11:0] fpga_serial_txd;
+	wire [pSERIALIO_WIDTH-1:0] fpga_serial_txd;
 //	wire [7:0] fpga_Serial_Data_Out_tdata;
 //	wire fpga_Serial_Data_Out_tstrb;
 //	wire fpga_Serial_Data_Out_tkeep;
 //	wire fpga_Serial_Data_Out_tid_tuser;	// tid and tuser	
 //	wire fpga_Serial_Data_Out_tlast_tvalid_tready;		//flowcontrol
 
-	wire [31:0] fpga_is_as_tdata;
+	wire [pDATA_WIDTH-1:0] fpga_is_as_tdata;
 	wire [3:0] fpga_is_as_tstrb;
 	wire [3:0] fpga_is_as_tkeep;
 	wire fpga_is_as_tlast;
@@ -208,6 +215,9 @@ module fsic_tb_soc_to_fpga #(
 
 
 	IO_SERDES  #(
+		.pSERIALIO_WIDTH(pSERIALIO_WIDTH),
+		.pADDR_WIDTH(pADDR_WIDTH),
+		.pDATA_WIDTH(pDATA_WIDTH),
 		.RxFIFO_DEPTH(RxFIFO_DEPTH),
 		.CLK_RATIO(CLK_RATIO)
 	)
@@ -264,6 +274,9 @@ module fsic_tb_soc_to_fpga #(
 	);
 
 	IO_SERDES  #(
+		.pSERIALIO_WIDTH(pSERIALIO_WIDTH),
+		.pADDR_WIDTH(pADDR_WIDTH),
+		.pDATA_WIDTH(pDATA_WIDTH),
 		.RxFIFO_DEPTH(RxFIFO_DEPTH),
 		.CLK_RATIO(CLK_RATIO)
 	)
@@ -809,7 +822,7 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 	
 	task soc_delay_valid;		//input tdata and valid_delay 
-		input [31:0] tdata;
+		input [pDATA_WIDTH-1:0] tdata;
 		input [7:0] valid_delay;
 		
 		begin
@@ -833,7 +846,7 @@ module fsic_tb_soc_to_fpga #(
 		
 
 	task soc_cfg_write_addr;		//input addr and valid_delay 
-		input [11:0] axi_awaddr;
+		input [pADDR_WIDTH+1:2] axi_awaddr;
 		input [7:0] valid_delay;
 		
 		begin
@@ -854,7 +867,7 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 
 	task soc_cfg_write_data;		//input data, strb and valid_delay 
-		input [31:0] axi_wdata;
+		input [pDATA_WIDTH-1:0] axi_wdata;
 		input [3:0] axi_wstrb;
 		
 		input [7:0] valid_delay;
@@ -878,8 +891,8 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 
 	task soc_cfg_write;		//input addr, data, strb and valid_delay 
-		input [11:0] axi_awaddr;
-		input [31:0] axi_wdata;
+		input [pADDR_WIDTH+1:2] axi_awaddr;
+		input [pDATA_WIDTH-1:0] axi_wdata;
 		input [3:0] axi_wstrb;
 		input [7:0] valid_delay;
 		
@@ -907,8 +920,8 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 
 	task fpga_cfg_write;		//input addr, data, strb and valid_delay 
-		input [11:0] axi_awaddr;
-		input [31:0] axi_wdata;
+		input [pADDR_WIDTH+1:2] axi_awaddr;
+		input [pDATA_WIDTH-1:0] axi_wdata;
 		input [3:0] axi_wstrb;
 		input [7:0] valid_delay;
 		
@@ -935,7 +948,7 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 
 	task soc_cfg_read;		//input addr and valid_delay 
-		input [11:0] axi_araddr;
+		input [pADDR_WIDTH+1:2] axi_araddr;
 		input [7:0] valid_delay;
 		//input [7:0] compare_data;
 		
