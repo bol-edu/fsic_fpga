@@ -194,12 +194,7 @@ task axis_tx_hi_req2;
         if(!hpri_req_in) begin
             valid_2 = #0 0;      
             tlast_2 = 0;                
-        end else begin
-            if(tlast_in) begin
-                valid_2 = #0 0;      
-                tlast_2 = 0;
-            end
-        end                        
+        end                       
     end  
 endtask
 
@@ -233,18 +228,17 @@ endtask
 task axis_rx;    
     reg Is_hi_req;
     begin
-        ready_m = 1;
-        wait(ready_m && valid_m);
+        ready_m <= 1;
         if(ready_m && valid_m) begin
-            $display("TID is %h", tid_m);         
             $display("Upstream received stream data is %h", data_m);
+            $display("TID is %h", tid_m);                
             $display("data strobe is %h", strb_m);
             $display("keep is %h", keep_m);
             $display("user data is %h", user_m);
-            if(tlast_m) 
+            if(tlast_m) begin
                 $display("This transaction is over"); 
-            else
-                $display("This transaction still continued"); 
+                ready_m <= 0;                
+            end
         end                                                                  
     end  
 endtask
@@ -302,64 +296,52 @@ endtask
 
 task up_axis_rx;
     begin
-        up_ready = 1;
-        wait(up_ready && up_valid);
+        up_ready <= 1;
         if(up_ready && up_valid) begin
             $display("User Project stream data is %h", up_data);
             $display("strb is %h", up_strb);            
             $display("keep is %h", up_keep);
             $display("user data is %h", up_user);
-            if(up_tlast) 
-                $display("This transaction is over"); 
-            else
-                $display("This transaction still continued"); 
+            if(up_tlast) begin 
+                $display("This transaction is over");
+            end                 
         end
     end  
 endtask
 
 task aa_axis_rx;
     begin
-        aa_ready = 1;
-        wait(aa_ready && aa_valid);
+        aa_ready <= 1;
         if(aa_ready && aa_valid) begin
             $display("Axis_Axilite stream data is %h", aa_data);
             $display("strb is %h", aa_strb);            
             $display("keep is %h", aa_keep);
             $display("user data is %h", aa_user);
-            if(aa_tlast) 
+            if(aa_tlast) begin 
                 $display("This transaction is over"); 
-            else
-                $display("This transaction still continued");
-                      
-            if(aa_data==16'h5551) begin
-                repeat (1) @ (posedge o_clk);
-                aa_ready = 0;
-                repeat (6) @ (posedge o_clk);
-                aa_ready = 1;
-            end                
+            end           
        end                                                                  
     end  
 endtask
 
 //for Arbiter Rx
-
 always @(posedge o_clk) begin
     if(o_rst_n)
         if(start_test == 1)
-            #1 axis_rx;
+            axis_rx;
 end
 
 //For Demux Rx
 always @(posedge o_clk) begin
     if(o_rst_n)
         if(start_test == 1)
-            #1 up_axis_rx;
+            up_axis_rx;
 end
 
 always @(posedge o_clk) begin
     if(o_rst_n)
         if(start_test == 1)
-            #1 aa_axis_rx;
+            aa_axis_rx;
 end
 
 initial
@@ -384,14 +366,15 @@ begin
 	axis_tx_hi_req(16'h2225, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00);  
 	axis_tx_hi_req(16'h2226, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00); 	  	
 	axis_tx_hi_req(16'h2227, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00); 
-	axis_tx_hi_req(16'h2228, 4'hF,  4'hF, 2'b00, 1'b0, 1'b0, 2'b00);  //for no last support	 
-//	axis_tx_hi_req(16'h2228, 4'hF,  4'hF, 2'b00, 1'b1, 1'b0, 2'b00);  //for last support
+	axis_tx_hi_req(16'h2228, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00); 	
+	axis_tx_hi_req(16'h2229, 4'hF,  4'hF, 2'b00, 1'b0, 1'b0, 2'b00);  //for no last support, hi_req must deassert for the last transfer	 
+//	axis_tx_hi_req(16'h2229, 4'hF,  4'hF, 2'b00, 1'b1, 1'b0, 2'b00);  //for last support
 end
 
 initial
 begin
     //data, strb, keep, user, tlast, wait	
-    #3500 	  
+    #4000 	  
 	axis_tx(16'h1111, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00);
 	axis_tx(16'h1112, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00); 	  	
 	axis_tx(16'h1113, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00);  
@@ -427,14 +410,15 @@ begin
 	axis_tx_hi_req2(16'h6665, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
 	axis_tx_hi_req2(16'h6666, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00); 	  	
 	axis_tx_hi_req2(16'h6667, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req2(16'h6668, 4'hF,  4'hF, 2'b10, 1'b0, 1'b0, 2'b00);  //for no last support
-//	axis_tx_hi_req2(16'h6668, 4'hF,  4'hF, 2'b10, 1'b1, 1'b0, 2'b00);  //for last support	 
+	axis_tx_hi_req2(16'h6668, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00); 	
+	axis_tx_hi_req2(16'h6669, 4'hF,  4'hF, 2'b10, 1'b0, 1'b0, 2'b00);  //for no last support, hi_req must deassert for the last transfer
+//	axis_tx_hi_req2(16'h6669, 4'hF,  4'hF, 2'b10, 1'b1, 1'b0, 2'b00);  //for last support	 
 end
 
 initial
 begin
     //data, strb, keep, user, tlast, wait	
-    #3500 	  
+    #4000 	  
 	axis_tx2(16'h5551, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00);
 	axis_tx2(16'h5552, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00); 	  	
 	axis_tx2(16'h5553, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00);  
@@ -456,12 +440,15 @@ begin
 	#10 
 
     //data, strb, keep, tlast, tid, user, wait 
-	is_axis_tx(16'h2220, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
 	is_axis_tx(16'h2221, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
 	is_axis_tx(16'h2222, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
 	is_axis_tx(16'h2223, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);    
 	is_axis_tx(16'h2224, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
-	is_axis_tx(16'h2225, 4'hF, 4'hF, 1'b1, 2'b00, 2'b00, 2'b00);    		   	
+	is_axis_tx(16'h2225, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
+	is_axis_tx(16'h2226, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h2227, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);    
+	is_axis_tx(16'h2228, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h2229, 4'hF, 4'hF, 1'b1, 2'b00, 2'b00, 2'b00);    	 		   	
 	is_axis_tx(16'h1111, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);
 	is_axis_tx(16'h1112, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 	  	
 	is_axis_tx(16'h1113, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
@@ -474,13 +461,15 @@ begin
 	
 	#1000 
     //data, strb, keep, tlast, tid, user, wait 
-	is_axis_tx(16'h3330, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
 	is_axis_tx(16'h3331, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
 	is_axis_tx(16'h3332, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
 	is_axis_tx(16'h3333, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);    
 	is_axis_tx(16'h3334, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
-	is_axis_tx(16'h3335, 4'hF, 4'hF, 1'b1, 2'b00, 2'b00, 2'b00);  
-	is_axis_tx(16'h5550, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 	
+	is_axis_tx(16'h3335, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);  
+	is_axis_tx(16'h3336, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h3337, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);    
+	is_axis_tx(16'h3338, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h3339, 4'hF, 4'hF, 1'b1, 2'b00, 2'b00, 2'b00);  	
     is_axis_tx(16'h5551, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);
 	is_axis_tx(16'h5552, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 	  	
 	is_axis_tx(16'h5553, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
