@@ -167,8 +167,6 @@ module IO_SERDES #(
 	assign axi_rvalid = 1;
 	assign axi_rdata =  { 30'b0, txen_ctl, rxen_ctl };
 	
-
-	
 	assign txen_out = txen;
 
 	wire [$clog2(pCLK_RATIO)-1:0] phase_cnt;
@@ -187,7 +185,6 @@ module IO_SERDES #(
 // For Tx Path
 
 	wire	rx_received_data;		
-
 
 	always @(negedge ioclk or negedge axis_rst_n)  begin
 		if ( !axis_rst_n ) begin

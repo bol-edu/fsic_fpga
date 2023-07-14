@@ -1,1 +1,1 @@
-config_ctrl.v
+../rtl/config_ctrl.v

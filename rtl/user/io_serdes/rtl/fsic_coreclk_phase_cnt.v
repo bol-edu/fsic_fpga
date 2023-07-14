@@ -43,7 +43,6 @@ module fsic_coreclk_phase_cnt#(
         end
     end
 
-
     always @(posedge ioclk or negedge axis_rst_n) begin
         if ( !axis_rst_n ) begin
             clk_seq <= 0;
