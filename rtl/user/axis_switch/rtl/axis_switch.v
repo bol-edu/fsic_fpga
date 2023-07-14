@@ -130,7 +130,7 @@ reg [pDATA_WIDTH-1:0]       m_axis_tdata_reg;
 reg [pDATA_WIDTH/8-1:0]     m_axis_tstrb_reg;
 reg [pDATA_WIDTH/8-1:0]     m_axis_tkeep_reg; 
 reg                         m_axis_tlast_reg;        
-reg                         m_axis_tvalid_reg = 1'b0, m_axis_tvalid_next;
+reg                         m_axis_tvalid_reg = 1'b0;
 reg [USER_WIDTH-1:0]        m_axis_tuser_reg;     
 reg [TID_WIDTH-1:0]         m_axis_tid_reg;
 
@@ -180,6 +180,7 @@ assign  as_is_tlast     = m_axis_tlast_reg;
 assign  as_is_tvalid    = m_axis_tvalid_reg;
 assign  as_is_tuser     = m_axis_tuser_reg;   
 assign  as_is_tid       = m_axis_tid_reg;
+
 
 assign as_up_tready = grant_reg[0] && is_as_tready && m_axis_tvalid_reg;
 assign as_aa_tready = grant_reg[1] && is_as_tready && m_axis_tvalid_reg;
@@ -269,62 +270,76 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
                 base_ptr <= 2'd0;
                 base_hi_ptr <= 2'd0;
             end
-        end 
-        if(grant_reg == 3'b001) begin
-            m_axis_tdata_reg <= up_as_tdata;
-            m_axis_tstrb_reg <= up_as_tstrb;
-            m_axis_tkeep_reg <= up_as_tkeep;
-            if((up_hpri_req || hi_req_flag[0]) && (!last_support[0])) begin 
-                if(up_hpri_req && !hi_req_flag[0]) begin
-                    hi_req_flag[0] <= 1;
-                end
-                if(!up_hpri_req && hi_req_flag[0]) begin
-                    m_axis_tlast_reg <= 1;
-                end     
-                if(as_is_tvalid && is_as_tready && m_axis_tlast_reg) begin
-                    hi_req_flag[0] <= 0;
-                    m_axis_tlast_reg <= 0;
-                end
-            end else begin
-            //for  normal req
-                m_axis_tlast_reg <= up_as_tlast;
-            end 
-            m_axis_tvalid_reg <= up_as_tvalid;
-            m_axis_tuser_reg <= up_as_tuser;
-            m_axis_tid_reg <= 2'b00;
+        end else begin
+            base_ptr <= base_ptr;
+            base_hi_ptr <= base_hi_ptr;
         end
-       if(grant_reg == 3'b010) begin
-            m_axis_tdata_reg <= aa_as_tdata;
-            m_axis_tstrb_reg <= aa_as_tstrb;
-            m_axis_tkeep_reg <= aa_as_tkeep;
-            m_axis_tlast_reg <= aa_as_tlast;
-            m_axis_tvalid_reg <= aa_as_tvalid;
-            m_axis_tuser_reg <= aa_as_tuser;
-            m_axis_tid_reg <= 2'b01;       
-        end
-        if(grant_reg == 3'b100) begin
-            m_axis_tdata_reg <= la_as_tdata;
-            m_axis_tstrb_reg <= la_as_tstrb;
-            m_axis_tkeep_reg <= la_as_tkeep;
-            if((la_hpri_req || hi_req_flag[2]) && (!last_support[2])) begin            
-                if(la_hpri_req && !hi_req_flag[2]) begin    
-                    hi_req_flag[2] <= 1;
-                end
-                if(!la_hpri_req && hi_req_flag[2]) begin                
-                    m_axis_tlast_reg <= 1;
-                end     
-                if(as_is_tvalid && is_as_tready && as_is_tlast) begin
-                    hi_req_flag[2] <= 0;
-                    m_axis_tlast_reg <= 0;
-                end
-            end else begin
-            //for  normal req
-                m_axis_tlast_reg <= la_as_tlast;
-            end                
-            m_axis_tvalid_reg <= la_as_tvalid;
-            m_axis_tuser_reg <= la_as_tuser;
-            m_axis_tid_reg <= 2'b10;        
-        end                           
+       case (grant_reg)
+            3'b001: begin
+                m_axis_tdata_reg <= up_as_tdata;
+                m_axis_tstrb_reg <= up_as_tstrb;
+                m_axis_tkeep_reg <= up_as_tkeep;
+                if((up_hpri_req || hi_req_flag[0]) && (!last_support[0])) begin 
+                    if(up_hpri_req && !hi_req_flag[0]) begin
+                        hi_req_flag[0] <= 1;
+                    end
+                    if(!up_hpri_req && hi_req_flag[0]) begin
+                        m_axis_tlast_reg <= 1;
+                    end     
+                    if(as_is_tvalid && is_as_tready && m_axis_tlast_reg) begin
+                        hi_req_flag[0] <= 0;
+                        m_axis_tlast_reg <= 0;
+                    end
+                end else begin
+                //for  normal req
+                    m_axis_tlast_reg <= up_as_tlast;
+                end 
+                m_axis_tvalid_reg <= is_as_tready ? up_as_tvalid : 0; 
+                m_axis_tuser_reg <= up_as_tuser;
+                m_axis_tid_reg <= 2'b00;        
+            end
+            3'b010: begin
+                m_axis_tdata_reg <= aa_as_tdata;
+                m_axis_tstrb_reg <= aa_as_tstrb;
+                m_axis_tkeep_reg <= aa_as_tkeep;
+                m_axis_tlast_reg <= aa_as_tlast;
+                m_axis_tvalid_reg <= is_as_tready ? aa_as_tvalid : 0;   
+                m_axis_tuser_reg <= aa_as_tuser;
+                m_axis_tid_reg <= 2'b01;               
+            end
+            3'b100: begin
+                m_axis_tdata_reg <= la_as_tdata;
+                m_axis_tstrb_reg <= la_as_tstrb;
+                m_axis_tkeep_reg <= la_as_tkeep;
+                if((la_hpri_req || hi_req_flag[2]) && (!last_support[2])) begin            
+                    if(la_hpri_req && !hi_req_flag[2]) begin    
+                        hi_req_flag[2] <= 1;
+                    end
+                    if(!la_hpri_req && hi_req_flag[2]) begin                
+                        m_axis_tlast_reg <= 1;
+                    end     
+                    if(as_is_tvalid && is_as_tready && as_is_tlast) begin
+                        hi_req_flag[2] <= 0;
+                        m_axis_tlast_reg <= 0;
+                    end
+                end else begin
+                //for  normal req
+                    m_axis_tlast_reg <= la_as_tlast;
+                end                
+                m_axis_tvalid_reg <= is_as_tready ? la_as_tvalid : 0; 
+                m_axis_tuser_reg <= la_as_tuser;
+                m_axis_tid_reg <= 2'b10;                
+            end
+            default: begin
+                m_axis_tdata_reg <= 0;
+                m_axis_tstrb_reg <= 0;
+                m_axis_tkeep_reg <= 0;
+                m_axis_tlast_reg <= 0;
+                m_axis_tvalid_reg <= 0;
+                m_axis_tuser_reg <= 0;
+                m_axis_tid_reg <= 2'b00;            
+            end
+        endcase     
     end
 end
 
@@ -343,45 +358,46 @@ end
 // Read logic
 always @(posedge axis_clk) begin
     if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
-        if (up_as_tready) begin
-            if (!empty && (wr_ptr_reg != pre_rd_ptr_reg)) begin
-                as_up_tvalid_reg <= 1;
-                rd_ptr_reg<=pre_rd_ptr_reg;
-                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-            end else begin
-                as_up_tvalid_reg <= 0;
-            end
-        end
+        if (wr_ptr_reg != pre_rd_ptr_reg) begin                 
+            as_up_tvalid_reg <= 1;
+            rd_ptr_reg<=pre_rd_ptr_reg;
+            if(up_as_tready) 
+               pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
+            else
+               pre_rd_ptr_reg <= pre_rd_ptr_reg;
+        end else begin
+            as_up_tvalid_reg <= 0;
+        end                                    
     end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin
-        if (aa_as_tready) begin
-            if (!empty && (wr_ptr_reg != pre_rd_ptr_reg)) begin
-                as_aa_tvalid_reg <= 1;
-                rd_ptr_reg<=pre_rd_ptr_reg;
-                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-            end else begin
-                as_aa_tvalid_reg <= 0;
-            end
-        end    
+        if (wr_ptr_reg != pre_rd_ptr_reg) begin         
+            as_aa_tvalid_reg <= 1;
+            rd_ptr_reg<=pre_rd_ptr_reg;
+            if(aa_as_tready)
+               pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
+            else
+               pre_rd_ptr_reg <= pre_rd_ptr_reg;
+        end else begin
+            as_aa_tvalid_reg <= 0;
+        end         
     end else begin
         as_up_tvalid_reg <= 0;
         as_aa_tvalid_reg <= 0;
     end       
 
     if (!axi_reset_n) begin
-        rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};
         as_up_tvalid_reg <= 0; 
         as_aa_tvalid_reg <= 0;
     end
 end
 
-assign as_up_tvalid = ((m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) && !empty) ? as_up_tvalid_reg: 0;
+assign as_up_tvalid = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? as_up_tvalid_reg: 0;   
 assign as_up_tdata = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[pDATA_WIDTH - 1:0]: 0;
 assign as_up_tstrb = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[STRB_OFFSET +: pDATA_WIDTH/8]: 0;
 assign as_up_tkeep = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[KEEP_OFFSET +: pDATA_WIDTH/8]: 0;
 assign as_up_tlast = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[LAST_OFFSET]: 0;
 assign as_up_tuser = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[USER_OFFSET +: USER_WIDTH]: 0;
 
-assign as_aa_tvalid =  ((m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) && !empty) ? as_aa_tvalid_reg: 0;
+assign as_aa_tvalid =  (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? as_aa_tvalid_reg: 0;  
 assign as_aa_tdata = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[pDATA_WIDTH-1:0]: 0;
 assign as_aa_tstrb = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[STRB_OFFSET +: pDATA_WIDTH/8]: 0;
 assign as_aa_tkeep = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[KEEP_OFFSET +: pDATA_WIDTH/8]: 0;
