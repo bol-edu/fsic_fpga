@@ -18,8 +18,8 @@ module axis_slave(
     output logic bk_valid,
 
     // frontend - axis slave
-    input axi_aclk,
-    input axi_aresetn,
+    input logic axi_aclk,
+    input logic axi_aresetn,
     input logic axis_tvalid,
     input logic [31:0] axis_tdata,
     input logic [3:0] axis_tstrb,

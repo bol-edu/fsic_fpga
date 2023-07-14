@@ -8,22 +8,22 @@
 
 module axilite_slave(
     // frontend - axilite slave
-    input axi_aclk,
-    input axi_aresetn,
+    input logic axi_aclk,
+    input logic axi_aresetn,
 
     output logic axi_awready,
     output logic axi_wready,
     output logic axi_arready,
     output logic axi_rvalid,
     output logic [31:0] axi_rdata,
-    input axi_awvalid,
-    input [14:0] axi_awaddr,
-    input axi_wvalid,
-    input [31:0] axi_wdata,
-    input [3:0] axi_wstrb,
-    input axi_arvalid,
-    input [14:0] axi_araddr,
-    input axi_rready,
+    input logic axi_awvalid,
+    input logic [14:0] axi_awaddr,
+    input logic axi_wvalid,
+    input logic [31:0] axi_wdata,
+    input logic [3:0] axi_wstrb,
+    input logic axi_arvalid,
+    input logic [14:0] axi_araddr,
+    input logic axi_rready,
 
     // backend source to receive the axilite slave transaction
     output logic bk_wstart,
@@ -33,10 +33,10 @@ module axilite_slave(
     //input bk_wdone,
     output logic bk_rstart,
     output logic [14:0] bk_raddr,
-    input [31:0] bk_rdata,
-    input bk_rdone,
+    input logic [31:0] bk_rdata,
+    input logic bk_rdone,
 
-    input cc_aa_enable //ConfigControl assert it when the request is forwarding to AA.
+    input logic cc_aa_enable //ConfigControl assert it when the request is forwarding to AA.
 );
 
     // backend interface

@@ -8,19 +8,19 @@
 
 module axilite_master(
     // backend source to trigger the axilite master transaction
-    input bk_wstart,
-    input [31:0] bk_waddr,
-    input [31:0] bk_wdata,
-    input [3:0]  bk_wstrb,
+    input logic bk_wstart,
+    input logic [31:0] bk_waddr,
+    input logic [31:0] bk_wdata,
+    input logic [3:0]  bk_wstrb,
     output logic bk_wdone,
-    input bk_rstart,
-    input [31:0] bk_raddr,
+    input logic bk_rstart,
+    input logic [31:0] bk_raddr,
     output logic [31:0] bk_rdata,
     output logic bk_rdone,
 
     // frontend - axilite master
-    input axi_aclk,
-    input axi_aresetn,
+    input logic axi_aclk,
+    input logic axi_aresetn,
     output logic axi_awvalid,
     output logic [31:0] axi_awaddr,
     output logic axi_wvalid,
@@ -29,11 +29,11 @@ module axilite_master(
     output logic axi_arvalid,
     output logic [31:0] axi_araddr,
     output logic axi_rready,
-    input [31:0] axi_rdata,
-    input axi_awready,
-    input axi_wready,
-    input axi_arready,
-    input axi_rvalid
+    input logic [31:0] axi_rdata,
+    input logic axi_awready,
+    input logic axi_wready,
+    input logic axi_arready,
+    input logic axi_rvalid
 );
 
     // backend interface

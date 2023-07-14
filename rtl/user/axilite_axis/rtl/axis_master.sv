@@ -7,12 +7,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 module axi_fifo#(WIDTH=8, DEPTH=8)(
-    input clk,
-    input rst_n,
-    input wr_vld,
-    input rd_rdy,
-    input clear,
-    input [WIDTH - 1:0] data_in,
+    input logic clk,
+    input logic rst_n,
+    input logic wr_vld,
+    input logic rd_rdy,
+    input logic clear,
+    input logic [WIDTH - 1:0] data_in,
     output logic [WIDTH - 1:0] data_out,
     output logic wr_rdy,
     output logic rd_vld
@@ -109,8 +109,8 @@ module axis_master(
     output logic bk_done,
 
     // frontend - axis master
-    input axi_aclk,
-    input axi_aresetn,
+    input logic axi_aclk,
+    input logic axi_aresetn,
     output logic axis_tvalid,
     output logic [31:0] axis_tdata,
     output logic [3:0] axis_tstrb,
@@ -118,7 +118,7 @@ module axis_master(
     output logic axis_tlast,
     //output logic [1:0] axis_tid,
     output logic [1:0] axis_tuser,
-    input axis_tready
+    input logic axis_tready
 );
 
     // backend interface

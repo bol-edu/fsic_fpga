@@ -7,9 +7,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 module axi_ctrl_logic(
-    input axi_aclk,
-    input axi_aresetn,
-    output axi_interrupt,
+    input logic axi_aclk,
+    input logic axi_aresetn,
+    output logic axi_interrupt,
 
     // backend interface, axilite_master (LM)
     output logic bk_lm_wstart,
