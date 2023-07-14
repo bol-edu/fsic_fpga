@@ -1,1 +1,1 @@
-../rtl/cfg_ctrl.dummy_io.vd
+../rtl/config_ctrl.v

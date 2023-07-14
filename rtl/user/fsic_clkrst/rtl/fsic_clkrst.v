@@ -10,11 +10,17 @@ module FSIC_CLKRST (
   input  wire         wb_rst,
   input  wire         wb_clk,
   output wire  [2: 0] user_irq,
+
   input  wire         user_clock2,
+  output wire         uck2_rst_n,
+
   input  wire         axi_clk,
   output wire         axi_reset_n,
+
   input  wire         axis_clk,
-  output wire         axis_rst_n
+  output wire         axis_rst_n,
+
+  output wire         ioclk
 );
 
 
@@ -45,9 +51,38 @@ assign axis_rst_n = axis_rst_nr[2];
 
 
 // ----------------------------------------------------------
+// user_clock2
+reg [2:0] uck2_rst_nr; 
+always @(posedge user_clock2 or negedge wb_rst)
+  if( ~wb_rst )
+    uck2_rst_nr <= 3'b000;
+  else
+    uck2_rst_nr <= {uck2_rst_nr[1:0], 1'b1};
+
+assign uck2_rst_n = uck2_rst_nr[2];
+
+
+// ----------------------------------------------------------
 // IRQ
 assign user_irq[0] = user_prj_irq;
 assign user_irq[1] = mb_irq;
 assign user_irq[2] = 1'b0;           // TBD
+
+
+// ----------------------------------------------------------
+// IOCLK for IO_SERDES
+
+/*
+// TBD
+reg div2_clk;
+always @(posedge user_clock2 or negedge uck2_rst_n)
+  if( ~uck2_rst_n )
+    div2_clk <= 1'b0;
+  else
+    div2_clk <= ~div2_clk; 
+*/
+
+
+assign ioclk = user_clock2;
 
 endmodule // FSIC_CLKRST
