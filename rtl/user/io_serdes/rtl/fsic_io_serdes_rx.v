@@ -2,21 +2,21 @@
 //////////////////////////////////////////////////////////////////////////////////
 // Author : Tony Ho
 //
-// 
+//
 // Create Date: 07/10/2023 11:45:06 AM
-// Design Name: 
+// Design Name:
 // Module Name: fsic_io_serdes_rx
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
+// Project Name:
+// Target Devices:
+// Tool Versions:
+// Description:
+//
+// Dependencies:
+//
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
-// 
+//
 //////////////////////////////////////////////////////////////////////////////////
 
 
@@ -24,12 +24,12 @@ module fsic_io_serdes_rx#(
 		parameter pRxFIFO_DEPTH = 5,
 		parameter pCLK_RATIO =4
 	) (
-		input 	axis_rst_n,
-		input 	rxclk,
-		input   rxen,
-		input 	ioclk,
-		input 	coreclk,
-		input 	Serial_Data_in,
+		input wire 	axis_rst_n,
+		input wire 	rxclk,
+		input wire   rxen,
+		input wire 	ioclk,
+		input wire 	coreclk,
+		input wire 	Serial_Data_in,
 		output 	[pCLK_RATIO-1:0] rxdata_out,
 		output 	rxdata_out_valid
 	);
@@ -161,7 +161,7 @@ module fsic_io_serdes_rx#(
 	reg rx_sync_fifo_valid;
 
 	always @(posedge ioclk or negedge axis_rst_n)  begin		//use posedge, the simulation result is early 1T in rxdata
-																// - This issue is fixed by use block assigment in clock divider to avoid race condition in simulation	   
+																// - This issue is fixed by use block assigment in clock divider to avoid race condition in simulation
 		if ( !axis_rst_n ) begin
 			rx_sync_fifo <= 0;
 			rx_sync_fifo_valid <= 0;
