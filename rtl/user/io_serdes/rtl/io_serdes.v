@@ -49,22 +49,22 @@ module IO_SERDES #(
 		//write addr channel
 		input wire 	axi_awvalid,
 		input wire 	[pADDR_WIDTH+1:2] axi_awaddr,		//axi_awaddr is DW address
-		output	axi_awready,
+		output wire	axi_awready,
 
 		//write data channel
 		input wire 	axi_wvalid,
 		input wire 	[pDATA_WIDTH-1:0] axi_wdata,
 		input wire 	[(pDATA_WIDTH/8)-1:0] axi_wstrb,
-		output	axi_wready,
+		output wire	axi_wready,
 
 		//read addr channel
 		input wire 	axi_arvalid,
 		input wire 	[pADDR_WIDTH+1:2] axi_araddr,
-		output 	axi_arready,
+		output wire 	axi_arready,
 
 		//read data channel
-		output 	axi_rvalid,
-		output 	[pDATA_WIDTH-1:0] axi_rdata,
+		output wire 	axi_rvalid,
+		output wire 	[pDATA_WIDTH-1:0] axi_rdata,
 		input wire 	axi_rready,
 
 		input wire 	cc_is_enable,		//axi_lite enable
@@ -88,14 +88,14 @@ module IO_SERDES #(
 		input  wire		  serial_rclk,
 		input  wire  [pSERIALIO_WIDTH-1: 0] serial_rxd,
 
-		output 	[pDATA_WIDTH-1:0] is_as_tdata,
-		output 	[(pDATA_WIDTH/8)-1:0] is_as_tstrb,
-		output 	[(pDATA_WIDTH/8)-1:0] is_as_tkeep,
-		output 	is_as_tlast,
-		output 	[1:0] is_as_tid,
-		output 	is_as_tvalid,
-		output 	[1:0] is_as_tuser,
-		output 	is_as_tready		//when remote side axis switch Rxfifo size <= threshold then is_as_tready=0, this flow control mechanism is for notify local side do not provide data with as_is_tvalid=1
+		output wire 	[pDATA_WIDTH-1:0] is_as_tdata,
+		output wire 	[(pDATA_WIDTH/8)-1:0] is_as_tstrb,
+		output wire 	[(pDATA_WIDTH/8)-1:0] is_as_tkeep,
+		output wire 	is_as_tlast,
+		output wire 	[1:0] is_as_tid,
+		output wire 	is_as_tvalid,
+		output wire 	[1:0] is_as_tuser,
+		output wire 	is_as_tready		//when remote side axis switch Rxfifo size <= threshold then is_as_tready=0, this flow control mechanism is for notify local side do not provide data with as_is_tvalid=1
 
 	);
 
