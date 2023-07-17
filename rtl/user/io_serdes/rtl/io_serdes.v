@@ -107,7 +107,7 @@ module IO_SERDES #(
 	wire axi_awvalid_in;
 	wire axi_wvalid_in;
 	wire txen_out;
-	wire txclk;
+	wire is_as_tready_remote;
 	
 	assign coreclk = axis_clk;
 	assign serial_tclk = txclk;
