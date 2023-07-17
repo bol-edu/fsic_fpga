@@ -360,18 +360,18 @@ always @(posedge axis_clk) begin
     if (wr_ptr_reg != pre_rd_ptr_reg) begin  
         if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
             as_up_tvalid_reg <= 1;
-            rd_ptr_reg<=pre_rd_ptr_reg;
-            if(up_as_tready) 
-               pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-            else
+            if(up_as_tready) begin
+                rd_ptr_reg <= pre_rd_ptr_reg;   
+                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
+            end else
                pre_rd_ptr_reg <= pre_rd_ptr_reg;
         end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin
   
             as_aa_tvalid_reg <= 1;
-            rd_ptr_reg<=pre_rd_ptr_reg;
-            if(aa_as_tready)
+            if(aa_as_tready) begin
+               rd_ptr_reg <= pre_rd_ptr_reg;  
                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-            else
+            end else
                pre_rd_ptr_reg <= pre_rd_ptr_reg;
         end               
     end else begin
