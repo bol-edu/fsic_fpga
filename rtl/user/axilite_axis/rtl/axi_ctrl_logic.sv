@@ -7,8 +7,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 module axi_ctrl_logic(
-    input logic axi_aclk,
-    input logic axi_aresetn,
+    input wire axi_aclk,
+    input wire axi_aresetn,
     output logic axi_interrupt,
 
     // backend interface, axilite_master (LM)
@@ -16,19 +16,19 @@ module axi_ctrl_logic(
     output logic [31:0] bk_lm_waddr,
     output logic [31:0] bk_lm_wdata,
     output logic [3:0]  bk_lm_wstrb,
-    input logic bk_lm_wdone,
+    input wire bk_lm_wdone,
     output logic bk_lm_rstart,
     output logic [31:0] bk_lm_raddr,
-    input logic [31:0] bk_lm_rdata,
-    input logic bk_lm_rdone,
+    input wire [31:0] bk_lm_rdata,
+    input wire bk_lm_rdone,
 
     // backend interface, axilite_slave (LS)
-    input logic bk_ls_wstart,
-    input logic [14:0] bk_ls_waddr,
-    input logic [31:0] bk_ls_wdata,
-    input logic [3:0]  bk_ls_wstrb,
-    input logic bk_ls_rstart,
-    input logic [14:0] bk_ls_raddr,
+    input wire bk_ls_wstart,
+    input wire [14:0] bk_ls_waddr,
+    input wire [31:0] bk_ls_wdata,
+    input wire [3:0]  bk_ls_wstrb,
+    input wire bk_ls_rstart,
+    input wire [14:0] bk_ls_raddr,
     output logic [31:0] bk_ls_rdata,
     output logic bk_ls_rdone,
 
@@ -39,18 +39,18 @@ module axi_ctrl_logic(
     output logic [3:0] bk_sm_tkeep,
     //output logic [1:0] bk_sm_tid,
     output logic [1:0] bk_sm_user,
-    input logic bk_sm_nordy,
-    input logic bk_sm_done,
+    input wire bk_sm_nordy,
+    input wire bk_sm_done,
 
     // backend interface, axis_slave (SS)
-    input logic [31:0] bk_ss_data,
-    input logic [3:0] bk_ss_tstrb,
-    input logic [3:0] bk_ss_tkeep,
-    //input logic [1:0] bk_ss_tid,
-    input logic [1:0] bk_ss_user,
-    input logic bk_ss_tlast,
+    input wire [31:0] bk_ss_data,
+    input wire [3:0] bk_ss_tstrb,
+    input wire [3:0] bk_ss_tkeep,
+    //input wire [1:0] bk_ss_tid,
+    input wire [1:0] bk_ss_user,
+    input wire bk_ss_tlast,
     output logic bk_ss_ready,
-    input logic bk_ss_valid
+    input wire bk_ss_valid
 );
 
     parameter FIFO_LS_WIDTH = 8'd52, FIFO_LS_DEPTH = 8'd8;

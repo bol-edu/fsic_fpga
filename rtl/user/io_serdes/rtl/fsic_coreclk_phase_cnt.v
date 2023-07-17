@@ -23,9 +23,9 @@
 module fsic_coreclk_phase_cnt#(
 		parameter pCLK_RATIO =4
 	) (
-		input 	axis_rst_n,
-		input 	ioclk,
-		input 	coreclk,
+		input wire 	axis_rst_n,
+		input wire 	ioclk,
+		input wire 	coreclk,
 		output 	[$clog2(pCLK_RATIO)-1:0] phase_cnt_out
 	);
 

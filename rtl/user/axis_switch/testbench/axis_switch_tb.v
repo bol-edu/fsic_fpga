@@ -310,17 +310,32 @@ task up_axis_rx;
 endtask
 
 task aa_axis_rx;
+    reg [4:0] dcount;
     begin
-        aa_ready <= 1;
+        if(dcount != 5'd0) begin
+            if(dcount == 5'd5) begin
+                aa_ready <= 1;
+                dcount <= 5'd0;
+            end else begin
+                aa_ready <= 0;
+                dcount <= dcount + 1;
+            end
+        end else begin
+            aa_ready <= 1;
+            dcount <= 5'd0;
+        end                        
         if(aa_ready && aa_valid) begin
             $display("Axis_Axilite stream data is %h", aa_data);
             $display("strb is %h", aa_strb);            
             $display("keep is %h", aa_keep);
             $display("user data is %h", aa_user);
-            if(aa_tlast) begin 
+            if(aa_tlast) begin
                 $display("This transaction is over"); 
-            end           
-       end                                                                  
+            end
+            if((aa_data==16'h5551) && (dcount == 5'd0)) begin
+                dcount <= 1;
+            end                        
+       end
     end  
 endtask
 

@@ -14,19 +14,19 @@ module axis_slave(
     //output logic [1:0] bk_tid,
     output logic [1:0] bk_user,
     output logic bk_tlast,
-    input logic bk_ready,
+    input wire bk_ready,
     output logic bk_valid,
 
     // frontend - axis slave
-    input logic axi_aclk,
-    input logic axi_aresetn,
-    input logic axis_tvalid,
-    input logic [31:0] axis_tdata,
-    input logic [3:0] axis_tstrb,
-    input logic [3:0] axis_tkeep,
-    input logic axis_tlast,
-    //input logic [1:0] axis_tid,
-    input logic [1:0] axis_tuser,
+    input wire axi_aclk,
+    input wire axi_aresetn,
+    input wire axis_tvalid,
+    input wire [31:0] axis_tdata,
+    input wire [3:0] axis_tstrb,
+    input wire [3:0] axis_tkeep,
+    input wire axis_tlast,
+    //input wire [1:0] axis_tid,
+    input wire [1:0] axis_tuser,
     output logic axis_tready
 );
 

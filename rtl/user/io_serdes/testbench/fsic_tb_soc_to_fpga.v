@@ -23,6 +23,8 @@
 // 2. change [pADDR_WIDTH+1:2] *_axi_awaddr to [pADDR_WIDTH+1:2] *_axi_awaddr for DW base address
 // 3. update coding error and add pSERIALIO_TDATA_WIDTH
 // 4. update tpyo, change cc_is_enable to cc_is_enable
+// 5. use fork join to sync soc and fpga to replace sync by test_seq
+// 6. verify soc and fpga txen_ctl timing in test003
 // 20230712
 // 1. check cfg read result
 // 20230711
@@ -400,68 +402,306 @@ module fsic_tb_soc_to_fpga #(
 		fpga_as_is_tuser=0;
 		fpga_as_is_tready=0;
 
-
+		test001();
+		test002();
+		test003();
+		$finish;
+		
 	end
 
-	// test001 : soc side register R/W test
-	initial begin
-		//$monitor($time, "=>soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_as_is_tready=%b, soc_is_as_tready=%b", soc_as_is_tdata, soc_as_is_tvalid, soc_as_is_tready, soc_is_as_tready);
-		$display("test001 : soc side register test");
-		soc_apply_reset(40,40);
+	task test001;
+		//input [7:0] compare_data;
 
-		#20;
-		soc_cc_is_enable=1;
+		begin
+			$display("test001 : soc side register test");
+			soc_apply_reset(40,40);
 
-		//burst write test
-		soc_cfg_write(0,0,1,0);		//write offset 0 = 0
-		soc_cfg_write(0,1,1,0);		//write offset 0 = 1
-		soc_cfg_write(0,2,1,0);		//write offset 0 = 2
-		soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+			#20;
+			soc_cc_is_enable=1;
 
-		//burst read test
-		soc_cfg_write(0,3,1,0);		//write offset 0 = 3
-		soc_compare_data = 3;		//read offset 0 result should be 3, other offset is reserved and result equal to offset 0
-		soc_cfg_read(0,0);			//read offset 0 
-		soc_cfg_read(1,0);			//read offset 4
-		soc_cfg_read(2,0);			//read offset 8
-		soc_cfg_read(3,0);			//read offset 12
+			//burst write test
+			soc_cfg_write(0,0,1,0);		//write offset 0 = 0
+			soc_cfg_write(0,1,1,0);		//write offset 0 = 1
+			soc_cfg_write(0,2,1,0);		//write offset 0 = 2
+			soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+
+			//burst read test
+			soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+			soc_compare_data = 3;		//read offset 0 result should be 3, other offset is reserved and result equal to offset 0
+			soc_cfg_read(0,0);			//read offset 0
+			soc_cfg_read(1,0);			//read offset 4
+			soc_cfg_read(2,0);			//read offset 8
+			soc_cfg_read(3,0);			//read offset 12
 
 
-		//burst write/read test
-		soc_cfg_write(0,0,1,0);		//write offset 0 = 0
-		soc_compare_data = 0;		//read offset 0 result should be 0
-		soc_cfg_read(0,0);
-		soc_cfg_write(0,1,1,0);		//write offset 0 = 1
-		soc_compare_data = 1;		//read offset 0 result should be 1
-		soc_cfg_read(0,0);
-		soc_cfg_write(0,2,1,0);		//write offset 0 = 2
-		soc_compare_data = 2;		//read offset 0 result should be 2
-		soc_cfg_read(0,0);
-		soc_cfg_write(0,3,1,0);		//write offset 0 = 3
-		soc_compare_data = 3;		//read offset 0 result should be 3
-		soc_cfg_read(0,0);
+			//burst write/read test
+			soc_cfg_write(0,0,1,0);		//write offset 0 = 0
+			soc_compare_data = 0;		//read offset 0 result should be 0
+			soc_cfg_read(0,0);
+			soc_cfg_write(0,1,1,0);		//write offset 0 = 1
+			soc_compare_data = 1;		//read offset 0 result should be 1
+			soc_cfg_read(0,0);
+			soc_cfg_write(0,2,1,0);		//write offset 0 = 2
+			soc_compare_data = 2;		//read offset 0 result should be 2
+			soc_cfg_read(0,0);
+			soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+			soc_compare_data = 3;		//read offset 0 result should be 3
+			soc_cfg_read(0,0);
+
+			//write to offset 1, the data in offset 0 should no changed.
+			soc_cfg_write(0,3,1,0);	// write to offset 0, data = 3
+			soc_cfg_write(0,0,2,0);	// write to offset 1 (strobe = 4'b0010) , data = 0
+			soc_compare_data = 3;	// data should be 3 in offset 0
+			soc_cfg_read(0,0);		//read offset 0
+
+	`ifdef NotSupport_Test
+			//no support below test in IO_SERDES module
+			//IO_SERDES output axi_awready_out = 1 and axi_wready_out = 1 when both axi_awvalid_in=1 and axi_wvalid_in=1
+			//it will cause dead lock if testbench set axi_awvalid=1 and wait for axi_awready
+			soc_cfg_write_addr(0,0);
+			soc_cfg_write_data(0,1,0);
+			soc_cfg_write_addr(0,0);
+			soc_cfg_write_data(1,1,0);
+			soc_cfg_write_addr(0,0);
+			soc_cfg_write_data(2,1,0);
+			soc_cfg_write_addr(0,0);
+			soc_cfg_write_data(3,1,0);
+	`endif //NotSupport_Test
+
+		end
+
+	endtask
+
+
+	reg[31:0] i;
+	
+	task test002;
+		//input [7:0] compare_data;
+
+		begin
+			for (i=0;i<TEST002_CNT;i=i+1) begin
+				$display("test002: TX/RX test - loop %02d", i);
+				fork 
+					soc_apply_reset(40+i*10, 40);			//change coreclk phase in soc
+					fpga_apply_reset(40,40);		//fix coreclk phase in fpga
+				join
+				#40;
+				soc_cc_is_enable=1;
+				fpga_cc_is_enable=1;
+				fork 
+					soc_cfg_write(0,1,1,0);
+					fpga_cfg_write(0,1,1,0);
+				join
+				$display($time, "=> soc rxen_ctl=1");
+				$display($time, "=> fpga rxen_ctl=1");
+
+				#400;
+				fork 
+					soc_cfg_write(0,3,1,0);
+					fpga_cfg_write(0,3,1,0);
+				join
+				$display($time, "=> soc txen_ctl=1");
+				$display($time, "=> fpga txen_ctl=1");
+
+				#200;
+				soc_as_is_tdata = 32'h5a5a5a5a;
+				#40;
+
+				fork
+					test002_soc();
+					test002_fpga();
+				join
+				#200;
+			end
+		end
+	endtask
+
+	reg[31:0]idx1;
+
+	task test002_soc;
+		//input [7:0] compare_data;
+
+		begin
+			@ (posedge soc_coreclk);
+			
+			for(idx1=0; idx1<16; idx1=idx1+1)begin
+				soc_as_is_tdata <=  idx1 * 32'h11111111;
+				soc_as_is_tstrb <=  idx1 * 4'h1;
+				soc_as_is_tkeep <=  idx1 * 4'h1;
+				soc_as_is_tid <=  idx1 * 2'h1;
+				soc_as_is_tuser <=  idx1 * 2'h1;
+				soc_as_is_tlast <=  idx1 * 1'h1;
+				soc_as_is_tvalid <= 1;
+
+				@ (posedge soc_coreclk);
+				while (soc_is_as_tready == 0) begin		// wait util soc_is_as_tready == 1 then change data
+						@ (posedge soc_coreclk);
+				end
+			end
+			soc_as_is_tvalid <= 0;
+
+			$display($time, "=> test002_soc done");
+		end
+	endtask
+
+	reg[31:0]idx2;
+
+	task test002_fpga;
+		//input [7:0] compare_data;
+
+		begin
+			fpga_as_is_tready = 1;
+			@ (posedge fpga_coreclk);
+			//for Axis Switch Rx
+			for(idx2=0; idx2<16; idx2=idx2+1)begin
+				@ (posedge fpga_coreclk);
+				while ( fpga_is_as_tvalid == 0) begin
+					@ (posedge fpga_coreclk);
+				end
+				$display($time, "=> fpga idx2=%x", idx2);
+			end
+		$display($time, "=> test002_fpga done");
+		end
+	endtask
+
+
+	// test003 : simulation the behavior of fpga axis_switch rx buffer full
+	// Step 1. soc provide data and valid=1 to fpga
+	// Step 2. fpga default send tready=1 to soc
+	// step 3. fpga set tready=0 (to simulation the behavior of fpga axis_switch rx buffer full)
+	// step 4. soc provide valid=0 to fpga
+	// step 5. fpga set tready=1
+	// step 6. soc provide data and valid=1 to fpga
+	
+	reg[31:0] m;
+	task test003;
+		//input [7:0] compare_data;
+
+		begin
+			for (m=0;m<TEST003_CNT;m=m+1) begin
+
+				$display("test003 : TX/RX test with tready toggle - loop %02d", m);
+				fork 
+					//change txen timing in soc
+					test003_soc_init();
+					test003_fpga_init();
+				join 	
+
+				fork 
+					test003_soc();
+					test003_fpga();
+				join 	
+
+				#200;
+
+			end
+
+		end
+	endtask
+
+	task test003_soc_init;
+		//input [7:0] compare_data;
+
+		begin
+			soc_apply_reset(40+m*10, 40);			//change coreclk phase in soc
+
+			#40;
+			soc_cc_is_enable=1;
+			soc_cfg_write(0,1,1,0);
+			$display($time, "=> soc rxen_ctl=1");
+			#100;
+			repeat (m) #100;
+			soc_cfg_write(0,3,1,0);					//txen timing in #100/#200/#300/#400 after rxen
+			$display($time, "=> soc txen_ctl=1");
+			#200;
+			soc_as_is_tdata = 32'h5a5a5a5a;
+		end
+	endtask
+
+	reg [7:0] as_fifo_cnt;
+	task test003_fpga_init;
+		//input [7:0] compare_data;
+
+		begin
+			fpga_apply_reset(40,40);		//fix coreclk phase in fpga
+
+			as_fifo_cnt = 0;
+
+			#40;
+			fpga_cc_is_enable=1;
+			fpga_cfg_write(0,1,1,0);
+			$display($time, "=> fpga rxen_ctl=1");
+			#200;
+			fpga_cfg_write(0,3,1,0);			//txen timing fixed in #200 after rxen
+			$display($time, "=> fpga txen_ctl=1");
+			#200;
+
+			fpga_as_is_tdata = 32'h5a5a5a5a;
+			fpga_as_is_tready = 1;
+		end
+	endtask
+
+	reg[31:0]idx3;
+	task test003_soc;
+		//input [7:0] compare_data;
+
+		begin
+			@ (posedge soc_coreclk);
+			// wait util soc_is_as_tready == 1 then change data
+			for(idx3=0; idx3<16; idx3=idx3+1)begin
+				soc_as_is_tdata <=  idx3 * 32'h11111111;
+				soc_as_is_tstrb <=  idx3 * 4'h1;
+				soc_as_is_tkeep <=  idx3 * 4'h1;
+				soc_as_is_tid <=  idx3 * 2'h1;
+				soc_as_is_tuser <=  idx3 * 2'h1;
+				soc_as_is_tlast <=  idx3 * 1'h1;
+				soc_as_is_tvalid <= 1;
+
+				@ (posedge soc_coreclk);
+				while (soc_is_as_tready == 0) begin
+						@ (posedge soc_coreclk);
+				end
+			end
+			soc_as_is_tvalid <= 0;
+
+			$display($time, "=> test003_soc done");
+
+		end
+	endtask
+
+	reg[31:0]idx4;
+	task test003_fpga;
+		//input [7:0] compare_data;
+
+		begin
 		
-		//write to offset 1, the data in offset 0 should no changed.
-		soc_cfg_write(0,3,1,0);	// write to offset 0, data = 3
-		soc_cfg_write(0,0,2,0);	// write to offset 1 (strobe = 4'b0010) , data = 0
-		soc_compare_data = 3;	// data should be 3 in offset 0
-		soc_cfg_read(0,0);		//read offset 0
-		
-`ifdef NotSupport_Test		
-		//no support below test in IO_SERDES module
-		//IO_SERDES output axi_awready_out = 1 and axi_wready_out = 1 when both axi_awvalid_in=1 and axi_wvalid_in=1
-		//it will cause dead lock if testbench set axi_awvalid=1 and wait for axi_awready
-		soc_cfg_write_addr(0,0);
-		soc_cfg_write_data(0,1,0);
-		soc_cfg_write_addr(0,0);
-		soc_cfg_write_data(1,1,0);
-		soc_cfg_write_addr(0,0);
-		soc_cfg_write_data(2,1,0);
-		soc_cfg_write_addr(0,0);
-		soc_cfg_write_data(3,1,0);
-`endif //NotSupport_Test		
+			@ (posedge fpga_coreclk);
+			while ( fpga_is_as_tvalid == 0) begin		//wait for remote side from valid data then start test
+				@ (posedge fpga_coreclk);
+			end
 
-	end
+			//for Axis Switch Rx
+			for(idx4=0; idx4<16; idx4=idx4+1)begin
+				if (fpga_is_as_tvalid)
+					as_fifo_cnt = as_fifo_cnt + 1;
+
+				if (as_fifo_cnt == 4 && fpga_is_as_tvalid )  begin
+						fpga_as_is_tready <= 0;
+						repeat(20) @ (posedge fpga_coreclk); //wait for 20 coreclk
+						fpga_as_is_tready <= 1;
+						as_fifo_cnt = as_fifo_cnt + 1;  //add as_fifo_cnt to avoid enter
+				end
+				else fpga_as_is_tready <= 1;
+
+				$display($time, "=> fpga fpga_as_is_tready=%b, idx4=%x, as_fifo_cnt=%x", fpga_as_is_tready, idx4, as_fifo_cnt);
+				@ (posedge fpga_coreclk);
+
+			end
+
+			#200;
+			$display($time, "=> test003_fpga done");
+		end
+	endtask
 
 	//Dump data_send
 	initial begin
@@ -508,272 +748,6 @@ module fsic_tb_soc_to_fpga #(
 		end
 
 	end
-	
-	
-	// test_sequence_control
-	reg [31:0] k;
-	reg [31:0]test_seq;
-	
-	initial begin
-		
-		for (k=0;k<(TOTAL_TEST_LOOP+1);k=k+1) begin
-			test_seq = k;
-			$display($time, "=> test_sequence_control set test_seq=%x", test_seq);
-			if (k < TEST003_START)
-				#(2000);
-			else 
-				#(4000);
-		end
-		
-		$finish;
-		
-	end
-
-
-	//test002 soc provide soc_as_is_tdata, soc_as_is_tstrb, soc_as_is_tkeep, soc_as_is_tlast, soc_as_is_tid, soc_as_is_tuser, soc_as_is_tvalid, soc_as_is_tready to fpga
-
-	reg [31:0]test002_partA_done, test002_partB_done;
-	// test002_partA : soc side - TX/RX test
-	reg[31:0]idx1;
-	reg[31:0] i;
-	initial begin
-		//$monitor($time, "=>soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_as_is_tready=%b, soc_is_as_tready=%b", soc_as_is_tdata, soc_as_is_tvalid, soc_as_is_tready, soc_is_as_tready);
-		
-		#2000;
-		for (i=0;i<TEST002_CNT;i=i+1) begin
-
-			
-			while (test_seq<=i) begin
-				@ (posedge soc_coreclk);
-				//$display($time, "=> soc wait test_seq=%x, i=%x", test_seq, i);
-			end
-			$display("test002_partA : soc side - TX/RX test");
-			soc_apply_reset(40+i*10, 40);			//change coreclk phase in soc
-
-			#40;
-			soc_cc_is_enable=1;
-			soc_cfg_write(0,1,1,0);
-			$display($time, "=> soc rxen_ctl=1");
-			#400;
-			soc_cfg_write(0,3,1,0);
-			$display($time, "=> soc txen_ctl=1");
-			#200;
-			soc_as_is_tdata = 32'h5a5a5a5a;
-			#40;
-
-			
-			@ (posedge soc_coreclk);
-			// wait util soc_is_as_tready == 1 then change data
-			for(idx1=0; idx1<16; idx1=idx1+1)begin
-				soc_as_is_tdata <=  idx1 * 32'h11111111;
-				soc_as_is_tstrb <=  idx1 * 4'h1;
-				soc_as_is_tkeep <=  idx1 * 4'h1;
-				soc_as_is_tid <=  idx1 * 2'h1;
-				soc_as_is_tuser <=  idx1 * 2'h1;
-				soc_as_is_tlast <=  idx1 * 1'h1;
-				soc_as_is_tvalid <= 1;
-				
-				@ (posedge soc_coreclk);
-				while (soc_is_as_tready == 0) begin
-						@ (posedge soc_coreclk);
-				end
-			end
-			soc_as_is_tvalid <= 0;
-
-			#200;
-			
-			test002_partA_done = i;
-			$display($time, "=> soc set test002_partA_done=%x, i=%x", test002_partA_done, i);
-		end
-		
-
-		//$finish;
-
-	end
-
-	// test002_partB : fpga side RX/TX test
-	reg[31:0]idx2;
-	reg[31:0] j;
-	
-	initial begin
-		//$monitor($time, "=>fpga_as_is_tdata=%x, fpga_as_is_tvalid=%b, fpga_as_is_tready=%b, as_fifo_cnt=%d, fpga_is_as_tready=%b, fpga_is_as_tvalid=%b",fpga_as_is_tdata, fpga_as_is_tvalid, fpga_as_is_tready, as_fifo_cnt, fpga_is_as_tready, fpga_is_as_tvalid);
-		#2000;
-		
-		for (j=0; j<TEST002_CNT; j=j+1) begin
-		
-			while (test_seq<=j) begin
-				@ (posedge soc_coreclk);
-				//$display($time, "=> fpga wait test_seq=%x, j=%x", test_seq, j);
-			end
-
-			$display("test002_partB : fpga side - TX/RX test");
-			fpga_apply_reset(40,40);		//fix coreclk phase in fpga
-			
-
-			#40;
-			fpga_cc_is_enable=1;
-			fpga_cfg_write(0,1,1,0);
-			$display($time, "=> fpga rxen_ctl=1");
-			#400;
-			fpga_cfg_write(0,3,1,0);
-			$display($time, "=> fpga txen_ctl=1");
-			#200;
-
-			fpga_as_is_tdata = 32'h5a5a5a5a;
-			fpga_as_is_tready = 1;
-
-			@ (posedge fpga_coreclk);
-			//for Axis Switch Rx
-			for(idx2=0; idx2<16; idx2=idx2+1)begin
-				@ (posedge fpga_coreclk);
-				while ( fpga_is_as_tvalid == 0) begin
-					@ (posedge fpga_coreclk);
-				end
-				$display($time, "=> fpga idx2=%x", idx2);
-			end
-
-			#200;
-			test002_partB_done = j;
-			$display($time, "=> fpga set test002_partB_done=%x, j=%x", test002_partB_done, j);
-		end
-
-		//$finish;
-
-	end
-
-
-	// test003 : simulation the behavior of fpga axis_switch rx buffer full
-	// Step 1. soc provide data and valid=1 to fpga
-	// Step 2. fpga default send tready=1 to soc
-	// step 3. fpga set tready=0 (to simulation the behavior of fpga axis_switch rx buffer full)
-	// step 4. soc provide valid=0 to fpga
-	// step 5. fpga set tready=1
-	// step 6. soc provide data and valid=1 to fpga
-
-	// test003_partA : soc side - TX/RX test with tready toggle
-	reg[31:0] test003_partA_done, test003_partB_done;
-	reg[31:0]idx3;
-	reg[31:0] m;
-	initial begin
-		//$monitor($time, "=>soc_as_is_tdata=%x, soc_as_is_tvalid=%b, soc_as_is_tready=%b, soc_is_as_tready=%b", soc_as_is_tdata, soc_as_is_tvalid, soc_as_is_tready, soc_is_as_tready);
-		#2000;
-		
-		for (m=0;m<TEST003_CNT;m=m+1) begin
-
-			
-			while (test_seq < (m+TEST003_START)) begin
-				@ (posedge soc_coreclk);
-				//$display($time, "=> soc wait test_seq=%x, m=%x", test_seq, m);
-			end
-			$display("test003_partA : soc side - TX/RX test with tready toggle");
-			soc_apply_reset(40+m*10, 40);			//change coreclk phase in soc
-
-			#40;
-			soc_cc_is_enable=1;
-			soc_cfg_write(0,1,1,0);
-			$display($time, "=> soc rxen_ctl=1");
-			#400;
-			soc_cfg_write(0,3,1,0);
-			$display($time, "=> soc txen_ctl=1");
-			#200;
-			soc_as_is_tdata = 32'h5a5a5a5a;
-			
-			@ (posedge soc_coreclk);
-			
-			// wait util soc_is_as_tready == 1 then change data
-			for(idx3=0; idx3<16; idx3=idx3+1)begin
-				soc_as_is_tdata <=  idx3 * 32'h11111111;
-				soc_as_is_tstrb <=  idx3 * 4'h1;
-				soc_as_is_tkeep <=  idx3 * 4'h1;
-				soc_as_is_tid <=  idx3 * 2'h1;
-				soc_as_is_tuser <=  idx3 * 2'h1;
-				soc_as_is_tlast <=  idx3 * 1'h1;
-				soc_as_is_tvalid <= 1;
-				
-				@ (posedge soc_coreclk);
-				while (soc_is_as_tready == 0) begin
-						@ (posedge soc_coreclk);
-				end
-			end
-			soc_as_is_tvalid <= 0;
-
-			#200;
-			
-			test003_partA_done = m;
-			$display($time, "=> soc set test003_partA_done=%x, m=%x", test003_partA_done, m);
-		end
-		
-
-		//$finish;
-
-	end
-
-	// test003_partB : fpga side RX/TX test
-	reg[31:0]idx4;
-	reg[7:0]as_fifo_cnt;
-	reg[31:0] n;
-	initial begin
-		//$monitor($time, "=>fpga_as_is_tdata=%x, fpga_as_is_tvalid=%b, fpga_as_is_tready=%b, as_fifo_cnt=%d, fpga_is_as_tready=%b, fpga_is_as_tvalid=%b",fpga_as_is_tdata, fpga_as_is_tvalid, fpga_as_is_tready, as_fifo_cnt, fpga_is_as_tready, fpga_is_as_tvalid);
-		#2000;
-		
-		for (n=0; n<TEST003_CNT; n=n+1) begin
-
-			while (test_seq < (n+TEST003_START)) begin
-				@ (posedge soc_coreclk);
-				//$display($time, "=> fpga wait test_seq=%x, n=%x", test_seq, n);
-			end
-
-
-			$display("fpga side - TX/RX test");
-			fpga_apply_reset(40,40);		//fix coreclk phase in fpga
-			
-			as_fifo_cnt = 0;
-
-			#40;
-			fpga_cc_is_enable=1;
-			fpga_cfg_write(0,1,1,0);
-			$display($time, "=> fpga rxen_ctl=1");
-			#400;
-			fpga_cfg_write(0,3,1,0);
-			$display($time, "=> fpga txen_ctl=1");
-			#200;
-
-			fpga_as_is_tdata = 32'h5a5a5a5a;
-			fpga_as_is_tready = 1;
-
-			@ (posedge fpga_coreclk);
-			while ( fpga_is_as_tvalid == 0) begin
-				@ (posedge fpga_coreclk);
-			end
-
-			//for Axis Switch Rx
-			for(idx4=0; idx4<16; idx4=idx4+1)begin
-				if (fpga_is_as_tvalid)
-					as_fifo_cnt = as_fifo_cnt + 1;
-					
-				if (as_fifo_cnt == 4 && fpga_is_as_tvalid )  begin
-						fpga_as_is_tready <= 0;
-						repeat(20) @ (posedge fpga_coreclk); //wait for 20 coreclk
-						fpga_as_is_tready <= 1;
-						as_fifo_cnt = as_fifo_cnt + 1;  //add as_fifo_cnt to avoid enter
-				end
-				else fpga_as_is_tready <= 1;
-
-				$display($time, "=> fpga fpga_as_is_tready=%b, idx4=%x, as_fifo_cnt=%x", fpga_as_is_tready, idx4, as_fifo_cnt);
-				@ (posedge fpga_coreclk);
-
-			end
-
-			#200;
-			test003_partB_done = n;
-			$display($time, "=> fpga set test003_partB_done=%x, n=%x", test003_partB_done, n);
-			
-		end
-
-		//$finish;
-
-	end
-
 	
 
 	always #(ioclk_pd/2) ioclk = ~ioclk;
