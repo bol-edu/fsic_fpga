@@ -38,6 +38,7 @@ module fsic_io_serdes_rx#(
 	reg [$clog2(pRxFIFO_DEPTH)-1:0] w_ptr;
 	reg w_ptr_pre;
 	reg w_ptr_sync;
+	wire rx_shift_reg_valid;
 
 	wire w_ptr_graycode_bit0;
 
