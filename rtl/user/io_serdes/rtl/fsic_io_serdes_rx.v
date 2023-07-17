@@ -30,8 +30,8 @@ module fsic_io_serdes_rx#(
 		input wire 	ioclk,
 		input wire 	coreclk,
 		input wire 	Serial_Data_in,
-		output 	[pCLK_RATIO-1:0] rxdata_out,
-		output 	rxdata_out_valid
+		output wire 	[pCLK_RATIO-1:0] rxdata_out,
+		output wire 	rxdata_out_valid
 	);
 
 

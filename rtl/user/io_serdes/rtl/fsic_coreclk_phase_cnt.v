@@ -26,7 +26,7 @@ module fsic_coreclk_phase_cnt#(
 		input wire 	axis_rst_n,
 		input wire 	ioclk,
 		input wire 	coreclk,
-		output 	[$clog2(pCLK_RATIO)-1:0] phase_cnt_out
+		output wire	[$clog2(pCLK_RATIO)-1:0] phase_cnt_out
 	);
 
     reg [pCLK_RATIO-1:0] clk_seq;

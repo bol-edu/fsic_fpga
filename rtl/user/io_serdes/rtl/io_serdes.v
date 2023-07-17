@@ -100,7 +100,15 @@ module IO_SERDES #(
 	);
 
 	localparam pSERIALIO_TDATA_WIDTH	= pDATA_WIDTH/pCLK_RATIO;
-
+	
+	wire coreclk;
+	wire txclk;
+	wire rxclk;
+	wire axi_awvalid_in;
+	wire axi_wvalid_in;
+	wire txen_out;
+	wire txclk;
+	
 	assign coreclk = axis_clk;
 	assign serial_tclk = txclk;
 	assign rxclk = serial_rclk;
