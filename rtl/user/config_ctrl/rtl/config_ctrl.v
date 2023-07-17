@@ -119,11 +119,11 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	wire [31:0] m_axi_rdata;
 	wire m_axi_rvalid;
 	
-	reg cc_enable;
-	reg cc_sub_enable;
+	wire cc_enable;
+	wire cc_sub_enable;
 	
 	reg [2:0] cc_s_fsm_reg;	
-	reg [12:0] cc_s_addr;
+	reg [11:0] cc_s_addr;
 	reg [31:0] cc_s_wdata;
 	reg [31:0] cc_s_rdata;
 	
@@ -151,10 +151,6 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	reg [14: 0] axi_araddr_o = 15'b0;
 	reg axi_rready_o = 1'b0;
 	
-    reg cc_aa_enable_o;
-	reg cc_is_enable_o;
-	reg cc_la_enable_o;
-	reg cc_up_enable_o;
 	reg [4: 0] user_prj_sel_o = 5'b0;
 	
 	reg wbs_ack_o;
@@ -182,6 +178,9 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	assign m_axi_rdata = (((((({32{cc_up_enable}} & axi_rdata2) | ({32{cc_la_enable}} & axi_rdata0)) | ({32{cc_aa_enable}} & axi_rdata1)) | ({32{cc_is_enable}} & axi_rdata3)) | ({32{cc_enable}} & axi_rdata4)) | ({32{cc_sub_enable}} & 32'hFFFFFFFF));
 	assign m_axi_rvalid = (((((({1{cc_up_enable}} & axi_rvalid2) | ({1{cc_la_enable}} & axi_rvalid0)) | ({1{cc_aa_enable}} & axi_rvalid1)) | ({1{cc_is_enable}} & axi_rvalid3)) | ({1{cc_enable}} & axi_rvalid4)) | ({1{cc_sub_enable}} & axi_arvalid));
 	
+	assign cc_enable = ( m_axi_request_add[31:12] == 20'h30004 )? 1'b1 : 1'b0;
+	assign cc_sub_enable = ( (m_axi_request_add[31:12] >= 20'h30005) && (m_axi_request_add[31:12] <= 20'h3FFFF ) )? 1'b1 : 1'b0;	
+	
 	////////////////////////////////
 	// Assignment for Ports begin //
 	////////////////////////////////
@@ -199,9 +198,9 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	assign axi_araddr = axi_araddr_o;
 	assign axi_rready = axi_rready_o;
 	
-	assign cc_aa_enable = cc_aa_enable_o;	assign cc_is_enable = cc_is_enable_o;
-	assign cc_la_enable = cc_la_enable_o;
-	assign cc_up_enable = cc_up_enable_o;
+	assign cc_aa_enable = ( m_axi_request_add[31:12] == 20'h30002 )? 1'b1 : 1'b0;	assign cc_is_enable = ( m_axi_request_add[31:12] == 20'h30003 )? 1'b1 : 1'b0;
+	assign cc_la_enable = ( m_axi_request_add[31:12] == 20'h30001 )? 1'b1 : 1'b0;
+	assign cc_up_enable = ( m_axi_request_add[31:12] == 20'h30000 )? 1'b1 : 1'b0;
 	assign user_prj_sel = user_prj_sel_o;
 	
 	assign wbs_ack = wbs_ack_o;
@@ -261,6 +260,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 						else
 							wb_axi_wdata <= 32'h0;
 						wb_axi_request <= 1'b0;
+						wb_axi_request_add <= 32'b0;
 						wb_fsm_reg <= wb_fsm_idle;						
 					end
 				end
@@ -310,7 +310,8 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 					if ( aa_cfg_rready && f_axi_request_done ) begin
 						aa_cfg_rdata_o <= f_axi_rdata;			//Output aa_cfg_rdata_o
 						aa_cfg_rvalid_o <= 1'b1;
-						f_axi_request <= 1'b0;						
+						f_axi_request <= 1'b0;	
+						f_axi_request_add <= 32'b0;
 						f_axi_fsm_reg <= axi_fsm_read_complete;						
 					end
 				end
@@ -336,7 +337,8 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 				begin
 					if ( f_axi_request_done ) begin
 						aa_cfg_wready_o <= 1'b1;
-						f_axi_request <= 1'b0;						
+						f_axi_request <= 1'b0;		
+						f_axi_request_add <= 32'b0;
 						f_axi_fsm_reg <= axi_fsm_idle;								
 					end
 				end
@@ -489,36 +491,6 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 		end
 	end
 
-	////////////////////////////////////////////////////
-	// Always for Target Selection Interface handling //
-	////////////////////////////////////////////////////
-	always @( posedge axi_clk or negedge axi_reset_n )
-	begin
-		if ( !axi_reset_n ) begin			cc_up_enable_o <= 1'b0;
-			cc_la_enable_o <= 1'b0;
-			cc_aa_enable_o <= 1'b0;
-			cc_is_enable_o <= 1'b0;
-			cc_enable <= 1'b0;
-			cc_sub_enable <= 1'b0;
-		end else begin
-			if ( !m_axi_request ) begin
-			cc_up_enable_o <= 1'b0;
-			cc_la_enable_o <= 1'b0;
-			cc_aa_enable_o <= 1'b0;
-			cc_is_enable_o <= 1'b0;
-			cc_enable <= 1'b0;
-			cc_sub_enable <= 1'b0;
-			end else begin
-				if ( m_axi_request_add[31:12] == 20'h30000 ) cc_up_enable_o <= 1'b1;
-				if ( m_axi_request_add[31:12] == 20'h30001 ) cc_la_enable_o <= 1'b1;
-				if ( m_axi_request_add[31:12] == 20'h30002 ) cc_aa_enable_o <= 1'b1;
-				if ( m_axi_request_add[31:12] == 20'h30003 ) cc_is_enable_o <= 1'b1;
-				if ( m_axi_request_add[31:12] == 20'h30004 ) cc_enable <= 1'b1;
-				if ( (m_axi_request_add[31:12] >= 20'h30005) && (m_axi_request_add[31:12] <= 20'h3FFFF )) cc_sub_enable <= 1'b1;				
-			end
-		end
-	end	
-	
 	///////////////////////////////////////////
 	// Always for AXI-Lite CC Slave response //
 	///////////////////////////////////////////	
@@ -536,17 +508,17 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 				begin
 					if ( axi_arvalid ) begin
 						axi_arready4 <= 1'b1;
-						cc_s_addr <= axi_araddr;
+						cc_s_addr <= axi_araddr[11:0];
 						cc_s_fsm_reg <= axi_fsm_read_data;						
 					end else if ( axi_awvalid && axi_wvalid ) begin
 						axi_wready4 <= 1'b1;							
 						axi_awready4 <= 1'b1;
-						cc_s_addr <= axi_awaddr;	
+						cc_s_addr <= axi_awaddr[11:0];	
 						cc_s_wdata <= axi_wdata;	
 						cc_s_fsm_reg <= axi_fsm_write_complete;
 					end else if ( axi_awvalid ) begin
 						axi_awready4 <= 1'b1;
-						cc_s_addr <= axi_awaddr;
+						cc_s_addr <= axi_awaddr[11:0];
 						cc_s_fsm_reg <= axi_fsm_write_data;						
 					end
 				end
