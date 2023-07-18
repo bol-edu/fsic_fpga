@@ -327,7 +327,7 @@ module IO_SERDES #(
 
 
 // For Rx Path
-
+	wire rxdata_out_valid[pSERIALIO_TDATA_WIDTH+2:0];		//add dummy connection to avoid WARNING message by xelab
 
 	reg	rxen;
 
@@ -359,8 +359,8 @@ module IO_SERDES #(
 				.ioclk(ioclk),
 				.coreclk(coreclk),
 				.Serial_Data_in(Serial_Data_In_tdata[i]),
-				.rxdata_out(is_as_tdata[i*4+3:i*4])
-//				.rxdata_out_valid(rxdata_out_valid)
+				.rxdata_out(is_as_tdata[i*4+3:i*4]),
+				.rxdata_out_valid(rxdata_out_valid[i])
 			);
 
 		end
@@ -378,8 +378,8 @@ module IO_SERDES #(
 		.ioclk(ioclk),
 		.coreclk(coreclk),
 		.Serial_Data_in(Serial_Data_In_tstrb),
-		.rxdata_out(is_as_tstrb)
-//		.rxdata_out_valid(rxdata_out_valid)
+		.rxdata_out(is_as_tstrb),
+		.rxdata_out_valid(rxdata_out_valid[pSERIALIO_TDATA_WIDTH])
 	);
 
 
@@ -394,8 +394,8 @@ module IO_SERDES #(
 		.ioclk(ioclk),
 		.coreclk(coreclk),
 		.Serial_Data_in(Serial_Data_In_tkeep),
-		.rxdata_out(is_as_tkeep)
-//		.rxdata_out_valid(rxdata_out_valid)
+		.rxdata_out(is_as_tkeep),
+		.rxdata_out_valid(rxdata_out_valid[pSERIALIO_TDATA_WIDTH+1])
 	);
 
 	fsic_io_serdes_rx  #(
@@ -409,8 +409,8 @@ module IO_SERDES #(
 		.ioclk(ioclk),
 		.coreclk(coreclk),
 		.Serial_Data_in(Serial_Data_In_tid_tuser),
-		.rxdata_out( {is_as_tid[1:0], is_as_tuser[1:0]})
-//		.rxdata_out_valid(rxdata_out_valid)
+		.rxdata_out( {is_as_tid[1:0], is_as_tuser[1:0]}),
+		.rxdata_out_valid(rxdata_out_valid[pSERIALIO_TDATA_WIDTH+2])
 	);
 
     wire is_as_dummy;
