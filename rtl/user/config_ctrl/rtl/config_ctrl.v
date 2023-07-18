@@ -80,6 +80,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	// Top AXI-Lite Signals //
 	//////////////////////////		
 	input  wire          user_clock2,
+	input  wire          uck2_rst_n,
 	input  wire          axi_clk,
 	input  wire          axi_reset_n
 );
