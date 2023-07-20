@@ -17,7 +17,8 @@
 // Additional Comments:
 //
 //////////////////////////////////////////////////////////////////////////////////
-
+// 20230720
+// 1. change pADDR_WIDTH=15 and use [pADDR_WIDTH-1:0] for *_axi_awaddr and *_axi_araddr
 // 20230714
 // 1. add pADDR_WIDTH and pDATA_WIDTH
 // 2. change [pADDR_WIDTH+1:2] *_axi_awaddr to [pADDR_WIDTH+1:2] *_axi_awaddr for DW base address
@@ -62,7 +63,7 @@
 //test002 : soc to fpga TX/RX test with change coreclk phase
 module fsic_tb_soc_to_fpga #(
 		parameter pSERIALIO_WIDTH   = 12,
-		parameter pADDR_WIDTH   = 10,
+		parameter pADDR_WIDTH   = 15,
 		parameter pDATA_WIDTH   = 32,
 		parameter IOCLK_Period	= 10,
 		parameter DLYCLK_Period	= 1,
@@ -96,7 +97,7 @@ module fsic_tb_soc_to_fpga #(
 	
 	//write addr channel
 	reg soc_axi_awvalid;
-	reg [pADDR_WIDTH+1:2] soc_axi_awaddr;
+	reg [pADDR_WIDTH-1:0] soc_axi_awaddr;
 	wire soc_axi_awready;
 	
 	//write data channel
@@ -107,7 +108,7 @@ module fsic_tb_soc_to_fpga #(
 	
 	//read addr channel
 	reg 	soc_axi_arvalid;
-	reg 	[pADDR_WIDTH+1:2] soc_axi_araddr;
+	reg 	[pADDR_WIDTH-1:0] soc_axi_araddr;
 	wire 	soc_axi_arready;
 	
 	//read data channel
@@ -120,7 +121,7 @@ module fsic_tb_soc_to_fpga #(
 
 	//write addr channel
 	reg fpga_axi_awvalid;
-	reg [pADDR_WIDTH+1:2] fpga_axi_awaddr;
+	reg [pADDR_WIDTH-1:0] fpga_axi_awaddr;
 	wire fpga_axi_awready;
 	
 	//write data channel
@@ -131,7 +132,7 @@ module fsic_tb_soc_to_fpga #(
 	
 	//read addr channel
 	reg 	fpga_axi_arvalid;
-	reg 	[pADDR_WIDTH+1:2] fpga_axi_araddr;
+	reg 	[pADDR_WIDTH-1:0] fpga_axi_araddr;
 	wire 	fpga_axi_arready;
 	
 	//read data channel
@@ -429,9 +430,9 @@ module fsic_tb_soc_to_fpga #(
 			soc_cfg_write(0,3,1,0);		//write offset 0 = 3
 			soc_compare_data = 3;		//read offset 0 result should be 3, other offset is reserved and result equal to offset 0
 			soc_cfg_read(0,0);			//read offset 0
-			soc_cfg_read(1,0);			//read offset 4
-			soc_cfg_read(2,0);			//read offset 8
-			soc_cfg_read(3,0);			//read offset 12
+			soc_cfg_read(4,0);			//read offset 4
+			soc_cfg_read(8,0);			//read offset 8
+			soc_cfg_read(12,0);			//read offset 12
 
 
 			//burst write/read test
@@ -821,7 +822,7 @@ module fsic_tb_soc_to_fpga #(
 		
 
 	task soc_cfg_write_addr;		//input addr and valid_delay 
-		input [pADDR_WIDTH+1:2] axi_awaddr;
+		input [pADDR_WIDTH-1:0] axi_awaddr;
 		input [7:0] valid_delay;
 		
 		begin
@@ -866,7 +867,7 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 
 	task soc_cfg_write;		//input addr, data, strb and valid_delay 
-		input [pADDR_WIDTH+1:2] axi_awaddr;
+		input [pADDR_WIDTH-1:0] axi_awaddr;
 		input [pDATA_WIDTH-1:0] axi_wdata;
 		input [3:0] axi_wstrb;
 		input [7:0] valid_delay;
@@ -895,7 +896,7 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 
 	task fpga_cfg_write;		//input addr, data, strb and valid_delay 
-		input [pADDR_WIDTH+1:2] axi_awaddr;
+		input [pADDR_WIDTH-1:0] axi_awaddr;
 		input [pDATA_WIDTH-1:0] axi_wdata;
 		input [3:0] axi_wstrb;
 		input [7:0] valid_delay;
@@ -923,7 +924,7 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 
 	task soc_cfg_read;		//input addr and valid_delay 
-		input [pADDR_WIDTH+1:2] axi_araddr;
+		input [pADDR_WIDTH-1:0] axi_araddr;
 		input [7:0] valid_delay;
 		//input [7:0] compare_data;
 		
