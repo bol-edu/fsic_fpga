@@ -6,7 +6,6 @@
 module FSIC_CLKRST (
   input  wire  [4: 0] user_prj_sel,
   input  wire         mb_irq,
-  input  wire         user_prj_irq,
   input  wire         wb_rst,
   input  wire         wb_clk,
   output wire  [2: 0] user_irq,
@@ -67,9 +66,9 @@ assign uck2_rst_n = uck2_rst_nr[2];
 
 // ----------------------------------------------------------
 // IRQ
-assign user_irq[0] = user_prj_irq;
-assign user_irq[1] = mb_irq;
-assign user_irq[2] = 1'b0;           // TBD
+assign user_irq[0] = high_pri_irq;
+assign user_irq[1] = low__pri_irq;
+assign user_irq[2] = mb_irq;
 
 
 // ----------------------------------------------------------
