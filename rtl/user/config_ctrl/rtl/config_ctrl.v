@@ -127,7 +127,10 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	
 	wire cc_enable;
 	wire cc_sub_enable;
-	
+
+	wire cc_axi_awvalid;
+	wire cc_axi_wvalid;
+
 	reg [2:0] cc_s_fsm_reg;	
 	reg [11:0] cc_s_addr;
 	reg [31:0] cc_s_wdata;
