@@ -29,6 +29,7 @@ module tb_top;
 	reg [31:0] mem3 [0:255];
 	reg rxen_ctl;
 	reg txen_ctl;
+	reg [31:0] as_reg;
 
 	reg aa_cfg_awvalid;
 	reg [31:0] aa_cfg_awaddr;
@@ -50,6 +51,11 @@ module tb_top;
 	reg axi_arready1;
 	reg [31:0] axi_rdata1;
 	reg axi_rvalid1;
+	wire axi_wready4;		//for AXIL_SWITCH
+	wire axi_awready4;
+	wire axi_arready4;
+	wire [31:0] axi_rdata4;
+	wire axi_rvalid4;
 	wire axi_awready3;		//for IO_SERDES
 	wire axi_wready3;
 	wire axi_arready3;
@@ -75,7 +81,8 @@ module tb_top;
 	wire [14:0] axi_araddr;
 	wire axi_rready;	
 
-	wire cc_aa_enable;		
+	wire cc_aa_enable;
+	wire cc_as_enable;
 	wire cc_is_enable;
 	wire cc_la_enable;
 	wire cc_up_enable;
@@ -96,19 +103,31 @@ module tb_top;
 	wire axi_clk;
 	reg axi_reset_n;
 
-	wire axi_awvalid_in;
-	wire axi_wvalid_in;
+	wire axi_awvalid_is;
+	wire axi_wvalid_is;
+
+	wire axi_awvalid_as;
+	wire axi_wvalid_as;
 	
 	assign axi_clk = wb_clk;
 
-	assign axi_awvalid_in = axi_awvalid && cc_is_enable;
-	assign axi_wvalid_in = axi_wvalid && cc_is_enable;
+	assign axi_awvalid_is = axi_awvalid && cc_is_enable;
+	assign axi_wvalid_is = axi_wvalid && cc_is_enable;
 	
-	assign axi_awready3 = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;
-	assign axi_wready3 = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;
+	assign axi_awready3 = (axi_awvalid_is && axi_wvalid_is) ? 1 : 0;
+	assign axi_wready3 = (axi_awvalid_is && axi_wvalid_is) ? 1 : 0;
 	assign axi_arready3 = 1;
 	assign axi_rdata3 = { 30'b0, txen_ctl, rxen_ctl };
 	assign axi_rvalid3 = 1;	
+
+	assign axi_awvalid_as = axi_awvalid && cc_as_enable;
+	assign axi_wvalid_as = axi_wvalid && cc_as_enable;
+
+	assign axi_awready4 = (axi_awvalid_as && axi_wvalid_as) ? 1 : 0;
+	assign axi_wready4 = (axi_awvalid_as && axi_wvalid_as) ? 1 : 0;
+	assign axi_arready4 = 1;
+	assign axi_rdata4 = as_reg;
+	assign axi_rvalid4 = 1;
 
 	CFG_CTRL dut (
 		//////////////////////////////////////
@@ -136,6 +155,11 @@ module tb_top;
 		.axi_arready1(axi_arready1),
 		.axi_rdata1(axi_rdata1),
 		.axi_rvalid1(axi_rvalid1),
+		.axi_awready4(axi_awready4),		//for AXIL_SWITCH
+		.axi_wready4(axi_wready4),
+		.axi_arready4(axi_arready4),
+		.axi_rdata4(axi_rdata4),
+		.axi_rvalid4(axi_rvalid4),
 		.axi_awready3(axi_awready3),		//for IO_SERDES
 		.axi_wready3(axi_wready3),
 		.axi_arready3(axi_arready3),
@@ -163,7 +187,8 @@ module tb_top;
 		//////////////////////
 		// Target Selection //
 		//////////////////////
-		.cc_aa_enable(cc_aa_enable),		
+		.cc_aa_enable(cc_aa_enable),
+		.cc_as_enable(cc_as_enable),
 		.cc_is_enable(cc_is_enable),
 		.cc_la_enable(cc_la_enable),
 		.cc_up_enable(cc_up_enable),
@@ -219,8 +244,8 @@ module tb_top;
 		axi_wready2 = 1'b0;
 		axi_arready2 = 1'b0;
 		axi_rdata2 = 32'b0;
-        axi_rvalid2 = 1'b0;
-		
+		axi_rvalid2 = 1'b0;
+
 		wb_rst = 1'b0;
 		wb_clk = 1'b1;
 		wbs_adr = 32'b0;
@@ -264,7 +289,7 @@ module tb_top;
 		wbs_stb = 1'b1;
 		wbs_we = 1'b0;				
 
-        #10
+		#10
 		aa_cfg_awaddr = 32'h30001064;
 		aa_cfg_awvalid = 1'b1;
 		aa_cfg_wdata = 32'h1234567F;
@@ -276,7 +301,7 @@ module tb_top;
 		aa_cfg_araddr = 32'h30001064;
 		aa_cfg_rready = 1'b1;	
 		
-        #50		
+		#50		
 		wbs_adr = 32'h30002088;
 		wbs_wdata = 32'h5a5a5a5a;
 		wbs_sel = 4'b1111;
@@ -289,7 +314,7 @@ module tb_top;
 		aa_cfg_araddr = 32'h30002088;
 		aa_cfg_rready = 1'b1;		
 		
-        #50		
+		#50		
 		aa_cfg_arvalid = 1'b1;
 		aa_cfg_araddr = 32'h30003000;
 		aa_cfg_rready = 1'b1;
@@ -333,7 +358,7 @@ module tb_top;
 		wbs_stb = 1'b1;		
 		wbs_we = 1'b0;
 		
-        #50		
+		#50		
 		wbs_adr = 32'h30004004;
 		wbs_wdata = 32'h11223344;
 		wbs_sel = 4'b1111;
@@ -631,16 +656,37 @@ module tb_top;
 				end
 			endcase
 		end
-	end	
-	
+	end
+
+
+	// AXI-Lite AS Slave response
+	always @(posedge axi_clk or negedge axi_reset_n) begin
+		if ( !axi_reset_n ) begin
+			as_reg <= 0;
+		end
+		else begin
+			if ( axi_awvalid_as && axi_wvalid_as ) begin		//when axi_awvalid_in=1 and axi_wvalid_in=1 means axi_awready_out=1 and axi_wready_out=1
+				if (axi_awaddr[11:0] == 12'h000 ) begin //offset 0
+					if ( axi_wstrb[0] == 1 ) as_reg[7:0] <= axi_wdata[7:0];
+					if ( axi_wstrb[1] == 1 ) as_reg[15:8] <= axi_wdata[15:8];
+					if ( axi_wstrb[2] == 1 ) as_reg[23:16] <= axi_wdata[23:16];
+					if ( axi_wstrb[3] == 1 ) as_reg[31:24] <= axi_wdata[31:24];
+				end
+				else begin
+					as_reg <= as_reg;
+				end
+			end
+		end
+	end
+
 	// AXI-Lite IS Slave response
-    always @(posedge axi_clk or negedge axi_reset_n) begin
-        if ( !axi_reset_n ) begin
-            rxen_ctl <= 0;
-            txen_ctl <= 0;
-        end
-        else begin
-			if ( axi_awvalid_in && axi_wvalid_in ) begin		//when axi_awvalid_in=1 and axi_wvalid_in=1 means axi_awready_out=1 and axi_wready_out=1
+    	always @(posedge axi_clk or negedge axi_reset_n) begin
+        	if ( !axi_reset_n ) begin
+        	    rxen_ctl <= 0;
+        	    txen_ctl <= 0;
+        	end
+        	else begin
+			if ( axi_awvalid_is && axi_wvalid_is ) begin		//when axi_awvalid_in=1 and axi_wvalid_in=1 means axi_awready_out=1 and axi_wready_out=1
 				if (axi_awaddr[11:0] == 12'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
 					rxen_ctl <= axi_wdata[0];
 					txen_ctl <= axi_wdata[1];
@@ -650,7 +696,7 @@ module tb_top;
 					txen_ctl <= txen_ctl;
 				end
 			end
-        end
-    end
+        	end
+	end
 	
 endmodule
