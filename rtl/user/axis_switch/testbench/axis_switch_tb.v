@@ -28,6 +28,31 @@ parameter   TID_WIDTH = 2;
 parameter   VALID_WS_LEN = 2;
 
 reg o_clk, o_rst_n;
+
+//for axi_lite
+//write address channel
+reg 	soc_axi_awvalid;
+reg 	[14:0] soc_axi_awaddr;		
+wire	soc_axi_awready;
+
+//write data channel
+reg 	soc_axi_wvalid;
+reg 	[DATA_WIDTH-1:0] soc_axi_wdata;
+reg 	[(DATA_WIDTH/8)-1:0] soc_axi_wstrb;
+wire	soc_axi_wready;
+
+//read addr channel
+reg 	soc_axi_arvalid;
+reg 	[14:0] soc_axi_araddr;
+wire soc_axi_arready;
+
+//read data channel
+wire soc_axi_rvalid;
+wire [DATA_WIDTH-1:0] soc_axi_rdata;
+reg 	soc_axi_rready;
+
+reg 	soc_cc_as_enable;		//axi_lite enable       
+
 /*
 *for Aribter
 */
@@ -89,6 +114,60 @@ wire [USER_WIDTH-1:0] aa_user;
 reg aa_ready;
 
 reg start_test; 
+
+//axi_lite
+task soc_cfg_write;		//input addr, data, strb and valid_delay 
+	input [14:0] axi_awaddr;
+	input [DATA_WIDTH-1:0] axi_wdata;
+	input [3:0] axi_wstrb;
+	input [7:0] valid_delay;
+	
+	begin
+		soc_axi_awaddr <= axi_awaddr;
+		soc_axi_awvalid <= 0;
+		soc_axi_wdata <= axi_wdata;
+		soc_axi_wstrb <= axi_wstrb;
+		soc_axi_wvalid <= 0;
+		repeat (valid_delay) @ (posedge o_clk);
+		soc_axi_awvalid <= 1;
+		soc_axi_wvalid <= 1;
+		@ (posedge o_clk);
+		while (soc_axi_awready == 0) begin		//assume both soc_axi_awready and soc_axi_wready assert as the same time.
+			@ (posedge o_clk);
+		end
+		$display($time, "=> soc_cfg_write : soc_axi_awaddr=%x, soc_axi_awvalid=%b, soc_axi_awready=%b, soc_axi_wdata=%x, axi_wstrb=%x, soc_axi_wvalid=%b, soc_axi_wready=%b", soc_axi_awaddr, soc_axi_awvalid, soc_axi_awready, soc_axi_wdata, axi_wstrb, soc_axi_wvalid, soc_axi_wready); 
+		soc_axi_awvalid <= 0;
+		soc_axi_wvalid <= 0;
+	end
+endtask
+
+task soc_cfg_read;		//input addr and valid_delay 
+	input [14:0] axi_araddr;
+	input [7:0] valid_delay;
+	
+	begin
+		soc_axi_araddr <= axi_araddr;
+		soc_axi_arvalid <= 0;
+		soc_axi_rready <= 0;
+		repeat (valid_delay) @ (posedge o_clk);
+		soc_axi_arvalid <= 1;
+		@ (posedge o_clk);
+		while (soc_axi_arready == 0) begin		
+				@ (posedge o_clk);
+		end
+		$display($time, "=> soc_cfg_read : soc_axi_araddr=%x, soc_axi_arvalid=%b, soc_axi_arready=%b", soc_axi_araddr, soc_axi_arvalid, soc_axi_arready); 
+		
+		soc_axi_arvalid <= 0;
+		repeat (valid_delay) @ (posedge o_clk);
+		soc_axi_rready <= 1;
+		@ (posedge o_clk);
+		while (soc_axi_rvalid == 0) begin		
+				@ (posedge o_clk);
+		end
+		$display($time, "=> soc_cfg_read : soc_axi_rdata=%x, soc_axi_rready=%b, soc_axi_rvalid=%b", soc_axi_rdata, soc_axi_rready, soc_axi_rvalid); 
+		soc_axi_rready <= 0;
+	end
+endtask
 
 task axis_tx;
     input [DATA_WIDTH-1:0] data_in;
@@ -371,7 +450,29 @@ begin
 	o_clk = 0;
 	o_rst_n = 1'b0;
 	#100 o_rst_n = 1;
-	#100 
+	#50 
+    //for axi_lite
+    //write addr channel
+    soc_axi_awvalid = 0;
+    soc_axi_awaddr = 0;
+    //write data channel
+    soc_axi_wvalid = 0;
+    soc_axi_wdata = 0;
+    soc_axi_wstrb = 0;
+    //read addr channel
+    soc_axi_arvalid = 0;
+    soc_axi_araddr = 0;
+    //read data channel
+    soc_axi_rready = 0;
+    
+    soc_cc_as_enable = 0;
+    
+    #100;
+    soc_cc_as_enable = 1;
+    soc_cfg_write(0,0,1,0);		//write offset 0 = 0
+    soc_cfg_read(0,0);			//read offset 0
+    soc_cfg_write(0,4,1,0);		//write offset 0 = 4
+    soc_cfg_read(0,0);			//read offset 0
 
     //data, strb, keep, user, tlast, hi_req, wait	
 	axis_tx_hi_req(16'h2221, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00);  
@@ -389,7 +490,7 @@ end
 initial
 begin
     //data, strb, keep, user, tlast, wait	
-    #4000 	  
+    #5000 	  
 	axis_tx(16'h1111, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00);
 	axis_tx(16'h1112, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00); 	  	
 	axis_tx(16'h1113, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00);  
@@ -403,7 +504,7 @@ end
 
 initial
 begin
-#200
+#1000
 	axis_tx1(16'h3331, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00);
 	axis_tx1(16'h3332, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00); 	  	
 	axis_tx1(16'h3333, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00);  
@@ -417,7 +518,7 @@ end
 
 initial
 begin
-#200
+#1000
 	axis_tx_hi_req2(16'h6661, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
 	axis_tx_hi_req2(16'h6662, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
 	axis_tx_hi_req2(16'h6663, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
@@ -433,7 +534,7 @@ end
 initial
 begin
     //data, strb, keep, user, tlast, wait	
-    #4000 	  
+    #5000 	  
 	axis_tx2(16'h5551, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00);
 	axis_tx2(16'h5552, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00); 	  	
 	axis_tx2(16'h5553, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00);  
@@ -452,7 +553,7 @@ begin
 	o_clk = 0;
 	o_rst_n = 1'b0;
 	#100 o_rst_n = 1;
-	#10 
+	#1000 
 
     //data, strb, keep, tlast, tid, user, wait 
 	is_axis_tx(16'h2221, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
@@ -499,6 +600,21 @@ end
 AXIS_SW uut_AXIS_SW(
 .axi_reset_n(o_rst_n),
 .axis_clk(o_clk),
+//axi_lite interface
+.axi_awvalid(soc_axi_awvalid),
+.axi_awaddr(soc_axi_awaddr),
+.axi_awready(soc_axi_awready),
+.axi_wvalid(soc_axi_wvalid),
+.axi_wdata(soc_axi_wdata),
+.axi_wstrb(soc_axi_wstrb),
+.axi_wready(soc_axi_wready),
+.axi_arvalid(soc_axi_arvalid),
+.axi_araddr(soc_axi_araddr),
+.axi_arready(soc_axi_arready),
+.axi_rvalid(soc_axi_rvalid),
+.axi_rdata(soc_axi_rdata),
+.axi_rready(soc_axi_rready),
+.cc_as_enable(soc_cc_as_enable),
 //Upstream for axis arbiter
 .up_as_tdata(data_0),
 .up_as_tstrb(strb_0),
