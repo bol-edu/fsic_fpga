@@ -32,6 +32,7 @@ class axil_axis_driver;
         bit [1:0] user;
         bit tlast;
         //event evt_wr_addr, evt_wr_data;
+        semaphore key = new(1);
 
         init_bus();
 
@@ -60,6 +61,8 @@ class axil_axis_driver;
                     fork // write
                         begin // wr addr
                             @(posedge intf.axi_ls_aclk);
+                            key.get(1);
+                            intf.cc_aa_enable = 1;
                             intf.axi_ls_awaddr = wr_tr.wr_addr;
                             intf.axi_ls_awvalid = 1;
                             
@@ -69,6 +72,8 @@ class axil_axis_driver;
                                     #(BUS_DELAY);
                                     intf.axi_ls_awaddr = 0;
                                     intf.axi_ls_awvalid = 0;
+                                    intf.cc_aa_enable = 0;
+                                    key.put(1); // ????????????
                                     break;
                                 end
                             end
@@ -108,6 +113,8 @@ class axil_axis_driver;
                     fork // read
                         begin // rd addr
                             @(posedge intf.axi_ls_aclk);
+                            key.get(1);
+                            intf.cc_aa_enable = 1;
                             intf.axi_ls_araddr = rd_tr.rd_addr;
                             intf.axi_ls_arvalid = 1;
                             
@@ -117,6 +124,8 @@ class axil_axis_driver;
                                     #(BUS_DELAY);
                                     intf.axi_ls_araddr = 0;
                                     intf.axi_ls_arvalid = 0;
+                                    intf.cc_aa_enable = 0;
+                                    key.put(1); // ????????????
                                     break;
                                 end
                             end
@@ -267,7 +276,7 @@ class axil_axis_driver;
         intf.axi_ls_araddr = 0;
         intf.axi_ls_rready = 0;
         intf.cc_aa_enable = 0;
-        force `dut.axi_ctrl_logic.bk_ss_ready = 1; //??????????
+        //force `dut.axi_ctrl_logic.bk_ss_ready = 1; //??????????
 
         // SM
         intf.axis_sm_tready = 0;
