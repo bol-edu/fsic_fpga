@@ -17,6 +17,8 @@
 // Additional Comments:
 //
 //////////////////////////////////////////////////////////////////////////////////
+// 20230720
+// 1. change pADDR_WIDTH=15 and use [pADDR_WIDTH-1:0] for *_axi_awaddr and *_axi_araddr
 // 20230714
 // 1. change [pADDR_WIDTH-1:0] axi_awaddr to [pADDR_WIDTH+1:2] axi_awaddr for DW base address
 // 2. add pSERIALIO_WIDTH and pSERIALIO_TDATA_WIDTH
@@ -31,7 +33,7 @@
 
 module IO_SERDES #(
 		parameter pSERIALIO_WIDTH   = 12,
-		parameter pADDR_WIDTH   = 10,
+		parameter pADDR_WIDTH   = 15,
 		parameter pDATA_WIDTH   = 32,
 		parameter pRxFIFO_DEPTH = 5,
 		parameter pCLK_RATIO =4
@@ -48,7 +50,7 @@ module IO_SERDES #(
 
 		//write addr channel
 		input wire 	axi_awvalid,
-		input wire 	[pADDR_WIDTH+1:2] axi_awaddr,		//axi_awaddr is DW address
+		input wire 	[pADDR_WIDTH-1:0] axi_awaddr,		//axi_awaddr is DW address
 		output wire	axi_awready,
 
 		//write data channel
@@ -59,7 +61,7 @@ module IO_SERDES #(
 
 		//read addr channel
 		input wire 	axi_arvalid,
-		input wire 	[pADDR_WIDTH+1:2] axi_araddr,
+		input wire 	[pADDR_WIDTH-1:0] axi_araddr,
 		output wire 	axi_arready,
 
 		//read data channel
@@ -158,7 +160,7 @@ module IO_SERDES #(
 		end
 		else begin
 			if ( axi_awvalid_in && axi_wvalid_in ) begin		//when axi_awvalid_in=1 and axi_wvalid_in=1 means axi_awready_out=1 and axi_wready_out=1
-				if (axi_awaddr == 10'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
+				if (axi_awaddr == 15'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
 					rxen_ctl <= axi_wdata[0];
 					txen_ctl <= axi_wdata[1];
 				end
