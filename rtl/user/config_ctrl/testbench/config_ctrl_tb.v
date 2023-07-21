@@ -339,6 +339,13 @@ module tb_top;
 		aa_cfg_wstrb = 4'b1111;
 		aa_cfg_wvalid = 1'b1;		
 		
+		#50
+		aa_cfg_awaddr = 32'h30005000;
+		aa_cfg_awvalid = 1'b1;
+		aa_cfg_wdata = 32'h7878787F;
+		aa_cfg_wstrb = 4'b1111;
+		aa_cfg_wvalid = 1'b1;			
+		
 		#10
 		wbs_adr = 32'h30005000;
 		wbs_cyc = 1'b1;
