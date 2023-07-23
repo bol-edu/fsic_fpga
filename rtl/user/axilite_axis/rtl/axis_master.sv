@@ -11,6 +11,7 @@ module axi_fifo#(WIDTH=8, DEPTH=8)(
     input wire rst_n,
     input wire wr_vld,
     input wire rd_rdy,
+    input wire hack, // ???????????????
     input wire clear,
     input wire [WIDTH - 1:0] data_in,
     output logic [WIDTH - 1:0] data_out,
@@ -76,14 +77,24 @@ module axi_fifo#(WIDTH=8, DEPTH=8)(
         wr_rdy = 1'b0;
         rd_vld = 1'b0;
 
-        if((wr_count - rd_count) > 8'h1) // can be read, end of transaction, avoid to send one more clock data, becasue we send data then update rd_pointer, the last data is already sent
-            rd_vld = 1'b1;
-        else if(wr_count == 8'h1 && rd_count == 8'h0 && ~sync_rd_vld) // fix bug for short transaction only have one clock data
-            rd_vld = 1'b1;
-        else
-            rd_vld = 1'b0;
+        if(hack)begin // for axis_master
+            if((wr_count - rd_count) > 8'h1) // can be read, end of transaction, avoid to send one more clock data, becasue we send data then update rd_pointer, the last data is already sent
+                rd_vld = 1'b1;
+            else if(wr_count == 8'h1 && rd_count == 8'h0 && ~sync_rd_vld) // fix bug for short transaction only have one clock data
+                rd_vld = 1'b1;
+            else
+                rd_vld = 1'b0;
+        end
+        else begin // for control_logic
+            if((wr_count - rd_count) > 8'h1)
+                rd_vld = 1'b1;
+            else if((wr_count - rd_count) == 8'h1)
+                rd_vld = 1'b1;
+            else
+                rd_vld = 1'b0;
+        end
 
-        if(full == 0) // can be wrote
+        if(full == 1'b0) // can be wrote
             wr_rdy = 1'b1;
         else
             wr_rdy = 1'b0;
@@ -91,7 +102,7 @@ module axi_fifo#(WIDTH=8, DEPTH=8)(
 
     always_comb begin
         empty = ((wr_count - rd_count) == 8'h0);
-        full = ((wr_count - rd_count) == DEPTH);
+        full = ((wr_count - rd_count) == DEPTH - 8'h1); // reserve one if ready too late
     end
 
 endmodule
@@ -229,6 +240,7 @@ module axis_master(
         .rst_n(axi_aresetn),
         .wr_vld(fifo_wr_vld),
         .rd_rdy(fifo_rd_rdy),
+        .hack(1'b1),
         .data_in(fifo_data_in),
         .data_out(fifo_data_out),
         .wr_rdy(fifo_wr_rdy),
