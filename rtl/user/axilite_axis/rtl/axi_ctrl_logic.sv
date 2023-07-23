@@ -54,7 +54,8 @@ module axi_ctrl_logic(
 );
 
     parameter FIFO_LS_WIDTH = 8'd52, FIFO_LS_DEPTH = 8'd8;
-    parameter FIFO_SS_WIDTH = 8'd45, FIFO_SS_DEPTH = 8'd8;
+    //parameter FIFO_SS_WIDTH = 8'd45, FIFO_SS_DEPTH = 8'd8;
+    parameter FIFO_SS_WIDTH = 8'd34, FIFO_SS_DEPTH = 8'd8;
 
     logic fifo_ls_wr_vld, fifo_ls_wr_rdy, fifo_ls_rd_vld, fifo_ls_rd_rdy, fifo_ls_clear;
     logic [FIFO_LS_WIDTH-1:0] fifo_ls_data_in, fifo_ls_data_out;
@@ -76,7 +77,8 @@ module axi_ctrl_logic(
         .clear(fifo_ls_clear));
 
     // data format: 
-    // {data_32bit, tstrb_4bit, tkeep_4bit, user_2bit, tlast_1bit}, total 43bit
+    // deleted {data_32bit, tstrb_4bit, tkeep_4bit, user_2bit, tlast_1bit}, total 43bit
+    // {data_32bit, user_2bit}, total 34bit
     axi_fifo #(.WIDTH(FIFO_SS_WIDTH), .DEPTH(FIFO_SS_DEPTH)) fifo_ss(
         .clk(axi_aclk),
         .rst_n(axi_aresetn),
@@ -107,6 +109,9 @@ module axi_ctrl_logic(
     assign enough_ls_data = fifo_ls_rd_vld;
     assign enough_ss_data = fifo_ss_rd_vld;
 
+    logic next_ls, next_ss, wr_mb, rd_mb, wr_aa, rd_aa, rd_unsupp, trig_sm_wr, trig_sm_rd, do_nothing, decide_done, trig_int;
+    logic ls_rd_data_bk, ls_wr_data_done, get_next_data_ss, ss_wr_data_done;
+
     // FSM state, combinational logic, axis
     always_comb begin
         axi_next_state = axi_state;
@@ -116,22 +121,42 @@ module axi_ctrl_logic(
                 if(enough_ls_data || enough_ss_data)begin
                     axi_next_state = AXI_DECIDE_DEST;
                 end
-            /*AXI_DECIDE_DEST:
-                if(enough_data)begin
-                    axi_next_state = AXIS_SEND_DATA;
+            AXI_DECIDE_DEST:
+                if(decide_done)begin
+                    axi_next_state = AXI_MOVE_DATA;
                 end
-                else begin
-                    axi_next_state = AXIS_WAIT_DATA;
+                else if(do_nothing)begin
+                    axi_next_state = AXI_WAIT_DATA;
                 end
             AXI_MOVE_DATA:
-                if(enough_data)begin
+                if(ls_rd_data_bk)
+                    axi_next_state = AXI_SEND_BKEND;
+                else if(trig_int)
+                    axi_next_state = AXI_TRIG_INT;
+                else if(ls_wr_data_done || ss_wr_data_done)
+                    axi_next_state = AXI_WAIT_DATA;
+                //end
+                //else begin
+                //    axi_next_state = AXI_WAIT_DATA;
+                //end
+            AXI_SEND_BKEND:
+                    axi_next_state = AXI_SEND_BKEND;
+                /*if(enough_data)begin
                     axi_next_state = AXIS_SEND_DATA;
                 end
                 else begin
-                    axi_next_state = AXIS_WAIT_DATA;
+                    axi_next_state = AXI_WAIT_DATA;
+                end*/
+            AXI_TRIG_INT:
+                    axi_next_state = AXI_MOVE_DATA;
+                /*if(enough_data)begin
+                    axi_next_state = AXIS_SEND_DATA;
                 end
+                else begin
+                    axi_next_state = AXI_WAIT_DATA;
+                end*/
             default:
-                axi_next_state = AXIS_WAIT_DATA;*/
+                axi_next_state = AXI_WAIT_DATA;
         endcase
     end
 
@@ -158,11 +183,19 @@ module axi_ctrl_logic(
     always_comb begin
         fifo_ss_data_in = '0;
         fifo_ss_wr_vld = 1'b0;
+        bk_ss_ready =  1'b0;
 
         if(bk_ss_valid)begin
-            fifo_ss_data_in = {bk_ss_data, bk_ss_tstrb, bk_ss_tkeep, bk_ss_user, bk_ss_tlast};
+            //fifo_ss_data_in = {bk_ss_data, bk_ss_tstrb, bk_ss_tkeep, bk_ss_user, bk_ss_tlast};
+            fifo_ss_data_in = {bk_ss_data, bk_ss_user};
             fifo_ss_wr_vld = 1'b1;
         end
+        
+        if(fifo_ss_wr_rdy == 1'b0)begin // fifo full, tell SS do not receive new data
+            bk_ss_ready = 1'b0;
+        end
+        else
+            bk_ss_ready = 1'b1;
     end
 
     logic [14:0] fifo_out_waddr, fifo_out_raddr;
@@ -182,47 +215,63 @@ module axi_ctrl_logic(
                 {fifo_out_trans_typ, fifo_out_raddr} = fifo_ls_data_out[FIFO_LS_WIDTH-1:36]; // wdata + wstrb total 36bit
         end
 
-        //if(next_data)begin // receive slave tready, can send next data
-        //    fifo_ls_rd_rdy = 1'b1;
-        //end
-        //
+        if((axi_state == AXI_MOVE_DATA) && (axi_next_state == AXI_WAIT_DATA))begin // can send next data
+            fifo_ls_rd_rdy = 1'b1;
+        end
+        
         //if(bk_done)begin // clear fifo when transaction done to fix bug
         //    fifo_ls_clear = 1'b1;
         //end
     end
 
     logic [31:0] fifo_out_tdata;
-    logic [3:0] fifo_out_tstrb, fifo_out_tkeep;
+    //logic [3:0] fifo_out_tstrb, fifo_out_tkeep;
     logic [1:0] fifo_out_tuser;
-    logic fifo_out_tlast;
+    //logic fifo_out_tlast;
 
     // get data from SS fifo
     always_comb begin
-        {fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_tuser, fifo_out_tlast} = '0;
+        //{fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_tuser, fifo_out_tlast} = '0;
+        {fifo_out_tdata, fifo_out_tuser} = '0;
         fifo_ss_rd_rdy = 1'b0;
         fifo_ss_clear = 1'b0;
 
         if(axi_state == AXI_DECIDE_DEST)begin
-            {fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_tuser, fifo_out_tlast} = fifo_ss_data_out;
+            //{fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_tuser, fifo_out_tlast} = fifo_ss_data_out;
+            {fifo_out_tdata, fifo_out_tuser} = fifo_ss_data_out;
         end
 
-        //if(next_data)begin // receive slave tready, can send next data
+        if(get_next_data_ss)begin // if tuser in SS is 1, AXI_WR need nex trans data
+            fifo_ss_rd_rdy = 1'b1;
+        end
+        //else if((axi_state == AXI_DECIDE_DEST) && (axi_next_state == AXI_WAIT_DATA))
         //    fifo_ss_rd_rdy = 1'b1;
-        //end
-        //
-        //if(bk_done)begin // clear fifo when transaction done to fix bug
-        //    fifo_ss_clear = 1'b1;
-        //end
+        
+        if((axi_state == AXI_DECIDE_DEST) && (axi_next_state == AXI_WAIT_DATA))begin // clear fifo when transaction done to fix bug
+            fifo_ss_clear = 1'b1;
+        end
     end
+    
+    logic [31:0] fifo_out_tdata_old;
+    always_ff@(posedge axi_aclk or negedge axi_aresetn) // keep old data from SS
+        if(~axi_aresetn)
+            fifo_out_tdata_old <= 32'b0;
+        else 
+            fifo_out_tdata_old <= fifo_out_tdata;
 
     parameter MB_SUPP_LOW = 15'h2000, MB_SUPP_HIGH = 15'h201F;
     parameter AA_SUPP_LOW = 15'h2100, AA_SUPP_HIGH = 15'h2107, AA_UNSUPP_HIGH = 15'h2FFF;
     parameter FPGA_USER_WP_0 = 15'h0000, FPGA_USER_WP_1 = 15'h1FFF, FPGA_USER_WP_2 = 15'h3000, FPGA_USER_WP_3 = 15'h4FFF;
-    logic next_ls, next_ss, wr_mb, rd_mb, wr_aa, rd_aa, rd_unsupp, trig_sm_wr, trig_sm_rd;
+    assign decide_done = wr_mb | rd_mb | wr_aa | rd_aa | rd_unsupp | trig_sm_wr | trig_sm_rd;
+    logic [3:0] wstrb_ss;
+    logic [27:0] addr_ss;
+    logic [31:0] data_ss;
+    logic [1:0] ss_data_cnt;
+
     // decide next transaction is LS / SS by round robin
     always_comb begin
-        next_ls = 1'b0;
-        next_ss = 1'b0;
+        //next_ls = 1'b0;
+        //next_ss = 1'b0;
         wr_mb = 1'b0;
         rd_mb = 1'b0;
         wr_aa = 1'b0;
@@ -230,10 +279,16 @@ module axi_ctrl_logic(
         rd_unsupp = 1'b0;
         trig_sm_wr = 1'b0;
         trig_sm_rd = 1'b0;
+        do_nothing = 1'b0;
+        get_next_data_ss = 1'b0;
+        wstrb_ss = 4'b0;
+        addr_ss = 28'b0;
+        data_ss = 32'b0;
+        trig_int = 1'b0;
 
-        if(axi_next_state == AXI_DECIDE_DEST)begin
-            next_ls = enough_ls_data & (~enough_ss_data | (last_trans == TRANS_SS));
-            next_ss = enough_ss_data & (~enough_ls_data | (last_trans == TRANS_LS));
+        if(axi_state == AXI_DECIDE_DEST)begin
+            //next_ls = enough_ls_data & (~enough_ss_data | (last_trans == TRANS_SS));
+            //next_ss = enough_ss_data & (~enough_ls_data | (last_trans == TRANS_LS));
             if(next_ls)
                 next_trans = TRANS_LS;
             else if(next_ss)
@@ -251,7 +306,10 @@ module axi_ctrl_logic(
                                     (fifo_out_waddr <= AA_SUPP_HIGH))begin // local access AA_reg
                                 wr_aa = 1'b1;
                             end
-                            // in MB AA range but is unsupported, ignored
+                            else if((fifo_out_waddr >= MB_SUPP_LOW) && 
+                                    (fifo_out_waddr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported, ignored
+                                do_nothing = 1'b1;
+                            end
                             else if(((fifo_out_waddr >= FPGA_USER_WP_0) && 
                                      (fifo_out_waddr <= FPGA_USER_WP_1)) ||
                                     ((fifo_out_waddr >= FPGA_USER_WP_2) && 
@@ -282,7 +340,40 @@ module axi_ctrl_logic(
                     endcase
                 end
                 TRANS_SS: begin
-                    
+                    case(fifo_out_tuser)
+                        2'b01: begin
+                            if(ss_data_cnt == 2'b0)begin
+                                get_next_data_ss = 1'b1;
+                            end
+                            else if(ss_data_cnt == 2'b1)begin
+                                wstrb_ss = fifo_out_tdata_old[31:28];
+                                addr_ss = fifo_out_tdata_old[27:0];
+                                data_ss = fifo_out_tdata;
+                                get_next_data_ss = 1'b0;
+
+                                if( (addr_ss >= {13'b0, MB_SUPP_LOW}) &&
+                                    (addr_ss <= {13'b0, MB_SUPP_HIGH}))begin // remote access MB_reg, write
+                                    wr_mb = 1'b1;
+                                    trig_int = 1'b1;
+                                end
+                                //else if( (addr_ss >= {13'b0, AA_SUPP_LOW}) &&
+                                //         (addr_ss <= {13'b0, AA_UNSUPP_HIGH}))begin // remote access AA_reg, ignore
+                                //     do_nothing = 1'b1;
+                                //end
+                                else if( (addr_ss >= {13'b0, MB_SUPP_LOW}) &&
+                                         (addr_ss <= {13'b0, AA_UNSUPP_HIGH}))begin // in MB AA range, ignore
+                                     do_nothing = 1'b1;
+                                end
+                            end
+                        end
+                        2'b10: begin
+                            addr_ss = fifo_out_tdata[27:0];
+                        end
+                        2'b11: begin
+                            data_ss = fifo_out_tdata;
+                        end
+                        default: do_nothing = 1'b1;
+                    endcase
                 end
             endcase
         end
@@ -290,15 +381,98 @@ module axi_ctrl_logic(
 
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
         if(~axi_aresetn)begin
-            //last_trans <= TRANS_LS; // ?????????????????
-            last_trans <= TRANS_SS;
+            ss_data_cnt <= 2'b0;
         end
         else begin
-            if(axi_state == AXI_MOVE_DATA)begin
-                last_trans <= next_trans;
+            if((axi_state == AXI_DECIDE_DEST) && (next_trans == TRANS_SS) && 
+                (fifo_out_tuser == 2'b01))
+                ss_data_cnt <= ss_data_cnt + 1'b1;
+            else
+                ss_data_cnt <= 2'b0;
+        end
+    end
+
+    logic [31:0] aa_reg, mb_reg, data_return; // ??????????????
+
+    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
+        if(~axi_aresetn)begin
+            //last_trans <= TRANS_LS; // ?????????????????
+            last_trans <= TRANS_SS;
+            aa_reg <= '0;
+            mb_reg <= '0;
+            ls_rd_data_bk <= 1'b0;
+            ls_wr_data_done <= 1'b0;
+            next_ls <= 1'b0;
+            next_ss <= 1'b0;
+            ss_wr_data_done <= 1'b0;
+        end
+        else begin
+            if(axi_state == AXI_WAIT_DATA && axi_next_state == AXI_DECIDE_DEST)begin
+                next_ls <= enough_ls_data & (~enough_ss_data | (last_trans == TRANS_SS));
+                next_ss <= enough_ss_data & (~enough_ls_data | (last_trans == TRANS_LS));
+            end
+
+            if(axi_next_state == AXI_WAIT_DATA)begin
+                ls_rd_data_bk <= 1'b0;
+                ls_wr_data_done <= 1'b0;
+            end
+            else if(axi_next_state == AXI_MOVE_DATA)begin
+                //if(get_next_data_ss) // get AXI_WR on SS nedd two clock cycle data
+                //    last_trans <= TRANS_LS;
+                //else
+                    last_trans <= next_trans;
+
+                if(wr_mb)begin
+                    // write MB_reg
+                    case(next_trans)
+                        TRANS_LS: begin
+                        end
+                        TRANS_SS: begin
+                            // wstrb_ss, addr_ss
+                            mb_reg <= data_ss;
+                            ss_wr_data_done <= 1'b1;
+                        end
+                    endcase
+                end
+                else if(rd_mb)begin
+                    // read MB_reg
+                end
+                else if(wr_aa)begin
+                    // write AA_reg
+                    if(next_trans == TRANS_LS)begin
+                        aa_reg <= fifo_out_wdata;
+                        ls_wr_data_done <= 1'b1;
+                    end
+                end
+                else if(rd_aa)begin
+                    // read AA_reg
+                    if(next_trans == TRANS_LS)begin
+                        data_return <= aa_reg;
+                        ls_rd_data_bk <= 1'b1;
+                    end
+                end
+                else if(rd_unsupp)begin
+                    // read MB_reg / AA_reg unsupported range
+                end
+                else if(trig_sm_wr)begin
+                    // trigger SM (axis master) to write another side
+                end
+                else if(trig_sm_rd)begin
+                    // trigger SM to read another side
+                end
+                /*else if(rd_mb)begin
+                    // read MB_reg
+                end
+                else if(rd_mb)begin
+                    // read MB_reg
+                end
+                else if(rd_mb)begin
+                    // read MB_reg
+                end*/
             end
         end
     end
+
 
 
 
