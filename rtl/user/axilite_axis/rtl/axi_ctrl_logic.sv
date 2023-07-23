@@ -113,7 +113,7 @@ module axi_ctrl_logic(
     logic ls_rd_data_bk, ls_wr_data_done, get_next_data_ss, ss_wr_data_done;
     
     //Willy debug - s
-    logic trig_int_latch, axi_interrupt_done;
+    logic trig_int_delay, axi_interrupt_done;
     //Willy debug - e
     
     // FSM state, combinational logic, axis
@@ -124,17 +124,10 @@ module axi_ctrl_logic(
             AXI_WAIT_DATA:
                 if(enough_ls_data || enough_ss_data)begin
                     axi_next_state = AXI_DECIDE_DEST;
-                    //Willy debug - s
-                    trig_int_latch = 0;
-                    //Willy debug - e
                 end
             AXI_DECIDE_DEST:
                 if(decide_done)begin
                     axi_next_state = AXI_MOVE_DATA;
-                    //Willy debug - s
-                    if(trig_int)
-                        trig_int_latch = 1;
-                    //Willy debug - e
                 end
                 else if(do_nothing)begin
                     axi_next_state = AXI_WAIT_DATA;
@@ -148,7 +141,7 @@ module axi_ctrl_logic(
                 //Willy debug else if(trig_int)
                     //Willy debug axi_next_state = AXI_TRIG_INT;
                 else if(ls_wr_data_done || ss_wr_data_done)
-                    if(trig_int_latch && ss_wr_data_done)
+                    if(trig_int_delay && ss_wr_data_done)
                         axi_next_state = AXI_TRIG_INT;
                     else
                         axi_next_state = AXI_WAIT_DATA;
@@ -177,6 +170,27 @@ module axi_ctrl_logic(
                 axi_next_state = AXI_WAIT_DATA;
         endcase
     end
+
+//Willy debug - s
+
+    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
+        if(~axi_aresetn) begin
+            trig_int_delay <= 0;
+        end else begin
+            //If decide done and need interrupt trigger, delay the trig_int
+            if(axi_state == AXI_DECIDE_DEST)begin
+                if(decide_done && trig_int)
+                    trig_int_delay <= 1;
+            end
+            //trig_int_delay is used in AXI_MOVE_DATA state, deassert trig_int_delay after switching to AXI_TRIG_INT
+            else if(axi_state == AXI_TRIG_INT)begin
+                trig_int_delay <= 0;
+            end
+        end
+    end
+//Willy debug - e
+
+
 
     logic [35:0] read_padding_zero;
 
@@ -440,6 +454,11 @@ module axi_ctrl_logic(
     //--------------------------------------------------
     logi[31:0] aa_regs[1:0]; //32bit * 2     
 
+//Willy debug - s
+    assign mb_int_en = aa_regs[0][0];
+//Willy debug - e
+
+
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
         if(~axi_aresetn)begin
             //last_trans <= TRANS_LS; // ?????????????????
@@ -453,12 +472,24 @@ module axi_ctrl_logic(
             next_ls <= 1'b0;
             next_ss <= 1'b0;
             ss_wr_data_done <= 1'b0;
-
+//Willy debug - s
+            axi_interrupt <= 1'b0;
+            axi_interrupt_done <= 1'b0;
+//Willy debug - e
         end
         else begin
+        
+            //Willy debug - s
+            if(axi_state == AXI_WAIT_DATA) begin
+                axi_interrupt <= 0;
+                axi_interrupt_done <= 0;
+            end
+            //Willy debug - e
+        
             if(axi_state == AXI_WAIT_DATA && axi_next_state == AXI_DECIDE_DEST)begin
                 next_ls <= enough_ls_data & (~enough_ss_data | (last_trans == TRANS_SS));
                 next_ss <= enough_ss_data & (~enough_ls_data | (last_trans == TRANS_LS));
+
             end
 
             if(axi_next_state == AXI_WAIT_DATA)begin
@@ -511,20 +542,25 @@ module axi_ctrl_logic(
                         TRANS_LS: begin
                             //fifo_out_wdata, fifo_out_wstrb, fifo_out_waddr
                             //aa_reg <= fifo_out_wdata;
-                            if(wstrb_ss[0]) aa_regs[fifo_out_waddr[11:0]][7: 0] <= fifo_out_wdata[7:0];
-                            if(wstrb_ss[1]) aa_regs[fifo_out_waddr[11:0]][15:8] <= fifo_out_wdata[15:8];
-                            if(wstrb_ss[2]) aa_regs[fifo_out_waddr[11:0]][23:16] <= fifo_out_wdata[23:16];
-                            if(wstrb_ss[3]) aa_regs[fifo_out_waddr[11:0]][31:24] <= fifo_out_wdata[31:24];
+                            //Offset 0
+                            if(fifo_out_waddr[11:0] == 0) begin
+                                //Bit 0 RW, Other bits RO
+                                if(wstrb_ss[0]) aa_regs[fifo_out_waddr[11:0]][0] <= fifo_out_wdata[0];                                
+                            //Offset 1
+                            end else if(fifo_out_waddr[11:0] == 1) begin
+                                //BIT 0 RW1C, Other bits RO
+                                if(wstrb_ss[0]) aa_regs[fifo_out_waddr[11:0]][0] <= aa_regs[fifo_out_waddr[11:0]][0] & ~fifo_out_wdata[0];
+                            //Other Offset registers, should not come here due to we only support aa_regs[1:0]                           
+                            end else begin
+                                if(wstrb_ss[0]) aa_regs[fifo_out_waddr[11:0]][7: 0] <= fifo_out_wdata[7:0];
+                                if(wstrb_ss[1]) aa_regs[fifo_out_waddr[11:0]][15:8] <= fifo_out_wdata[15:8];
+                                if(wstrb_ss[2]) aa_regs[fifo_out_waddr[11:0]][23:16] <= fifo_out_wdata[23:16];
+                                if(wstrb_ss[3]) aa_regs[fifo_out_waddr[11:0]][31:24] <= fifo_out_wdata[31:24];                             
+                            end 
                             ls_wr_data_done <= 1'b1;                        
                         end
                         TRANS_SS: begin
-                            // wstrb_ss, addr_ss
-                            //aa_reg <= data_ss;
-                            if(wstrb_ss[0]) aa_regs[addr_ss[11:0]][7: 0] <= data_ss[7:0];
-                            if(wstrb_ss[1]) aa_regs[addr_ss[11:0]][15:8] <= data_ss[15:8];
-                            if(wstrb_ss[2]) aa_regs[addr_ss[11:0]][23:16] <= data_ss[23:16];
-                            if(wstrb_ss[3]) aa_regs[addr_ss[11:0]][31:24] <= data_ss[31:24];
-                            ss_wr_data_done <= 1'b1;
+                            //Should not happen. Remote MB/AA register write is not supported
                         end
                     endcase
                 end
@@ -538,7 +574,7 @@ module axi_ctrl_logic(
                             ls_rd_data_bk <= 1'b1;
                         end
                         TRANS_SS: begin
-                            //Should not happen. Remote MB/AA register read is not supported          
+                            //Should not happen. Remote MB/AA register read is not supported
                         end
                     endcase       
                 end
@@ -553,44 +589,23 @@ module axi_ctrl_logic(
                 else if(trig_sm_rd)begin
                     // trigger SM to read another side
                 end
-            end
-        end
-    end
-
-
-//Willy debug - s
-    // For AA_REG description
-    //Offset 0:
-    // BIT 0: Enable Interrupt
-    // 0 = Disable interrupt signal
-    // 1 = Enable interrupt signal
-    assign mb_int_en = aa_regs[0][0];
-//Willy debug - e
-
-
-//Willy debug - s
-    //Handle Interrupt during local mailbox wriite
-    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
-        if(~axi_aresetn)begin
-            axi_interrupt <= 1'b0;
-            axi_interrupt_done <= 1'b0;
-        end
-        else begin
             //If in interrupt state and the interrupt enable bit is active.
-            if((axi_state == AXI_TRIG_INT) && mb_int_en) begin
+            end else if((axi_state == AXI_TRIG_INT) && mb_int_en) begin
                 // Edge trigger interrupt signal, will be de-assert in next posedge
                 axi_interrupt <= 1;
                 // Update interrupt status
+                // Offset 1 bit 0
                 aa_regs[1][0] <= 1;
                 
                 axi_interrupt_done <= 1;
-            end else begin
-                axi_interrupt <= 0;
             end
-
         end
     end
-//Willy debug - e 
+
+
+
+
+
 
 
 
