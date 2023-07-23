@@ -111,7 +111,11 @@ module axi_ctrl_logic(
 
     logic next_ls, next_ss, wr_mb, rd_mb, wr_aa, rd_aa, rd_unsupp, trig_sm_wr, trig_sm_rd, do_nothing, decide_done, trig_int;
     logic ls_rd_data_bk, ls_wr_data_done, get_next_data_ss, ss_wr_data_done;
-
+    
+    //Willy debug - s
+    logic trig_int_latch, axi_interrupt_done;
+    //Willy debug - e
+    
     // FSM state, combinational logic, axis
     always_comb begin
         axi_next_state = axi_state;
@@ -120,21 +124,34 @@ module axi_ctrl_logic(
             AXI_WAIT_DATA:
                 if(enough_ls_data || enough_ss_data)begin
                     axi_next_state = AXI_DECIDE_DEST;
+                    //Willy debug - s
+                    trig_int_latch = 0;
+                    //Willy debug - e
                 end
             AXI_DECIDE_DEST:
                 if(decide_done)begin
                     axi_next_state = AXI_MOVE_DATA;
+                    //Willy debug - s
+                    if(trig_int)
+                        trig_int_latch = 1;
+                    //Willy debug - e
                 end
                 else if(do_nothing)begin
                     axi_next_state = AXI_WAIT_DATA;
                 end
+                
             AXI_MOVE_DATA:
                 if(ls_rd_data_bk)
                     axi_next_state = AXI_SEND_BKEND;
-                else if(trig_int)
-                    axi_next_state = AXI_TRIG_INT;
+                //else if(trig_int)
+                //For remote mb write, transfer state to  AXI_TRIG_INT after  write register is finished.
+                //Willy debug else if(trig_int)
+                    //Willy debug axi_next_state = AXI_TRIG_INT;
                 else if(ls_wr_data_done || ss_wr_data_done)
-                    axi_next_state = AXI_WAIT_DATA;
+                    if(trig_int_latch && ss_wr_data_done)
+                        axi_next_state = AXI_TRIG_INT;
+                    else
+                        axi_next_state = AXI_WAIT_DATA;
                 //end
                 //else begin
                 //    axi_next_state = AXI_WAIT_DATA;
@@ -148,7 +165,8 @@ module axi_ctrl_logic(
                     axi_next_state = AXI_WAIT_DATA;
                 end*/
             AXI_TRIG_INT:
-                    axi_next_state = AXI_MOVE_DATA;
+                if(axi_interrupt_done)
+                    axi_next_state = AXI_WAIT_DATA;
                 /*if(enough_data)begin
                     axi_next_state = AXIS_SEND_DATA;
                 end
@@ -295,6 +313,7 @@ module axi_ctrl_logic(
                 next_trans = TRANS_SS;
 
             case(next_trans)
+                //The request came from left side - axilite_slave
                 TRANS_LS: begin
                     case(fifo_out_trans_typ)
                         AXI_WR: begin
@@ -318,29 +337,31 @@ module axi_ctrl_logic(
                             end
                         end
                         AXI_RD: begin
-                            if( (fifo_out_waddr >= MB_SUPP_LOW) && 
-                                (fifo_out_waddr <= MB_SUPP_HIGH))begin // local access MB_reg
+                            if( (fifo_out_raddr >= MB_SUPP_LOW) && 
+                                (fifo_out_raddr <= MB_SUPP_HIGH))begin // local access MB_reg
                                 rd_mb = 1'b1;
                             end
-                            else if((fifo_out_waddr >= AA_SUPP_LOW) && 
-                                    (fifo_out_waddr <= AA_SUPP_HIGH))begin // local access AA_reg
+                            else if((fifo_out_raddr >= AA_SUPP_LOW) && 
+                                    (fifo_out_raddr <= AA_SUPP_HIGH))begin // local access AA_reg
                                 rd_aa = 1'b1;
                             end
-                            else if((fifo_out_waddr >= MB_SUPP_LOW) && 
-                                    (fifo_out_waddr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported
+                            else if((fifo_out_raddr >= MB_SUPP_LOW) && 
+                                    (fifo_out_raddr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported
                                 rd_unsupp = 1'b1;
                             end
-                            else if(((fifo_out_waddr >= FPGA_USER_WP_0) && 
-                                     (fifo_out_waddr <= FPGA_USER_WP_1)) ||
-                                    ((fifo_out_waddr >= FPGA_USER_WP_2) && 
-                                     (fifo_out_waddr <= FPGA_USER_WP_3)))begin // fpga side access caravel usesr project wrapper, this do not fire in caravel side
+                            else if(((fifo_out_raddr >= FPGA_USER_WP_0) && 
+                                     (fifo_out_raddr <= FPGA_USER_WP_1)) ||
+                                    ((fifo_out_raddr >= FPGA_USER_WP_2) && 
+                                     (fifo_out_raddr <= FPGA_USER_WP_3)))begin // fpga side access caravel usesr project wrapper, this do not fire in caravel side
                                 trig_sm_rd = 1'b1;
                             end
                         end
                     endcase
                 end
+                //The request came from right side - axilite_stream_slave
                 TRANS_SS: begin
                     case(fifo_out_tuser)
+                        // axis slave two-cycle data with tuser = 2'b01, can be converted to axilite write address / write data.
                         2'b01: begin
                             if(ss_data_cnt == 2'b0)begin
                                 get_next_data_ss = 1'b1;
@@ -364,11 +385,21 @@ module axi_ctrl_logic(
                                          (addr_ss <= {13'b0, AA_UNSUPP_HIGH}))begin // in MB AA range, ignore
                                      do_nothing = 1'b1;
                                 end
+                                
+                                //TODO:
+                                //When  addr[27:0] in range(0x000_0000, 0x000_4FFF):
+                                //=> write remote module MMIO, generate m_axi transaction with addr + 0x30000000 to CC
                             end
                         end
+                        // axis slave one-cycle data with tuser = 2'b10, can be converted to axilite read address.
                         2'b10: begin
                             addr_ss = fifo_out_tdata[27:0];
+                            
+                            //TODO:
+                            //When  addr[27:0] in range(0x000_0000, 0x000_4FFF):
+                            //=> read remote module MMIO, generate m_axi transaction with addr + 0x30000000 to CC.
                         end
+                        //once the read data returned from axilite master, the data will convert to axis master transaction with tuser = 2'b11.
                         2'b11: begin
                             data_ss = fifo_out_tdata;
                         end
@@ -392,19 +423,37 @@ module axi_ctrl_logic(
         end
     end
 
-    logic [31:0] aa_reg, mb_reg, data_return; // ??????????????
+    //Willy debug logic [31:0] aa_reg, mb_reg, data_return; // ??????????????
+    logi[31:0] data_return;  
+    logi[31:0] mb_regs[7:0]; //32bit * 8 
+
+    //--------------------------------------------------
+    // For AA_REG description
+    //Offset 0:
+    // BIT 0: Enable Interrupt
+    // 0 = Disable interrupt signal
+    // 1 = Enable interrupt signal
+    //Offset 1:
+    // BIT 0: Interrupt Status
+    // 0: Interrupt has occurred.
+    // 0: Interrupt 
+    //--------------------------------------------------
+    logi[31:0] aa_regs[1:0]; //32bit * 2     
 
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
         if(~axi_aresetn)begin
             //last_trans <= TRANS_LS; // ?????????????????
             last_trans <= TRANS_SS;
-            aa_reg <= '0;
-            mb_reg <= '0;
+            //aa_reg <= '0;
+            mb_regs <= '{32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0};
+            //mb_reg <= '0;
+            aa_regs <= '{32'h0, 32'h0};
             ls_rd_data_bk <= 1'b0;
             ls_wr_data_done <= 1'b0;
             next_ls <= 1'b0;
             next_ss <= 1'b0;
             ss_wr_data_done <= 1'b0;
+
         end
         else begin
             if(axi_state == AXI_WAIT_DATA && axi_next_state == AXI_DECIDE_DEST)begin
@@ -426,33 +475,77 @@ module axi_ctrl_logic(
                     // write MB_reg
                     case(next_trans)
                         TRANS_LS: begin
+                            // //fifo_out_wdata, fifo_out_wstrb, fifo_out_waddr
+                            if(fifo_out_wstrb[0]) mb_regs[fifo_out_waddr[11:0]][7: 0] <= fifo_out_wdata[7:0];
+                            if(fifo_out_wstrb[1]) mb_regs[fifo_out_waddr[11:0]][15:8] <= fifo_out_wdata[15:8];
+                            if(fifo_out_wstrb[2]) mb_regs[fifo_out_waddr[11:0]][23:16] <= fifo_out_wdata[23:16];
+                            if(fifo_out_wstrb[3]) mb_regs[fifo_out_waddr[11:0]][31:24] <= fifo_out_wdata[31:24];
+                            ls_wr_data_done <= 1'b1;              
                         end
                         TRANS_SS: begin
                             // wstrb_ss, addr_ss
-                            mb_reg <= data_ss;
+                            //mb_reg <= data_ss;
+                            if(wstrb_ss[0]) mb_regs[addr_ss[11:0]][7: 0] <= data_ss[7:0];
+                            if(wstrb_ss[1]) mb_regs[addr_ss[11:0]][15:8] <= data_ss[15:8];
+                            if(wstrb_ss[2]) mb_regs[addr_ss[11:0]][23:16] <= data_ss[23:16];
+                            if(wstrb_ss[3]) mb_regs[addr_ss[11:0]][31:24] <= data_ss[31:24];
                             ss_wr_data_done <= 1'b1;
                         end
                     endcase
                 end
                 else if(rd_mb)begin
                     // read MB_reg
+                    case(next_trans)
+                        TRANS_LS: begin
+                            data_return <= mb_regs[fifo_out_raddr[11:0]];
+                            ls_rd_data_bk <= 1'b1;
+                        end
+                        TRANS_SS: begin
+                            //Should not happen. Remote MB/AA register read is not supported
+                        end
+                    endcase
                 end
                 else if(wr_aa)begin
                     // write AA_reg
-                    if(next_trans == TRANS_LS)begin
-                        aa_reg <= fifo_out_wdata;
-                        ls_wr_data_done <= 1'b1;
-                    end
+                    case(next_trans)
+                        TRANS_LS: begin
+                            //fifo_out_wdata, fifo_out_wstrb, fifo_out_waddr
+                            //aa_reg <= fifo_out_wdata;
+                            if(wstrb_ss[0]) aa_regs[fifo_out_waddr[11:0]][7: 0] <= fifo_out_wdata[7:0];
+                            if(wstrb_ss[1]) aa_regs[fifo_out_waddr[11:0]][15:8] <= fifo_out_wdata[15:8];
+                            if(wstrb_ss[2]) aa_regs[fifo_out_waddr[11:0]][23:16] <= fifo_out_wdata[23:16];
+                            if(wstrb_ss[3]) aa_regs[fifo_out_waddr[11:0]][31:24] <= fifo_out_wdata[31:24];
+                            ls_wr_data_done <= 1'b1;                        
+                        end
+                        TRANS_SS: begin
+                            // wstrb_ss, addr_ss
+                            //aa_reg <= data_ss;
+                            if(wstrb_ss[0]) aa_regs[addr_ss[11:0]][7: 0] <= data_ss[7:0];
+                            if(wstrb_ss[1]) aa_regs[addr_ss[11:0]][15:8] <= data_ss[15:8];
+                            if(wstrb_ss[2]) aa_regs[addr_ss[11:0]][23:16] <= data_ss[23:16];
+                            if(wstrb_ss[3]) aa_regs[addr_ss[11:0]][31:24] <= data_ss[31:24];
+                            ss_wr_data_done <= 1'b1;
+                        end
+                    endcase
                 end
                 else if(rd_aa)begin
                     // read AA_reg
-                    if(next_trans == TRANS_LS)begin
-                        data_return <= aa_reg;
-                        ls_rd_data_bk <= 1'b1;
-                    end
+                    case(next_trans)
+                        TRANS_LS: begin
+                            // fifo_out_raddr;
+                            //data_return <= aa_reg;
+                            data_return <= aa_regs[fifo_out_raddr[11:0]];
+                            ls_rd_data_bk <= 1'b1;
+                        end
+                        TRANS_SS: begin
+                            //Should not happen. Remote MB/AA register read is not supported          
+                        end
+                    endcase       
                 end
                 else if(rd_unsupp)begin
                     // read MB_reg / AA_reg unsupported range
+                    // Return 0xFFFFFFFF when the register is not supported
+                    data_return  <= 32'hFFFFFFFF;
                 end
                 else if(trig_sm_wr)begin
                     // trigger SM (axis master) to write another side
@@ -460,21 +553,44 @@ module axi_ctrl_logic(
                 else if(trig_sm_rd)begin
                     // trigger SM to read another side
                 end
-                /*else if(rd_mb)begin
-                    // read MB_reg
-                end
-                else if(rd_mb)begin
-                    // read MB_reg
-                end
-                else if(rd_mb)begin
-                    // read MB_reg
-                end*/
             end
         end
     end
 
 
+//Willy debug - s
+    // For AA_REG description
+    //Offset 0:
+    // BIT 0: Enable Interrupt
+    // 0 = Disable interrupt signal
+    // 1 = Enable interrupt signal
+    assign mb_int_en = aa_regs[0][0];
+//Willy debug - e
 
+
+//Willy debug - s
+    //Handle Interrupt during local mailbox wriite
+    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
+        if(~axi_aresetn)begin
+            axi_interrupt <= 1'b0;
+            axi_interrupt_done <= 1'b0;
+        end
+        else begin
+            //If in interrupt state and the interrupt enable bit is active.
+            if((axi_state == AXI_TRIG_INT) && mb_int_en) begin
+                // Edge trigger interrupt signal, will be de-assert in next posedge
+                axi_interrupt <= 1;
+                // Update interrupt status
+                aa_regs[1][0] <= 1;
+                
+                axi_interrupt_done <= 1;
+            end else begin
+                axi_interrupt <= 0;
+            end
+
+        end
+    end
+//Willy debug - e 
 
 
 
