@@ -97,6 +97,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	reg wb_fsm_reg;
 	reg wb_axi_request;
 	reg wb_axi_request_rw;
+	reg [3:0] wb_axi_wstrb;
 	reg wb_axi_request_done;
 	reg [31:0] wb_axi_request_add;
 	reg [31:0] wb_axi_wdata;
@@ -105,6 +106,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	reg [2:0] f_axi_fsm_reg;
 	reg f_axi_request;
 	reg f_axi_request_rw;
+	reg [3:0] f_axi_wstrb;
 	reg f_axi_request_done;
 	reg [31:0] f_axi_request_add;
 	reg [31:0] f_axi_wdata;
@@ -115,6 +117,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	reg axi_grant_o_reg = 1'b0;
 	wire m_axi_request;
 	wire m_axi_request_rw;
+	wire [3:0] m_axi_wstrb;
 	wire m_axi_request_done;
 	wire [31:0] m_axi_request_add;
 	wire [31:0] m_axi_wdata;
@@ -176,6 +179,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	///////////////////////////////////
 	assign m_axi_request = axi_grant_o_reg ? f_axi_request : wb_axi_request;
 	assign m_axi_request_rw = axi_grant_o_reg ? f_axi_request_rw : wb_axi_request_rw;
+	assign m_axi_wstrb = axi_grant_o_reg ? f_axi_wstrb : wb_axi_wstrb;
 	assign m_axi_request_done = axi_grant_o_reg ? f_axi_request_done : wb_axi_request_done;
 	assign m_axi_request_add = axi_grant_o_reg ? f_axi_request_add : wb_axi_request_add;
 	assign m_axi_wdata = axi_grant_o_reg ? f_axi_wdata : wb_axi_wdata;
@@ -280,6 +284,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 			wb_fsm_reg <= wb_fsm_idle;
 			wb_axi_request <= 1'b0;
 			wb_axi_request_rw <= 1'b0;
+			wb_axi_wstrb <= 4'b0;
 			wb_axi_request_add <= 32'b0;
 			wb_axi_wdata <= 32'b0;
 			
@@ -297,8 +302,10 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 							wb_axi_request <= 1'b1;
 							wb_axi_request_rw <= wbs_we;
 							wb_axi_request_add <= wbs_adr;	//Latch wbs_adr
-							if ( wbs_we )
+							if ( wbs_we ) begin
 								wb_axi_wdata <= wbs_wdata;	//Latch wbs_wdata;
+								wb_axi_wstrb <= wbs_sel;
+							end
 							wb_fsm_reg <= wb_fsm_inprogress;
 						end
 					end
@@ -331,6 +338,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 			f_axi_fsm_reg <= axi_fsm_idle;
 			f_axi_request <= 1'b0;
 			f_axi_request_rw <= 1'b0;
+			f_axi_wstrb <= 4'b0;
 			f_axi_request_add <= 32'b0;
 			f_axi_wdata <= 32'b0;
 			
@@ -381,8 +389,9 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 					aa_cfg_awready_o <= 1'b0;
 					if ( aa_cfg_wvalid ) begin
 						f_axi_request <= 1'b1;
-						f_axi_request_rw <= 1'b1;						
+						f_axi_request_rw <= 1'b1;	
 						f_axi_wdata <= aa_cfg_wdata;			//Latch wdata
+						f_axi_wstrb <= aa_cfg_wstrb;						
 						f_axi_fsm_reg <= axi_fsm_write_complete;		
 					end
 				end
@@ -460,7 +469,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 							axi_awaddr_o <= m_axi_request_add[14:0];							
 							axi_wvalid_o <= 1'b1;
 							axi_wdata_o <= m_axi_wdata;
-							axi_wstrb_o <= 4'b1111;
+							axi_wstrb_o <= m_axi_wstrb;
 							m_axi_fsm_reg <= axi_fsm_write_data;
 						end else begin
 							axi_arvalid_o <= 1'b1;							
