@@ -574,6 +574,15 @@ class top_module(sub_module):
     conx.set_conn_width(width)
     self.conn_list.append(conx)
 
+  def chk_conn(self, conn_name):
+    # get conn first
+    for conx in self.conn_list:
+      if( conx.get_conn_name() == conn_name ):
+        return True
+    return False
+
+
+
   # update width if wider
   def upd_conn_wire(self, conn_name, width):
     # get conn first
@@ -1047,9 +1056,11 @@ def build_top_module(work_sheet, top_modu):
                 # add top wire
               # conn = get_port_top_conn(port_n)
               # conn += post_str[coln_idx-1]
-                if( col_modo.chk_port(sptn) ):       # same output port connect to multiple load, wire only need declared once
-                 top_modu.upd_conn_wire(conn, wid)   # widest width of top wire
-                else:
+
+              # if( top_modo.chk_port(sptn) ):       # same output port connect to multiple load, wire only need declared once
+              #  top_modu.upd_conn_wire(conn, wid)   # widest width of top wire
+              # else:
+                if( not top_modu.chk_conn(conn) ):   # same output port connect to multiple load, wire only need declared once
                  top_modu.add_conn_wire(conn, wid)
 
                 # ---------------------------------------------------------- 

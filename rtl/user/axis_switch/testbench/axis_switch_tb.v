@@ -28,6 +28,31 @@ parameter   TID_WIDTH = 2;
 parameter   VALID_WS_LEN = 2;
 
 reg o_clk, o_rst_n;
+
+//for axi_lite
+//write address channel
+reg 	soc_axi_awvalid;
+reg 	[14:0] soc_axi_awaddr;		
+wire	soc_axi_awready;
+
+//write data channel
+reg 	soc_axi_wvalid;
+reg 	[DATA_WIDTH-1:0] soc_axi_wdata;
+reg 	[(DATA_WIDTH/8)-1:0] soc_axi_wstrb;
+wire	soc_axi_wready;
+
+//read addr channel
+reg 	soc_axi_arvalid;
+reg 	[14:0] soc_axi_araddr;
+wire soc_axi_arready;
+
+//read data channel
+wire soc_axi_rvalid;
+wire [DATA_WIDTH-1:0] soc_axi_rdata;
+reg 	soc_axi_rready;
+
+reg 	soc_cc_as_enable;		//axi_lite enable       
+
 /*
 *for Aribter
 */
@@ -90,143 +115,210 @@ reg aa_ready;
 
 reg start_test; 
 
+//axi_lite
+task soc_cfg_write;		//input addr, data, strb and valid_delay 
+	input [14:0] axi_awaddr;
+	input [DATA_WIDTH-1:0] axi_wdata;
+	input [3:0] axi_wstrb;
+	input [7:0] valid_delay;
+	
+	begin
+		soc_axi_awaddr <= axi_awaddr;
+		soc_axi_awvalid <= 0;
+		soc_axi_wdata <= axi_wdata;
+		soc_axi_wstrb <= axi_wstrb;
+		soc_axi_wvalid <= 0;
+		repeat (valid_delay) @ (posedge o_clk);
+		soc_axi_awvalid <= 1;
+		soc_axi_wvalid <= 1;
+		@ (posedge o_clk);
+		while (soc_axi_awready == 0) begin		//assume both soc_axi_awready and soc_axi_wready assert as the same time.
+			@ (posedge o_clk);
+		end
+		$display($time, "=> soc_cfg_write : soc_axi_awaddr=%x, soc_axi_awvalid=%b, soc_axi_awready=%b, soc_axi_wdata=%x, axi_wstrb=%x, soc_axi_wvalid=%b, soc_axi_wready=%b", soc_axi_awaddr, soc_axi_awvalid, soc_axi_awready, soc_axi_wdata, axi_wstrb, soc_axi_wvalid, soc_axi_wready); 
+		soc_axi_awvalid <= 0;
+		soc_axi_wvalid <= 0;
+	end
+endtask
+
+task soc_cfg_read;		//input addr and valid_delay 
+	input [14:0] axi_araddr;
+	input [7:0] valid_delay;
+	
+	begin
+		soc_axi_araddr <= axi_araddr;
+		soc_axi_arvalid <= 0;
+		soc_axi_rready <= 0;
+		repeat (valid_delay) @ (posedge o_clk);
+		soc_axi_arvalid <= 1;
+		@ (posedge o_clk);
+		while (soc_axi_arready == 0) begin		
+				@ (posedge o_clk);
+		end
+		$display($time, "=> soc_cfg_read : soc_axi_araddr=%x, soc_axi_arvalid=%b, soc_axi_arready=%b", soc_axi_araddr, soc_axi_arvalid, soc_axi_arready); 
+		
+		soc_axi_arvalid <= 0;
+		repeat (valid_delay) @ (posedge o_clk);
+		soc_axi_rready <= 1;
+		@ (posedge o_clk);
+		while (soc_axi_rvalid == 0) begin		
+				@ (posedge o_clk);
+		end
+		$display($time, "=> soc_cfg_read : soc_axi_rdata=%x, soc_axi_rready=%b, soc_axi_rvalid=%b", soc_axi_rdata, soc_axi_rready, soc_axi_rvalid); 
+		soc_axi_rready <= 0;
+	end
+endtask
+
+
+reg[31:0]idx;
 task axis_tx;
-    input [DATA_WIDTH-1:0] data_in;
-    input [STRB_WIDTH-1:0] strb_in, keep_in;
-    input [USER_WIDTH-1:0] user_in; 
-    input tlast_in;    
-    input [VALID_WS_LEN-1:0] valid_wait_state;
-    
-    begin    
-        data_0 = #0 data_in;
-        strb_0 = strb_in;
-        keep_0 = keep_in;
-        tlast_0 = #0 tlast_in;
-        user_0 = user_in;
-        if(valid_wait_state != {(VALID_WS_LEN){1'b0}}) begin
-            valid_0 = 0;
-            repeat (valid_wait_state) @ (posedge o_clk);
-        end
-        valid_0 = 1;
-        repeat (1) @ (posedge o_clk);     
-        wait(valid_0 && ready_0);
-        if(tlast_in) begin
-            valid_0 = #0 0;  
-            tlast_0 = 0;
-        end            
-    end  
+        input [7:0] valid_delay;
+		begin
+			@ (posedge o_clk);			
+			for(idx=0; idx<10; idx=idx+1)begin
+				data_0 <=  idx + 32'h00001110;
+				strb_0 <=  4'hf;
+				keep_0 <=  4'hf;
+				user_0 <=  2'b00;
+				if(idx == 4'h9)
+				    tlast_0 <=  1'h1;
+				else
+				    tlast_0 <=  1'h0;
+                if(valid_delay != 0) begin
+                    valid_0 <= 0;				    
+                    repeat (valid_delay) @ (posedge o_clk);	
+                end                    			    
+				valid_0 <= 1;
+				@ (posedge o_clk);
+				while (ready_0 == 0) begin		
+					@ (posedge o_clk);
+				end
+			end
+			valid_0 <= 0;
+            tlast_0 <=  1'h0;
+		end
 endtask
 
+reg[31:0]idxh;
 task axis_tx_hi_req;
-    input [DATA_WIDTH-1:0] data_in;
-    input [STRB_WIDTH-1:0] strb_in, keep_in;
-    input [USER_WIDTH-1:0] user_in; 
-    input tlast_in, hpri_req_in;    
-    input [VALID_WS_LEN-1:0] valid_wait_state;
-    begin
-        hpri_req0 = #0 hpri_req_in;       
-        data_0 = #0 data_in;              
-        strb_0 = strb_in;
-        keep_0 = keep_in;
-        tlast_0 = tlast_in;
-        user_0 = user_in;
-        if(valid_wait_state != {(VALID_WS_LEN){1'b0}}) begin
-            valid_0 = 0;
-            repeat (valid_wait_state) @ (posedge o_clk);
-        end
-        valid_0 = 1;
-        repeat (1) @ (posedge o_clk);     
-        wait(valid_0 && ready_0);
-        if(!hpri_req_in) begin
-            valid_0 = #0 0;         
-            tlast_0 = 0;      
-        end                       
-    end  
+        input [7:0] valid_delay;
+		begin
+			@ (posedge o_clk);			
+			for(idxh=0; idxh<10; idxh=idxh+1)begin
+				data_0 <=  idxh + 32'h00002220;
+				strb_0 <=  4'hf;
+				keep_0 <=  4'hf;
+				user_0 <=  2'b00;
+				tlast_0 <= 1'b0;
+				if(idxh == 4'h9)
+				    hpri_req0 <=  1'h0;
+				else
+				    hpri_req0 <=  1'h1;
+                if(valid_delay != 0) begin
+                    valid_0 <= 0;				    
+                    repeat (valid_delay) @ (posedge o_clk);	
+                end                    			    
+				valid_0 <= 1;
+				@ (posedge o_clk);
+				while (ready_0 == 0) begin		
+					@ (posedge o_clk);
+				end
+			end
+			valid_0 <= 0;
+		end
 endtask
 
+reg[31:0]idx1;
 task axis_tx1;
-    input [DATA_WIDTH-1:0] data_in;
-    input [STRB_WIDTH-1:0] strb_in, keep_in;
-    input [USER_WIDTH-1:0] user_in; 
-    input tlast_in;    
-    input [VALID_WS_LEN-1:0] valid_wait_state;
-    
-    begin    
-        data_1 = #0 data_in;   
-        strb_1 = strb_in;
-        keep_1 = keep_in;
-        tlast_1 = tlast_in;   
-        user_1 = user_in;
-        if(valid_wait_state != {(VALID_WS_LEN){1'b0}}) begin
-            valid_1 = 0;
-            repeat (valid_wait_state) @ (posedge o_clk);
-        end
-        valid_1 = 1;
-        repeat (1) @ (posedge o_clk);     
-        wait(valid_1 && ready_1);
-        if(tlast_in) begin
-            valid_1 = #0 0;  
-            tlast_1 = 0;  
-        end            
-    end  
+        input [7:0] valid_delay;
+		begin
+			@ (posedge o_clk);
+			
+			for(idx1=0; idx1<10; idx1=idx1+1)begin
+				data_1 <=  idx1 + 32'h00003330;
+				strb_1 <=  4'hf;
+				keep_1 <=  4'hf;
+				user_1 <=  2'b01;
+				if(idx1 == 4'h9)
+				    tlast_1 <=  1'h1;
+				else
+				    tlast_1 <=  1'h0;
+                if(valid_delay != 0) begin
+                    valid_1 <= 0;				    
+                    repeat (valid_delay) @ (posedge o_clk);	
+                end                    			    
+				valid_1 <= 1;
+				@ (posedge o_clk);
+				while (ready_1 == 0) begin		
+					@ (posedge o_clk);
+				end
+			end
+			valid_1 <= 0;
+            tlast_1 <=  1'h0;
+		end
 endtask
 
-task axis_tx_hi_req2;
-    input [DATA_WIDTH-1:0] data_in;
-    input [STRB_WIDTH-1:0] strb_in, keep_in;
-    input [USER_WIDTH-1:0] user_in; 
-    input tlast_in, hpri_req_in;    
-    input [VALID_WS_LEN-1:0] valid_wait_state;
-    begin
-        hpri_req2 = #0 hpri_req_in;          
-        data_2 = #0 data_in;     
-        strb_2 = strb_in;
-        keep_2 = keep_in;
-        tlast_2 = tlast_in;
-        user_2 = user_in;
-        if(valid_wait_state != {(VALID_WS_LEN){1'b0}}) begin
-            valid_2 = 0;
-            repeat (valid_wait_state) @ (posedge o_clk);
-        end
-        valid_2 = 1;
-        repeat (1) @ (posedge o_clk);     
-        wait(valid_2 && ready_2);
-        if(!hpri_req_in) begin
-            valid_2 = #0 0;      
-            tlast_2 = 0;                
-        end                       
-    end  
-endtask
-
+reg[31:0]idx2;
 task axis_tx2;
-    input [DATA_WIDTH-1:0] data_in;
-    input [STRB_WIDTH-1:0] strb_in, keep_in;
-    input [USER_WIDTH-1:0] user_in; 
-    input tlast_in;    
-    input [VALID_WS_LEN-1:0] valid_wait_state;
-    
-    begin    
-        data_2 = #0 data_in;   
-        strb_2 = strb_in;
-        keep_2 = keep_in;
-        tlast_2 = tlast_in;   
-        user_2 = user_in;
-        if(valid_wait_state != {(VALID_WS_LEN){1'b0}}) begin
-            valid_2 = 0;
-            repeat (valid_wait_state) @ (posedge o_clk);
-        end
-        valid_2 = 1;
-        repeat (1) @ (posedge o_clk);     
-        wait(valid_2 && ready_2);
-        if(tlast_in) begin
-            valid_2 = #0 0;   
-            tlast_2 = 0;  
-        end            
-    end  
+        input [7:0] valid_delay;
+		begin
+			@ (posedge o_clk);
+			
+			for(idx2=0; idx2<10; idx2=idx2+1)begin
+				data_2 <=  idx2 + 32'h00005550;
+				strb_2 <=  4'hf;
+				keep_2 <=  4'hf;
+				user_2 <=  2'b00;
+				if(idx2 == 4'h9)
+				    tlast_2 <=  1'h1;
+				else
+				    tlast_2 <=  1'h0;
+                if(valid_delay != 0) begin
+                    valid_2 <= 0;				    
+                    repeat (valid_delay) @ (posedge o_clk);	
+                end                    			    
+				valid_2 <= 1;
+				@ (posedge o_clk);
+				while (ready_2 == 0) begin		
+					@ (posedge o_clk);
+				end
+			end
+			valid_2 <= 0;
+            tlast_2 <=  1'h0;
+		end
+endtask
+
+reg[31:0]idx2h;
+task axis_tx_hi_req2;
+        input [7:0] valid_delay;
+		begin
+			@ (posedge o_clk);
+			
+			for(idx2h=0; idx2h<10; idx2h=idx2h+1)begin
+				data_2 <=  idx2h + 32'h00006660;
+				strb_2 <=  4'hf;
+				keep_2 <=  4'hf;
+				user_2 <=  2'b00;
+				tlast_2 <= 1'b0;
+				if(idx2h == 4'h9)
+				    hpri_req2 <=  1'h0;
+				else
+				    hpri_req2 <=  1'h1;
+                if(valid_delay != 0) begin
+                    valid_2 <= 0;				    
+                    repeat (valid_delay) @ (posedge o_clk);	
+                end                    			    
+				valid_2 <= 1;
+				@ (posedge o_clk);
+				while (ready_2 == 0) begin		
+					@ (posedge o_clk);
+				end
+			end
+			valid_2 <= 0;
+		end
 endtask
 
 task axis_rx;    
-    reg Is_hi_req;
     begin
         ready_m <= 1;
         if(ready_m && valid_m) begin
@@ -371,78 +463,55 @@ begin
 	o_clk = 0;
 	o_rst_n = 1'b0;
 	#100 o_rst_n = 1;
-	#100 
+	#50 
+    //for axi_lite
+    //write addr channel
+    soc_axi_awvalid = 0;
+    soc_axi_awaddr = 0;
+    //write data channel
+    soc_axi_wvalid = 0;
+    soc_axi_wdata = 0;
+    soc_axi_wstrb = 0;
+    //read addr channel
+    soc_axi_arvalid = 0;
+    soc_axi_araddr = 0;
+    //read data channel
+    soc_axi_rready = 0;
+    
+    soc_cc_as_enable = 0;
+    
+    #100;
+    soc_cc_as_enable = 1;
+    soc_cfg_write(0,0,1,0);		//write offset 0 = 0
+    soc_cfg_read(0,0);			//read offset 0
+    soc_cfg_write(0,3,1,0);		//write offset 0 = 3
+    soc_cfg_read(0,0);			//read offset 0
 
-    //data, strb, keep, user, tlast, hi_req, wait	
-	axis_tx_hi_req(16'h2221, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req(16'h2222, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req(16'h2223, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req(16'h2224, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00);  			    
-	axis_tx_hi_req(16'h2225, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req(16'h2226, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00); 	  	
-	axis_tx_hi_req(16'h2227, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00); 
-	axis_tx_hi_req(16'h2228, 4'hF,  4'hF, 2'b00, 1'b0, 1'b1, 2'b00); 	
-	axis_tx_hi_req(16'h2229, 4'hF,  4'hF, 2'b00, 1'b0, 1'b0, 2'b00);  //for no last support, hi_req must deassert for the last transfer	 
-//	axis_tx_hi_req(16'h2229, 4'hF,  4'hF, 2'b00, 1'b1, 1'b0, 2'b00);  //for last support
+    axis_tx_hi_req(8'h0);
 end
 
 initial
 begin
-    //data, strb, keep, user, tlast, wait	
-    #4000 	  
-	axis_tx(16'h1111, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00);
-	axis_tx(16'h1112, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00); 	  	
-	axis_tx(16'h1113, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00);  
-	axis_tx(16'h1114, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00); 
-	axis_tx(16'h1115, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00);  
-	axis_tx(16'h1116, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00); 	  	
-	axis_tx(16'h1117, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00);  
-	axis_tx(16'h1118, 4'hF,  4'hF, 2'b00, 1'b0, 2'b00); 					
-	axis_tx(16'h1119, 4'hF,  4'hF, 2'b00, 1'b1, 2'b00);
+    #5000 
+	axis_tx(8'h0);    
 end
 
 initial
 begin
-#200
-	axis_tx1(16'h3331, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00);
-	axis_tx1(16'h3332, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00); 	  	
-	axis_tx1(16'h3333, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00);  
-	axis_tx1(16'h3334, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00); 
-	axis_tx1(16'h3335, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00);  
-	axis_tx1(16'h3336, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00); 	  	
-	axis_tx1(16'h3337, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00);  
-	axis_tx1(16'h3338, 4'hF,  4'hF, 2'b01, 1'b0, 2'b00); 					
-	axis_tx1(16'h3339, 4'hF,  4'hF, 2'b01, 1'b1, 2'b00);
+#1000
+axis_tx1(8'h0);
 end
 
 initial
 begin
-#200
-	axis_tx_hi_req2(16'h6661, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req2(16'h6662, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req2(16'h6663, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req2(16'h6664, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  			    
-	axis_tx_hi_req2(16'h6665, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req2(16'h6666, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00); 	  	
-	axis_tx_hi_req2(16'h6667, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00);  
-	axis_tx_hi_req2(16'h6668, 4'hF,  4'hF, 2'b10, 1'b0, 1'b1, 2'b00); 	
-	axis_tx_hi_req2(16'h6669, 4'hF,  4'hF, 2'b10, 1'b0, 1'b0, 2'b00);  //for no last support, hi_req must deassert for the last transfer
-//	axis_tx_hi_req2(16'h6669, 4'hF,  4'hF, 2'b10, 1'b1, 1'b0, 2'b00);  //for last support	 
+#1000
+axis_tx_hi_req2(8'h0);
 end
 
 initial
 begin
-    //data, strb, keep, user, tlast, wait	
-    #4000 	  
-	axis_tx2(16'h5551, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00);
-	axis_tx2(16'h5552, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00); 	  	
-	axis_tx2(16'h5553, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00);  
-	axis_tx2(16'h5554, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00); 
-	axis_tx2(16'h5555, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00);  
-	axis_tx2(16'h5556, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00); 	  	
-	axis_tx2(16'h5557, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00);  
-	axis_tx2(16'h5558, 4'hF,  4'hF, 2'b10, 1'b0, 2'b00); 					
-	axis_tx2(16'h5559, 4'hF,  4'hF, 2'b10, 1'b1, 2'b00);
+    #5000 
+    axis_tx2(8'h0);    	
 end
 
 //for Demux
@@ -452,7 +521,7 @@ begin
 	o_clk = 0;
 	o_rst_n = 1'b0;
 	#100 o_rst_n = 1;
-	#10 
+	#1000 
 
     //data, strb, keep, tlast, tid, user, wait 
 	is_axis_tx(16'h2221, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
@@ -499,6 +568,21 @@ end
 AXIS_SW uut_AXIS_SW(
 .axi_reset_n(o_rst_n),
 .axis_clk(o_clk),
+//axi_lite interface
+.axi_awvalid(soc_axi_awvalid),
+.axi_awaddr(soc_axi_awaddr),
+.axi_awready(soc_axi_awready),
+.axi_wvalid(soc_axi_wvalid),
+.axi_wdata(soc_axi_wdata),
+.axi_wstrb(soc_axi_wstrb),
+.axi_wready(soc_axi_wready),
+.axi_arvalid(soc_axi_arvalid),
+.axi_araddr(soc_axi_araddr),
+.axi_arready(soc_axi_arready),
+.axi_rvalid(soc_axi_rvalid),
+.axi_rdata(soc_axi_rdata),
+.axi_rready(soc_axi_rready),
+.cc_as_enable(soc_cc_as_enable),
 //Upstream for axis arbiter
 .up_as_tdata(data_0),
 .up_as_tstrb(strb_0),
