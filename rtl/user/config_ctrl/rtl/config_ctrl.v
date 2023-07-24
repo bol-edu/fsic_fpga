@@ -277,9 +277,9 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	////////////////////////////////////////////
 	// Always for Wishbone Interface handling //
 	////////////////////////////////////////////
-	always @ ( posedge wb_clk or negedge wb_rst)
+	always @ ( posedge wb_clk or posedge wb_rst)
 	begin
-		if ( !wb_rst ) 
+		if ( wb_rst ) 
 		begin
 			wb_fsm_reg <= wb_fsm_idle;
 			wb_axi_request <= 1'b0;
@@ -411,9 +411,9 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	/////////////////////////////////////////////////
 	// Always for requests grant - axi_grant_o_reg //
 	/////////////////////////////////////////////////
-	always @( posedge wb_clk or negedge wb_rst )
+	always @( posedge wb_clk or posedge wb_rst )
 	begin
-		if ( !wb_rst ) begin
+		if ( wb_rst ) begin
 			axi_grant_o_reg <= 1'b0;
 		end else begin
 			case (axi_grant_o_reg)
