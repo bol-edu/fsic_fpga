@@ -18,7 +18,8 @@
 // Additional Comments:
 //
 //////////////////////////////////////////////////////////////////////////////////
-
+//20230724
+//1. rx_sync_fifo output to rxdata_out for reduce 1T.
 
 module fsic_io_serdes_rx#(
 		parameter pRxFIFO_DEPTH = 5,
@@ -179,6 +180,10 @@ module fsic_io_serdes_rx#(
 		end
 	end
 
+	assign rxdata_out = rx_sync_fifo;
+	assign rxdata_out_valid = rx_sync_fifo_valid;
+
+/*
 	reg [pCLK_RATIO-1:0] rxdata;
 	reg rxdata_valid;
 
@@ -195,7 +200,7 @@ module fsic_io_serdes_rx#(
 				rxdata_valid <= rx_sync_fifo_valid;
 		end
 	end
-
+*/
 
 
 endmodule
