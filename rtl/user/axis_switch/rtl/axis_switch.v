@@ -137,7 +137,7 @@ localparam WIDTH        = USER_OFFSET + USER_WIDTH;
 
 //axi_lite reg
 //FIFO threshold setting
-reg [3:0] TH_reg = 4'h6; //offset0, bit3:0
+reg [3:0] TH_reg = 4'h5; //offset0, bit3:0
 
 wire axi_awvalid_in;
 wire axi_wvalid_in;
@@ -147,7 +147,7 @@ wire axi_wready_out;
 //For Arbiter
 wire [N-1:0]                req, hi_req;
 reg  [N-1:0]                shift_req, shift_hi_req;
-reg  [$clog2(N)-1:0]        base_ptr, base_hi_ptr;
+reg  [$clog2(N)-1:0]        base_ptr;   
 reg  [N-1:0]                grant_reg = 3'b000, grant_next, shift_grant = 3'b000, shift_hi_grant= 3'b000;
 reg                         frame_start_reg = 1'b0, frame_start_next;   
 
@@ -175,6 +175,7 @@ reg as_aa_tvalid_reg;
 
 
 wire above_th = ((wr_ptr_reg - rd_ptr_reg) > TH_reg);
+reg as_is_tready_reg;   
 
 wire [WIDTH-1:0] s_axis;
 generate
@@ -189,7 +190,7 @@ endgenerate
 wire [WIDTH-1:0] m_axis = mem[rd_ptr_reg[ADDR_WIDTH-1:0]];    
 wire [WIDTH-1:0] pre_m_axis = mem[pre_rd_ptr_reg[ADDR_WIDTH-1:0]];  
 
-assign as_is_tready = !above_th; //IO_Serdes will delay  
+assign as_is_tready = as_is_tready_reg;     
 
 //for axi_lite
 //write addr channel
@@ -244,14 +245,14 @@ assign  as_is_tuser     = m_axis_tuser_reg;
 assign  as_is_tid       = m_axis_tid_reg;
 
 
-assign as_up_tready = grant_reg[0] && is_as_tready && m_axis_tvalid_reg;
-assign as_aa_tready = grant_reg[1] && is_as_tready && m_axis_tvalid_reg;
-assign as_la_tready = grant_reg[2] && is_as_tready && m_axis_tvalid_reg;
+assign as_up_tready = grant_reg[0] && is_as_tready;    
+assign as_aa_tready = grant_reg[1] && is_as_tready;    
+assign as_la_tready = grant_reg[2] && is_as_tready;    
 
 always @* begin
     if(frame_start_reg == 1'b0) begin 
         if(hi_req) begin
-            case (base_hi_ptr) 
+            case (base_ptr)             
                 2'b00: shift_hi_req = hi_req;
                 2'b01: shift_hi_req = {hi_req[0], hi_req[2:1]};
                 2'b10: shift_hi_req = {hi_req[1:0], hi_req[2]};
@@ -285,7 +286,7 @@ end
 always @* begin
     if(frame_start_reg == 1'b0) begin
         if(hi_req) begin
-            case (base_hi_ptr) 
+            case (base_ptr)
                 2'b00: grant_next = shift_hi_grant;
                 2'b01: grant_next = {shift_hi_grant[1:0], shift_hi_grant[2]};
                 2'b10: grant_next = {shift_hi_grant[0], shift_hi_grant[2:1]};
@@ -316,7 +317,6 @@ end
 always @(posedge axis_clk or negedge axi_reset_n) begin
     if (!axi_reset_n) begin
         base_ptr <= {($clog2(N)){1'b0}};
-        base_hi_ptr <= {($clog2(N)){1'b0}}; 
         hi_req_flag <= {(N){1'b0}};       
     end else begin
         grant_reg <= grant_next;
@@ -324,17 +324,13 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
         if((grant_reg != 0)) begin          
             if(grant_reg[0]) begin
                 base_ptr <= 2'd1;
-                base_hi_ptr <= 2'd1;
             end else if(grant_reg[1]) begin
                 base_ptr <= 2'd2;
-                base_hi_ptr <= 2'd2;
             end else if(grant_reg[2]) begin
                 base_ptr <= 2'd0;
-                base_hi_ptr <= 2'd0;
             end
         end else begin
             base_ptr <= base_ptr;
-            base_hi_ptr <= base_hi_ptr;
         end
        case (grant_reg)
             3'b001: begin
@@ -356,7 +352,7 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
                 //for  normal req
                     m_axis_tlast_reg <= up_as_tlast;
                 end 
-                m_axis_tvalid_reg <= is_as_tready ? up_as_tvalid : 0; 
+                m_axis_tvalid_reg <= up_as_tvalid; 
                 m_axis_tuser_reg <= up_as_tuser;
                 m_axis_tid_reg <= 2'b00;        
             end
@@ -365,7 +361,7 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
                 m_axis_tstrb_reg <= aa_as_tstrb;
                 m_axis_tkeep_reg <= aa_as_tkeep;
                 m_axis_tlast_reg <= aa_as_tlast;
-                m_axis_tvalid_reg <= is_as_tready ? aa_as_tvalid : 0;   
+                m_axis_tvalid_reg <= aa_as_tvalid;   
                 m_axis_tuser_reg <= aa_as_tuser;
                 m_axis_tid_reg <= 2'b01;               
             end
@@ -388,7 +384,7 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
                 //for  normal req
                     m_axis_tlast_reg <= la_as_tlast;
                 end                
-                m_axis_tvalid_reg <= is_as_tready ? la_as_tvalid : 0; 
+                m_axis_tvalid_reg <= la_as_tvalid; 
                 m_axis_tuser_reg <= la_as_tuser;
                 m_axis_tid_reg <= 2'b10;                
             end
@@ -419,6 +415,7 @@ end
 
 // Read logic
 always @(posedge axis_clk) begin
+    as_is_tready_reg <= !above_th;  
     if (wr_ptr_reg != pre_rd_ptr_reg) begin  
         if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
             as_up_tvalid_reg <= 1;
@@ -427,15 +424,17 @@ always @(posedge axis_clk) begin
                 pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
             end else
                pre_rd_ptr_reg <= pre_rd_ptr_reg;
-        end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin
-  
+        end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin  
             as_aa_tvalid_reg <= 1;
             if(aa_as_tready) begin
                rd_ptr_reg <= pre_rd_ptr_reg;  
                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
             end else
                pre_rd_ptr_reg <= pre_rd_ptr_reg;
-        end               
+        end else begin
+            as_up_tvalid_reg <= 0;
+            as_aa_tvalid_reg <= 0;
+        end
     end else begin
         as_up_tvalid_reg <= 0;
         as_aa_tvalid_reg <= 0;
