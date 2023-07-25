@@ -97,7 +97,7 @@ module axi_ctrl_logic(
     enum logic {AXI_WR, AXI_RD} fifo_out_trans_typ;
     enum logic [1:0] {TRANS_LS, TRANS_SS} next_trans, last_trans;
 
-    // FSM state, sequential logic, axis
+    // FSM state, sequential logic
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
         if(~axi_aresetn)begin
             axi_state <= AXI_WAIT_DATA;
@@ -114,7 +114,7 @@ module axi_ctrl_logic(
     logic next_ls, next_ss, wr_mb, rd_mb, wr_aa, rd_aa, rd_unsupp, trig_sm_wr, trig_sm_rd, do_nothing, decide_done, trig_int, sync_trig_int, axi_interrupt_done, sync_trig_sm_wr, sync_trig_sm_rd, trig_lm_rd, send_bk_done, trig_lm_wr, sync_trig_lm_rd;
     logic ls_rd_data_bk, ls_wr_data_done, get_next_data_ss, ss_wr_data_done;
 
-    // FSM state, combinational logic, axis
+    // FSM state, combinational logic
     always_comb begin
         axi_next_state = axi_state;
 
@@ -246,7 +246,7 @@ module axi_ctrl_logic(
         end
         //else if((axi_state == AXI_DECIDE_DEST) && (axi_next_state == AXI_WAIT_DATA))
         //    fifo_ss_rd_rdy = 1'b1;
-        if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_SS))begin // clear fifo when transaction done to fix bug
+        if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_SS))begin
             fifo_ss_rd_rdy = 1'b1;
         end
 
@@ -273,6 +273,9 @@ module axi_ctrl_logic(
     logic [1:0] ss_data_cnt, lm_rd_cnt;
     logic lm_rd_bk_sent;
 
+    // compute control signals according to source (LS / SS) and address range
+    // note this is combinational, so the signals can only exist when state is AXI_DECIDE_DEST, 
+    // if the signal need to be used in two clock cycles after the state, have to make a register for it
     always_comb begin
         //next_ls = 1'b0;
         //next_ss = 1'b0;
@@ -472,6 +475,7 @@ module axi_ctrl_logic(
     logic mb_int_en;
     assign mb_int_en = aa_regs[0][0];
 
+    // behavior description according to control signals and state
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
         if(~axi_aresetn)begin
             //last_trans <= TRANS_LS; // ?????????????????
@@ -637,7 +641,7 @@ module axi_ctrl_logic(
                     bk_ls_rdone <= 1'b1;
                     send_bk_done <= 1'b1;
                 end
-                else if(trig_sm_wr|| sync_trig_sm_wr)begin
+                else if(trig_sm_wr || sync_trig_sm_wr)begin
                     if(ss_data_cnt == 2'b0)begin
                         bk_sm_start <= 1'b1;
                         bk_sm_data <= {fifo_out_wstrb, 13'b0, fifo_out_waddr};
@@ -683,8 +687,7 @@ module axi_ctrl_logic(
                 // edge trigger interrupt signal, will be de-assert in next posedge
                 if(mb_int_en)begin
                     axi_interrupt <= 1'b1;
-                    // update interrupt status
-                    // offset 1 bit 0
+                    // update interrupt status, offset 1 bit 0
                     aa_regs[1][0] <= 1'b1;
                 end
                 axi_interrupt_done <= 1'b1;
