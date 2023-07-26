@@ -62,7 +62,7 @@ module axi_ctrl_logic(
     logic fifo_ss_wr_vld, fifo_ss_wr_rdy, fifo_ss_rd_vld, fifo_ss_rd_rdy, fifo_ss_clear;
     logic [FIFO_SS_WIDTH-1:0] fifo_ss_data_in, fifo_ss_data_out;
 
-    // data format: 
+    // data format:
     // if write: {rd_wr_1bit, waddr_15bit, wdata_32bit, wstrb_4bit}, total 52bit
     // if read:  {rd_wr_1bit, raddr_15bit, padding_zero_36bit},      total 52bit
     axi_fifo #(.WIDTH(FIFO_LS_WIDTH), .DEPTH(FIFO_LS_DEPTH)) fifo_ls(
@@ -77,7 +77,7 @@ module axi_ctrl_logic(
         .rd_vld(fifo_ls_rd_vld),
         .clear(fifo_ls_clear));
 
-    // data format: 
+    // data format:
     // deleted {data_32bit, tstrb_4bit, tkeep_4bit, user_2bit, tlast_1bit}, total 43bit
     // {data_32bit, user_2bit}, total 34bit
     axi_fifo #(.WIDTH(FIFO_SS_WIDTH), .DEPTH(FIFO_SS_DEPTH)) fifo_ss(
@@ -259,7 +259,7 @@ module axi_ctrl_logic(
     always_ff@(posedge axi_aclk or negedge axi_aresetn) // keep old data from SS
         if(~axi_aresetn)
             fifo_out_tdata_old <= 32'b0;
-        else 
+        else
             fifo_out_tdata_old <= fifo_out_tdata;
 
     parameter MB_SUPP_LOW = 15'h2000, MB_SUPP_HIGH = 15'h201F;
@@ -272,6 +272,8 @@ module axi_ctrl_logic(
     logic [31:0] data_ss;
     logic [1:0] ss_data_cnt, lm_rd_cnt;
     logic lm_rd_bk_sent;
+    logic [11:0]aa_index; // for index of aa_regs
+    logic [11:0]mb_index; // for index of mb_regs
 
     // compute control signals according to source (LS / SS) and address range
     // note this is combinational, so the signals can only exist when state is AXI_DECIDE_DEST, 
@@ -294,6 +296,8 @@ module axi_ctrl_logic(
         trig_int = 1'b0;
         trig_lm_wr = 1'b0;
         trig_lm_rd = 1'b0;
+        aa_index = 12'b0;
+        mb_index = 12'b0;
 
         next_trans = (next_ss) ? TRANS_SS : TRANS_LS;
 
@@ -307,22 +311,26 @@ module axi_ctrl_logic(
                 TRANS_LS: begin // request come from left side - axilite_slave
                     case(fifo_out_trans_typ)
                         AXI_WR: begin
-                            if( (fifo_out_waddr >= MB_SUPP_LOW) && 
+                            if( (fifo_out_waddr >= MB_SUPP_LOW) &&
                                 (fifo_out_waddr <= MB_SUPP_HIGH))begin // local access MB_reg
                                 wr_mb = 1'b1;
                                 trig_sm_wr = 1'b1;
+                                // compute related index and shift 2 for dw address
+                                mb_index = (fifo_out_waddr[11:0] - MB_SUPP_LOW[11:0]) >> 2;
                             end
-                            else if((fifo_out_waddr >= AA_SUPP_LOW) && 
+                            else if((fifo_out_waddr >= AA_SUPP_LOW) &&
                                     (fifo_out_waddr <= AA_SUPP_HIGH))begin // local access AA_reg
                                 wr_aa = 1'b1;
+                                // compute related index and shift 2 for dw address
+                                aa_index = (fifo_out_waddr[11:0] - AA_SUPP_LOW[11:0]) >> 2;
                             end
-                            else if((fifo_out_waddr >= MB_SUPP_LOW) && 
+                            else if((fifo_out_waddr >= MB_SUPP_LOW) &&
                                     (fifo_out_waddr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported, ignored
                                 do_nothing = 1'b1;
                             end
-                            else if(((fifo_out_waddr >= FPGA_USER_WP_0) && 
+                            else if(((fifo_out_waddr >= FPGA_USER_WP_0) &&
                                      (fifo_out_waddr <= FPGA_USER_WP_1)) ||
-                                    ((fifo_out_waddr >= FPGA_USER_WP_2) && 
+                                    ((fifo_out_waddr >= FPGA_USER_WP_2) &&
                                      (fifo_out_waddr <= FPGA_USER_WP_3)))begin // fpga side access caravel usesr project wrapper, this do not fire in caravel side
                                 trig_sm_wr = 1'b1;
                             end
@@ -330,21 +338,25 @@ module axi_ctrl_logic(
                                 do_nothing = 1'b1;
                         end
                         AXI_RD: begin
-                            if( (fifo_out_raddr >= MB_SUPP_LOW) && 
+                            if( (fifo_out_raddr >= MB_SUPP_LOW) &&
                                 (fifo_out_raddr <= MB_SUPP_HIGH))begin // local access MB_reg
                                 rd_mb = 1'b1;
+                                // compute related index and shift 2 for dw address
+                                mb_index = (fifo_out_raddr[11:0] - MB_SUPP_LOW[11:0]) >> 2;
                             end
-                            else if((fifo_out_raddr >= AA_SUPP_LOW) && 
+                            else if((fifo_out_raddr >= AA_SUPP_LOW) &&
                                     (fifo_out_raddr <= AA_SUPP_HIGH))begin // local access AA_reg
                                 rd_aa = 1'b1;
+                                // compute related index and shift 2 for dw address
+                                aa_index = (fifo_out_raddr[11:0] - AA_SUPP_LOW[11:0]) >> 2;
                             end
-                            else if((fifo_out_raddr >= MB_SUPP_LOW) && 
+                            else if((fifo_out_raddr >= MB_SUPP_LOW) &&
                                     (fifo_out_raddr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported
                                 rd_unsupp = 1'b1;
                             end
-                            else if(((fifo_out_raddr >= FPGA_USER_WP_0) && 
+                            else if(((fifo_out_raddr >= FPGA_USER_WP_0) &&
                                      (fifo_out_raddr <= FPGA_USER_WP_1)) ||
-                                    ((fifo_out_raddr >= FPGA_USER_WP_2) && 
+                                    ((fifo_out_raddr >= FPGA_USER_WP_2) &&
                                      (fifo_out_raddr <= FPGA_USER_WP_3)))begin // fpga side access caravel usesr project wrapper, this do not fire in caravel side
                                 trig_sm_rd = 1'b1;
                             end
@@ -369,6 +381,8 @@ module axi_ctrl_logic(
                                     (addr_ss <= {13'b0, MB_SUPP_HIGH}))begin // remote access MB_reg, write
                                     wr_mb = 1'b1;
                                     trig_int = 1'b1;
+                                    // compute related index and shift 2 for dw address
+                                    mb_index = (addr_ss[11:0] - MB_SUPP_LOW[11:0]) >> 2;
                                 end
                                 else if((addr_ss >= {13'b0, FPGA_USER_WP_0}) &&
                                         (addr_ss <= {13'b0, FPGA_USER_WP_3}))begin
@@ -403,7 +417,7 @@ module axi_ctrl_logic(
             ss_data_cnt <= 2'b0;
         end
         else begin
-            if((axi_state == AXI_DECIDE_DEST) && (next_trans == TRANS_SS) && 
+            if((axi_state == AXI_DECIDE_DEST) && (next_trans == TRANS_SS) &&
                 (fifo_out_tuser == 2'b01))
                 ss_data_cnt <= ss_data_cnt + 1'b1;
             else if((axi_next_state == AXI_SEND_BKEND) && (next_trans == TRANS_LS))
@@ -419,7 +433,7 @@ module axi_ctrl_logic(
             lm_rd_cnt <= 2'b0;
         end
         else begin
-            if((axi_next_state == AXI_SEND_BKEND) && (next_trans == TRANS_SS) && 
+            if((axi_next_state == AXI_SEND_BKEND) && (next_trans == TRANS_SS) &&
                 (fifo_out_tuser == 2'b10))
                 lm_rd_cnt <= lm_rd_cnt + 1'b1;
             else
@@ -459,17 +473,26 @@ module axi_ctrl_logic(
     assign bk_sm_tkeep = 4'b0;
 
     logic [31:0] data_return;
-    logic [31:0] mb_regs [7:0]; // 32bit * 8 
+    // registerName     offset Address
+    // mb_reg_0[31:0]   'h0
+    // mb_reg_1[31:0]   'h4
+    // mb_reg_2[31:0]   'h8
+    // mb_reg_3[31:0]   'hc
+    // mb_reg_4[31:0]   'h10
+    // mb_reg_5[31:0]   'h14
+    // mb_reg_6[31:0]   'h18
+    // mb_reg_7[31:0]   'h1c
+    logic [31:0] mb_regs [7:0]; // 32bit * 8
     //--------------------------------------------------
     // for AA_REG description
-    // offset 0:
+    // offset 0-3 (32bit):
     // bit 0: Enable Interrupt
-    // 0 = Disable interrupt signal
-    // 1 = Enable interrupt signal
-    // offset 1:
+    // 0 = disable interrupt signal
+    // 1 = enable interrupt signal
+    // offset 4-7 (32bit):
     // bit 0: Interrupt Status
-    // 0: Interrupt has occurred.
-    // 0: Interrupt 
+    // 0: interrupt has occurred
+    // 0: no interrupt
     //--------------------------------------------------
     logic [31:0] aa_regs [1:0]; //32bit * 2
     logic mb_int_en;
@@ -515,6 +538,7 @@ module axi_ctrl_logic(
             bk_lm_rstart <= 1'b0;
             bk_lm_raddr <= 32'b0;
             lm_rd_bk_sent <= 1'b0;
+            data_return <= 32'b0;
         end
         else begin
             if(axi_state == AXI_WAIT_DATA && axi_next_state == AXI_DECIDE_DEST)begin
@@ -542,23 +566,34 @@ module axi_ctrl_logic(
                 bk_lm_waddr <= 32'b0;
                 bk_lm_wdata <= 32'b0;
                 bk_lm_wstrb <= 4'b0;
+                data_return <= 32'b0;
             end
             else if(axi_next_state == AXI_MOVE_DATA)begin
                 if(wr_mb)begin
                     // write MB_reg
                     case(next_trans)
                         TRANS_LS: begin
-                            if(fifo_out_wstrb[0]) mb_regs[fifo_out_waddr[11:0]][7: 0] <= fifo_out_wdata[7:0];
-                            if(fifo_out_wstrb[1]) mb_regs[fifo_out_waddr[11:0]][15:8] <= fifo_out_wdata[15:8];
-                            if(fifo_out_wstrb[2]) mb_regs[fifo_out_waddr[11:0]][23:16] <= fifo_out_wdata[23:16];
-                            if(fifo_out_wstrb[3]) mb_regs[fifo_out_waddr[11:0]][31:24] <= fifo_out_wdata[31:24];
+                            // due to dw address access, the wstrb should be 1111b
+                            //if(fifo_out_wstrb[0]) mb_regs[mb_index][7: 0] <= fifo_out_wdata[7:0];
+                            //if(fifo_out_wstrb[1]) mb_regs[mb_index][15:8] <= fifo_out_wdata[15:8];
+                            //if(fifo_out_wstrb[2]) mb_regs[mb_index][23:16] <= fifo_out_wdata[23:16];
+                            //if(fifo_out_wstrb[3]) mb_regs[mb_index][31:24] <= fifo_out_wdata[31:24];
+                            mb_regs[mb_index][7: 0] <= fifo_out_wdata[7:0];
+                            mb_regs[mb_index][15:8] <= fifo_out_wdata[15:8];
+                            mb_regs[mb_index][23:16] <= fifo_out_wdata[23:16];
+                            mb_regs[mb_index][31:24] <= fifo_out_wdata[31:24];
                             ls_wr_data_done <= 1'b1;
                         end
                         TRANS_SS: begin
-                            if(wstrb_ss[0]) mb_regs[addr_ss[11:0]][7: 0] <= data_ss[7:0];
-                            if(wstrb_ss[1]) mb_regs[addr_ss[11:0]][15:8] <= data_ss[15:8];
-                            if(wstrb_ss[2]) mb_regs[addr_ss[11:0]][23:16] <= data_ss[23:16];
-                            if(wstrb_ss[3]) mb_regs[addr_ss[11:0]][31:24] <= data_ss[31:24];
+                            // due to dw address access, the wstrb should be 1111b
+                            //if(wstrb_ss[0]) mb_regs[mb_index][7: 0] <= data_ss[7:0];
+                            //if(wstrb_ss[1]) mb_regs[mb_index][15:8] <= data_ss[15:8];
+                            //if(wstrb_ss[2]) mb_regs[mb_index][23:16] <= data_ss[23:16];
+                            //if(wstrb_ss[3]) mb_regs[mb_index][31:24] <= data_ss[31:24];
+                            mb_regs[mb_index][7: 0] <= data_ss[7:0];
+                            mb_regs[mb_index][15:8] <= data_ss[15:8];
+                            mb_regs[mb_index][23:16] <= data_ss[23:16];
+                            mb_regs[mb_index][31:24] <= data_ss[31:24];
                             ss_wr_data_done <= 1'b1;
                         end
                     endcase
@@ -567,7 +602,7 @@ module axi_ctrl_logic(
                     // read MB_reg
                     case(next_trans)
                         TRANS_LS: begin
-                            data_return <= mb_regs[fifo_out_raddr[11:0]];
+                            data_return <= mb_regs[mb_index];
                             ls_rd_data_bk <= 1'b1;
                         end
                         TRANS_SS: begin
@@ -579,23 +614,30 @@ module axi_ctrl_logic(
                     // write AA_reg
                     case(next_trans)
                         TRANS_LS: begin
-                             // offset 0
-                            if(fifo_out_waddr[11:0] == 12'b0)begin
+                            // due to dw address access, fifo_out_wstrb should be 1111b
+                            // offset 0
+                            if(aa_index == 12'b0)begin
                                 // bit 0 RW, other bits RO
-                                if(fifo_out_wstrb[0]) aa_regs[fifo_out_waddr[11:0]][0] <= fifo_out_wdata[0];
-                            // offset 1
-                            end 
-                            else if(fifo_out_waddr[11:0] == 12'b1)begin
+                                //if(fifo_out_wstrb[0]) aa_regs[aa_index][0] <= fifo_out_wdata[0];
+                                aa_regs[aa_index][0] <= fifo_out_wdata[0];
+                            end
+                            // offset 4
+                            else if(aa_index == 12'b1)begin
                                 // bit 0 RW1C, other bits RO
-                                if(fifo_out_wstrb[0]) aa_regs[fifo_out_waddr[11:0]][0] <= aa_regs[fifo_out_waddr[11:0]][0] & ~fifo_out_wdata[0];
+                                //if(fifo_out_wstrb[0]) aa_regs[aa_index][0] <= aa_regs[aa_index][0] & ~fifo_out_wdata[0];
+                                aa_regs[aa_index][0] <= aa_regs[aa_index][0] & ~fifo_out_wdata[0];
+                            end
                             // other offset registers, should not come here due to we only support aa_regs[1:0]
-                            end 
                             else begin
-                                if(fifo_out_wstrb[0]) aa_regs[fifo_out_waddr[11:0]][7: 0] <= fifo_out_wdata[7:0];
-                                if(fifo_out_wstrb[1]) aa_regs[fifo_out_waddr[11:0]][15:8] <= fifo_out_wdata[15:8];
-                                if(fifo_out_wstrb[2]) aa_regs[fifo_out_waddr[11:0]][23:16] <= fifo_out_wdata[23:16];
-                                if(fifo_out_wstrb[3]) aa_regs[fifo_out_waddr[11:0]][31:24] <= fifo_out_wdata[31:24];
-                            end 
+                                //if(fifo_out_wstrb[0]) aa_regs[aa_index][7: 0] <= fifo_out_wdata[7:0];
+                                //if(fifo_out_wstrb[1]) aa_regs[aa_index][15:8] <= fifo_out_wdata[15:8];
+                                //if(fifo_out_wstrb[2]) aa_regs[aa_index][23:16] <= fifo_out_wdata[23:16];
+                                //if(fifo_out_wstrb[3]) aa_regs[aa_index][31:24] <= fifo_out_wdata[31:24];
+                                aa_regs[aa_index][7: 0] <= fifo_out_wdata[7:0];
+                                aa_regs[aa_index][15:8] <= fifo_out_wdata[15:8];
+                                aa_regs[aa_index][23:16] <= fifo_out_wdata[23:16];
+                                aa_regs[aa_index][31:24] <= fifo_out_wdata[31:24];
+                            end
                             ls_wr_data_done <= 1'b1;
                         end
                         TRANS_SS: begin // ?????????????
@@ -608,7 +650,7 @@ module axi_ctrl_logic(
                     // read AA_reg
                     case(next_trans)
                         TRANS_LS: begin
-                            data_return <= aa_regs[fifo_out_raddr[11:0]];
+                            data_return <= aa_regs[aa_index];
                             ls_rd_data_bk <= 1'b1;
                         end
                         TRANS_SS: begin
@@ -621,9 +663,9 @@ module axi_ctrl_logic(
                     // Return 0xFFFFFFFF when the register is not supported
                     data_return <= 32'hFFFFFFFF;
                     case(next_trans)
-                        TRANS_LS: 
+                        TRANS_LS:
                             ls_rd_data_bk <= 1'b1;
-                        //TRANS_SS: 
+                        //TRANS_SS:
                             // this path will not fire, because only wr_mb or fpga write caravel side can go through axis
                             //ss_rd_data_bk <= 1'b1;
                     endcase
