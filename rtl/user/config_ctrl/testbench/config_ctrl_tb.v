@@ -246,7 +246,7 @@ module tb_top;
 		axi_rdata2 = 32'b0;
 		axi_rvalid2 = 1'b0;
 
-		wb_rst = 1'b0;
+		wb_rst = 1'b1;
 		wb_clk = 1'b1;
 		wbs_adr = 32'b0;
 		wbs_wdata = 32'b0;
@@ -266,7 +266,7 @@ module tb_top;
 		end
 		
 		#8
-		wb_rst = 1'b1;
+		wb_rst = 1'b0;
 		
 		#4
 		axi_reset_n = 1'b1;
@@ -381,8 +381,8 @@ module tb_top;
 	end
 	
 	//WB Master wb_ack_o handling
-	always @( posedge wb_clk or negedge wb_rst) begin
-		if ( !wb_rst ) begin
+	always @( posedge wb_clk or posedge wb_rst) begin
+		if ( wb_rst ) begin
 			wbs_adr <= 32'h0;
 			wbs_wdata <= 32'h0;
 			wbs_sel <= 4'b0;
