@@ -160,7 +160,7 @@ module IO_SERDES #(
 		end
 		else begin
 			if ( axi_awvalid_in && axi_wvalid_in ) begin		//when axi_awvalid_in=1 and axi_wvalid_in=1 means axi_awready_out=1 and axi_wready_out=1
-				if (axi_awaddr == 15'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
+				if (axi_awaddr[11:2] == 10'h000 && (axi_wstrb[0] == 1) ) begin //offset 0
 					rxen_ctl <= axi_wdata[0];
 					txen_ctl <= axi_wdata[1];
 				end
