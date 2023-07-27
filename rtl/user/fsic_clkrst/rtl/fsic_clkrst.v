@@ -22,6 +22,7 @@ module FSIC_CLKRST (
   input  wire         axis_clk,
   output wire         axis_rst_n,
 
+  input  wire         io_clk,
   output wire         ioclk
 );
 
@@ -84,7 +85,7 @@ always @(posedge user_clock2 or negedge uck2_rst_n)
     div2_clk <= ~div2_clk; 
 */
 
-
-assign ioclk = user_clock2;
+// TBD
+assign ioclk = io_clk;
 
 endmodule // FSIC_CLKRST
