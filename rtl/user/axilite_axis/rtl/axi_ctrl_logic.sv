@@ -274,8 +274,9 @@ module axi_ctrl_logic(
     logic [31:0] data_ss;
     logic [1:0] ss_data_cnt, lm_rd_cnt;
     logic lm_rd_bk_sent;
-    logic [11:0]aa_index; // for index of aa_regs
-    logic [11:0]mb_index; // for index of mb_regs
+    // note: dw address access
+    logic [9:0]aa_index; // for index of aa_regs 
+    logic [9:0]mb_index; // for index of mb_regs 
 
     // compute control signals according to source (LS / SS) and address range
     // note this is combinational, so the signals can only exist when state is AXI_DECIDE_DEST, 
@@ -310,14 +311,14 @@ module axi_ctrl_logic(
                                 (fifo_out_waddr <= MB_SUPP_HIGH))begin // local access MB_reg
                                 wr_mb = 1'b1;
                                 trig_sm_wr = 1'b1;
-                                // compute related index and shift 2 for dw address
-                                mb_index = (fifo_out_waddr[11:0] - MB_SUPP_LOW[11:0]) >> 2;
+                                // compute related index for dw address
+                                mb_index = fifo_out_waddr[11:2] - MB_SUPP_LOW[11:2];
                             end
                             else if((fifo_out_waddr >= AA_SUPP_LOW) &&
                                     (fifo_out_waddr <= AA_SUPP_HIGH))begin // local access AA_reg
                                 wr_aa = 1'b1;
-                                // compute related index and shift 2 for dw address
-                                aa_index = (fifo_out_waddr[11:0] - AA_SUPP_LOW[11:0]) >> 2;
+                                // compute related index for dw address
+                                aa_index = fifo_out_waddr[11:2] - AA_SUPP_LOW[11:2];
                             end
                             else if((fifo_out_waddr >= MB_SUPP_LOW) &&
                                     (fifo_out_waddr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported, ignored
@@ -336,14 +337,14 @@ module axi_ctrl_logic(
                             if( (fifo_out_raddr >= MB_SUPP_LOW) &&
                                 (fifo_out_raddr <= MB_SUPP_HIGH))begin // local access MB_reg
                                 rd_mb = 1'b1;
-                                // compute related index and shift 2 for dw address
-                                mb_index = (fifo_out_raddr[11:0] - MB_SUPP_LOW[11:0]) >> 2;
+                                // compute related index for dw address
+                                mb_index = fifo_out_raddr[11:2] - MB_SUPP_LOW[11:2];
                             end
                             else if((fifo_out_raddr >= AA_SUPP_LOW) &&
                                     (fifo_out_raddr <= AA_SUPP_HIGH))begin // local access AA_reg
                                 rd_aa = 1'b1;
-                                // compute related index and shift 2 for dw address
-                                aa_index = (fifo_out_raddr[11:0] - AA_SUPP_LOW[11:0]) >> 2;
+                                // compute related index for dw address
+                                aa_index = fifo_out_raddr[11:2] - AA_SUPP_LOW[11:2];
                             end
                             else if((fifo_out_raddr >= MB_SUPP_LOW) &&
                                     (fifo_out_raddr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported
@@ -356,7 +357,11 @@ module axi_ctrl_logic(
                                 trig_sm_rd = 1'b1;
                             end
                             else
-                                do_nothing = 1'b1;
+                                //do_nothing = 1'b1;
+                                // should not happen, return all 1 for unsupported address request.
+                                // ex: AA support local AA + MB + remote caravel MMIO resource = 20K.
+                                // but user define AA MMIO resource = 24K, and send 24-1K address to AA.
+                                rd_unsupp = 1'b1;
                         end
                     endcase
                 end
@@ -376,8 +381,8 @@ module axi_ctrl_logic(
                                     (addr_ss <= {13'b0, MB_SUPP_HIGH}))begin // remote access MB_reg, write
                                     wr_mb = 1'b1;
                                     trig_int = 1'b1;
-                                    // compute related index and shift 2 for dw address
-                                    mb_index = (addr_ss[11:0] - MB_SUPP_LOW[11:0]) >> 2;
+                                    // compute related index for dw address
+                                    mb_index = addr_ss[11:2] - MB_SUPP_LOW[11:2];
                                 end
                                 else if((addr_ss >= {13'b0, FPGA_USER_WP_0}) &&
                                         (addr_ss <= {13'b0, FPGA_USER_WP_3}))begin
@@ -420,8 +425,8 @@ module axi_ctrl_logic(
             trig_int = 1'b0;
             trig_lm_wr = 1'b0;
             trig_lm_rd = 1'b0;
-            aa_index = 12'b0;
-            mb_index = 12'b0;
+            aa_index = 10'b0; // dw address
+            mb_index = 10'b0; // dw address
         end
     end
 
@@ -587,27 +592,17 @@ module axi_ctrl_logic(
                     // write MB_reg
                     case(next_trans)
                         TRANS_LS: begin
-                            // due to dw address access, the wstrb should be 1111b
-                            //if(fifo_out_wstrb[0]) mb_regs[mb_index][7: 0] <= fifo_out_wdata[7:0];
-                            //if(fifo_out_wstrb[1]) mb_regs[mb_index][15:8] <= fifo_out_wdata[15:8];
-                            //if(fifo_out_wstrb[2]) mb_regs[mb_index][23:16] <= fifo_out_wdata[23:16];
-                            //if(fifo_out_wstrb[3]) mb_regs[mb_index][31:24] <= fifo_out_wdata[31:24];
-                            mb_regs[mb_index][7: 0] <= fifo_out_wdata[7:0];
-                            mb_regs[mb_index][15:8] <= fifo_out_wdata[15:8];
-                            mb_regs[mb_index][23:16] <= fifo_out_wdata[23:16];
-                            mb_regs[mb_index][31:24] <= fifo_out_wdata[31:24];
+                            if(fifo_out_wstrb[0]) mb_regs[mb_index][7: 0] <= fifo_out_wdata[7:0];
+                            if(fifo_out_wstrb[1]) mb_regs[mb_index][15:8] <= fifo_out_wdata[15:8];
+                            if(fifo_out_wstrb[2]) mb_regs[mb_index][23:16] <= fifo_out_wdata[23:16];
+                            if(fifo_out_wstrb[3]) mb_regs[mb_index][31:24] <= fifo_out_wdata[31:24];
                             ls_wr_data_done <= 1'b1;
                         end
                         TRANS_SS: begin
-                            // due to dw address access, the wstrb should be 1111b
-                            //if(wstrb_ss[0]) mb_regs[mb_index][7: 0] <= data_ss[7:0];
-                            //if(wstrb_ss[1]) mb_regs[mb_index][15:8] <= data_ss[15:8];
-                            //if(wstrb_ss[2]) mb_regs[mb_index][23:16] <= data_ss[23:16];
-                            //if(wstrb_ss[3]) mb_regs[mb_index][31:24] <= data_ss[31:24];
-                            mb_regs[mb_index][7: 0] <= data_ss[7:0];
-                            mb_regs[mb_index][15:8] <= data_ss[15:8];
-                            mb_regs[mb_index][23:16] <= data_ss[23:16];
-                            mb_regs[mb_index][31:24] <= data_ss[31:24];
+                            if(wstrb_ss[0]) mb_regs[mb_index][7: 0] <= data_ss[7:0];
+                            if(wstrb_ss[1]) mb_regs[mb_index][15:8] <= data_ss[15:8];
+                            if(wstrb_ss[2]) mb_regs[mb_index][23:16] <= data_ss[23:16];
+                            if(wstrb_ss[3]) mb_regs[mb_index][31:24] <= data_ss[31:24];
                             ss_wr_data_done <= 1'b1;
                         end
                     endcase
@@ -628,29 +623,22 @@ module axi_ctrl_logic(
                     // write AA_reg
                     case(next_trans)
                         TRANS_LS: begin
-                            // due to dw address access, fifo_out_wstrb should be 1111b
                             // offset 0
-                            if(aa_index == 12'b0)begin
+                            if(aa_index == 10'b0)begin
                                 // bit 0 RW, other bits RO
-                                //if(fifo_out_wstrb[0]) aa_regs[aa_index][0] <= fifo_out_wdata[0];
-                                aa_regs[aa_index][0] <= fifo_out_wdata[0];
+                                if(fifo_out_wstrb[0]) aa_regs[aa_index][0] <= fifo_out_wdata[0];
                             end
                             // offset 4
-                            else if(aa_index == 12'b1)begin
+                            else if(aa_index == 10'b1)begin
                                 // bit 0 RW1C, other bits RO
-                                //if(fifo_out_wstrb[0]) aa_regs[aa_index][0] <= aa_regs[aa_index][0] & ~fifo_out_wdata[0];
-                                aa_regs[aa_index][0] <= aa_regs[aa_index][0] & ~fifo_out_wdata[0];
+                                if(fifo_out_wstrb[0]) aa_regs[aa_index][0] <= aa_regs[aa_index][0] & ~fifo_out_wdata[0];
                             end
                             // other offset registers, should not come here due to we only support aa_regs[1:0]
                             else begin
-                                //if(fifo_out_wstrb[0]) aa_regs[aa_index][7: 0] <= fifo_out_wdata[7:0];
-                                //if(fifo_out_wstrb[1]) aa_regs[aa_index][15:8] <= fifo_out_wdata[15:8];
-                                //if(fifo_out_wstrb[2]) aa_regs[aa_index][23:16] <= fifo_out_wdata[23:16];
-                                //if(fifo_out_wstrb[3]) aa_regs[aa_index][31:24] <= fifo_out_wdata[31:24];
-                                aa_regs[aa_index][7: 0] <= fifo_out_wdata[7:0];
-                                aa_regs[aa_index][15:8] <= fifo_out_wdata[15:8];
-                                aa_regs[aa_index][23:16] <= fifo_out_wdata[23:16];
-                                aa_regs[aa_index][31:24] <= fifo_out_wdata[31:24];
+                                if(fifo_out_wstrb[0]) aa_regs[aa_index][7: 0] <= fifo_out_wdata[7:0];
+                                if(fifo_out_wstrb[1]) aa_regs[aa_index][15:8] <= fifo_out_wdata[15:8];
+                                if(fifo_out_wstrb[2]) aa_regs[aa_index][23:16] <= fifo_out_wdata[23:16];
+                                if(fifo_out_wstrb[3]) aa_regs[aa_index][31:24] <= fifo_out_wdata[31:24];
                             end
                             ls_wr_data_done <= 1'b1;
                         end
@@ -743,7 +731,7 @@ module axi_ctrl_logic(
                 // edge trigger interrupt signal, will be de-assert in next posedge
                 if(mb_int_en)begin
                     axi_interrupt <= 1'b1;
-                    // update interrupt status, offset 1 bit 0
+                    // update interrupt status, offset 4 bit 0
                     aa_regs[1][0] <= 1'b1;
                 end
                 axi_interrupt_done <= 1'b1;
