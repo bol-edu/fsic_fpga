@@ -60,11 +60,13 @@ module axi_fifo#(WIDTH=8, DEPTH=8)(
 
     // output current read data if fifo is not empty, data go first before pointer moving, to solve read fifo cost too many clock
     always_comb begin // use combinational so rd_pointer change reflect instantly
-        data_out = '0; // initialize packed array (as a vector) with all zero
+        //data_out = '0; // initialize packed array (as a vector) with all zero
 
         if(empty == 0)begin
             data_out = fifo[rd_pointer];
         end
+        else
+            data_out = '0; // initialize packed array (as a vector) with all zero
     end
 
     // to fix bug in short transaction only have one clock data
@@ -74,8 +76,8 @@ module axi_fifo#(WIDTH=8, DEPTH=8)(
 
     // decide when this fifo can be read or wrote
     always_comb begin
-        wr_rdy = 1'b0;
-        rd_vld = 1'b0;
+        //wr_rdy = 1'b0;
+        //rd_vld = 1'b0;
 
         if(hack)begin // for axis_master
             if((wr_count - rd_count) > 8'h1) // can be read, end of transaction, avoid to send one more clock data, becasue we send data then update rd_pointer, the last data is already sent
@@ -193,13 +195,12 @@ module axis_master(
 
     // FSM state, combinational logic, axis, output control
     always_comb begin
-        axis_tvalid = 1'b0;
-        axis_tdata = 32'h0;
-        axis_tstrb = 4'h0;
-        axis_tkeep = 4'h0;
-        //axis_tid = 2'h0;
-        axis_tuser = 2'h0;
-        next_data = 1'b0;
+        //axis_tvalid = 1'b0;
+        //axis_tdata = 32'h0;
+        //axis_tstrb = 4'h0;
+        //axis_tkeep = 4'h0;
+        //axis_tuser = 2'h0;
+        //next_data = 1'b0;
 
         case(axis_state)
             //AXIS_WAIT_DATA: // do nothing
@@ -216,6 +217,14 @@ module axis_master(
                 else begin
                     next_data = 1'b0;
                 end
+            end
+            default: begin
+                axis_tvalid = 1'b0;
+                axis_tdata = 32'h0;
+                axis_tstrb = 4'h0;
+                axis_tkeep = 4'h0;
+                axis_tuser = 2'h0;
+                next_data = 1'b0;
             end
         endcase
     end
@@ -249,35 +258,43 @@ module axis_master(
 
     // send backend data to fifo
     always_comb begin
-        fifo_data_in = '0;
-        fifo_wr_vld = 1'b0;
+        //fifo_data_in = '0;
+        //fifo_wr_vld = 1'b0;
 
         if(bk_start)begin
             //fifo_data_in = {bk_data, bk_tstrb, bk_tkeep, bk_tid, bk_user};
             fifo_data_in = {bk_data, bk_tstrb, bk_tkeep, bk_user};
             fifo_wr_vld = 1'b1;
         end
+        else begin
+            fifo_data_in = '0;
+            fifo_wr_vld = 1'b0;
+        end
     end
 
     // get data from fifo
     always_comb begin
-        //{fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_tid, fifo_out_user} = '0;
-        {fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_user} = '0;
-        fifo_rd_rdy = 1'b0;
-        fifo_clear = 1'b0;
+        //{fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_user} = '0;
+        //fifo_rd_rdy = 1'b0;
+        //fifo_clear = 1'b0;
 
         if(axis_state == AXIS_SEND_DATA)begin
-            //{fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_tid, fifo_out_user} = fifo_data_out;
             {fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_user} = fifo_data_out;
         end
+        else
+            {fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_user} = '0;
 
         if(next_data)begin // receive slave tready, can send next data
             fifo_rd_rdy = 1'b1;
         end
+        else
+            fifo_rd_rdy = 1'b0;
 
         if(bk_done)begin // clear fifo when transaction done to fix bug
             fifo_clear = 1'b1;
         end
+        else
+            fifo_clear = 1'b0;
     end
 
     assign bk_done = (axis_state == AXIS_SEND_DATA) & (axis_next_state == AXIS_WAIT_DATA);

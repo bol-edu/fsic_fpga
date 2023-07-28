@@ -85,7 +85,7 @@ module axis_slave(
 
     // FSM state, combinational logic, axis, output control
     always_comb begin
-        axis_tready = 1'b0;
+        //axis_tready = 1'b0;
 
         case(axis_state)
             //AXIS_WAIT_BACKEND: // do nothing
@@ -95,18 +95,19 @@ module axis_slave(
             AXIS_OUTPUT_DATA:begin
                 axis_tready = 1'b1;
             end
+            default:
+                axis_tready = 1'b0;
         endcase
     end
 
     // combinational logic, backend interface
     always_comb begin
-        bk_data = 32'h0;
-        bk_tstrb = 4'h0;
-        bk_tkeep = 4'h0;
-        //bk_tid = 2'h0;
-        bk_user = 2'h0;
-        bk_tlast = 1'b0;
-        bk_valid = 1'b0;
+        //bk_data = 32'h0;
+        //bk_tstrb = 4'h0;
+        //bk_tkeep = 4'h0;
+        //bk_user = 2'h0;
+        //bk_tlast = 1'b0;
+        //bk_valid = 1'b0;
 
         if((axis_next_state == AXIS_OUTPUT_DATA))begin // normal case
             bk_data = axis_tdata;
@@ -125,6 +126,14 @@ module axis_slave(
             bk_user = axis_tuser;
             bk_tlast = axis_tlast;
             bk_valid = axis_tvalid; // solve short transaction
+        end
+        else begin
+            bk_data = 32'h0;
+            bk_tstrb = 4'h0;
+            bk_tkeep = 4'h0;
+            bk_user = 2'h0;
+            bk_tlast = 1'b0;
+            bk_valid = 1'b0;
         end
     end
 

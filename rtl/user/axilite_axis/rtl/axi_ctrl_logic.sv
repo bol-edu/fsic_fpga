@@ -78,7 +78,6 @@ module axi_ctrl_logic(
         .clear(fifo_ls_clear));
 
     // data format:
-    // deleted {data_32bit, tstrb_4bit, tkeep_4bit, user_2bit, tlast_1bit}, total 43bit
     // {data_32bit, user_2bit}, total 34bit
     axi_fifo #(.WIDTH(FIFO_SS_WIDTH), .DEPTH(FIFO_SS_DEPTH)) fifo_ss(
         .clk(axi_aclk),
@@ -140,10 +139,6 @@ module axi_ctrl_logic(
                     axi_next_state = AXI_TRIG_INT;
                 else if(ls_wr_data_done || ss_wr_data_done)
                     axi_next_state = AXI_WAIT_DATA;
-                //end
-                //else begin
-                //    axi_next_state = AXI_WAIT_DATA;
-                //end
             AXI_SEND_BKEND:
                 if(sync_trig_int)
                     axi_next_state = AXI_TRIG_INT;
@@ -158,12 +153,13 @@ module axi_ctrl_logic(
     end
 
     logic [35:0] read_padding_zero;
+    assign read_padding_zero = 36'b0;
 
     // send backend data to LS fifo
     always_comb begin
-        fifo_ls_data_in = '0;
-        fifo_ls_wr_vld = 1'b0;
-        read_padding_zero = 36'b0;
+        //fifo_ls_data_in = '0;
+        //fifo_ls_wr_vld = 1'b0;
+        //read_padding_zero = 36'b0;
 
         // note: potential bug if bk_ls_wstart && bk_ls_rstart both 1, but this case will not happen if config_ctrl use cc_aa_enable for read/write exclusively
         if(bk_ls_wstart)begin
@@ -174,18 +170,25 @@ module axi_ctrl_logic(
             fifo_ls_data_in = {AXI_RD, bk_ls_raddr, read_padding_zero};
             fifo_ls_wr_vld = 1'b1;
         end
+        else begin
+            fifo_ls_data_in = '0;
+            fifo_ls_wr_vld = 1'b0;
+        end
     end
 
     // send backend data to SS fifo
     always_comb begin
-        fifo_ss_data_in = '0;
-        fifo_ss_wr_vld = 1'b0;
-        bk_ss_ready =  1'b0;
+        //fifo_ss_data_in = '0;
+        //fifo_ss_wr_vld = 1'b0;
+        //bk_ss_ready =  1'b0;
 
         if(bk_ss_valid)begin
-            //fifo_ss_data_in = {bk_ss_data, bk_ss_tstrb, bk_ss_tkeep, bk_ss_user, bk_ss_tlast};
             fifo_ss_data_in = {bk_ss_data, bk_ss_user};
             fifo_ss_wr_vld = 1'b1;
+        end
+        else begin
+            fifo_ss_data_in = '0;
+            fifo_ss_wr_vld = 1'b0;
         end
 
         if(fifo_ss_wr_rdy == 1'b0)begin // fifo full, tell SS do not receive new data
@@ -199,28 +202,30 @@ module axi_ctrl_logic(
     logic [31:0] fifo_out_wdata;
     logic [3:0] fifo_out_wstrb;
 
+    assign fifo_ls_clear = 1'b0;
+
     // get data from LS fifo
     always_comb begin
-        {fifo_out_trans_typ, fifo_out_waddr, fifo_out_raddr, fifo_out_wdata, fifo_out_wstrb} = '0;
-        fifo_ls_rd_rdy = 1'b0;
-        fifo_ls_clear = 1'b0;
+        //{fifo_out_trans_typ, fifo_out_waddr, fifo_out_raddr, fifo_out_wdata, fifo_out_wstrb} = '0;
+        //fifo_ls_rd_rdy = 1'b0;
+        //fifo_ls_clear = 1'b0;
 
-        //if(axi_state == AXI_DECIDE_DEST || axi_state == AXI_SEND_BKEND)begin
-        if(axi_state != AXI_WAIT_DATA)begin
+        //if(axi_state != AXI_WAIT_DATA)begin
             if(fifo_ls_data_out[FIFO_LS_WIDTH-1] == AXI_WR)
                 {fifo_out_trans_typ, fifo_out_waddr, fifo_out_wdata, fifo_out_wstrb} = fifo_ls_data_out;
             else if(fifo_ls_data_out[FIFO_LS_WIDTH-1] == AXI_RD)
                 {fifo_out_trans_typ, fifo_out_raddr} = fifo_ls_data_out[FIFO_LS_WIDTH-1:36]; // wdata + wstrb total 36bit
-        end
+            else
+                {fifo_out_trans_typ, fifo_out_waddr, fifo_out_raddr, fifo_out_wdata, fifo_out_wstrb} = '0;
+        //end
+        //else
+        //    {fifo_out_trans_typ, fifo_out_waddr, fifo_out_raddr, fifo_out_wdata, fifo_out_wstrb} = '0;
 
-        //if((axi_state == AXI_MOVE_DATA) && (axi_next_state == AXI_WAIT_DATA))begin // can send next data
         if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_LS))begin // can send next data
             fifo_ls_rd_rdy = 1'b1;
         end
-
-        //if(bk_done)begin // clear fifo when transaction done to fix bug
-        //    fifo_ls_clear = 1'b1;
-        //end
+        else
+            fifo_ls_rd_rdy = 1'b0;
     end
 
     logic [31:0] fifo_out_tdata;
@@ -228,31 +233,28 @@ module axi_ctrl_logic(
     logic [1:0] fifo_out_tuser;
     //logic fifo_out_tlast;
 
+    assign fifo_ss_clear = 1'b0;
+
     // get data from SS fifo
     always_comb begin
-        //{fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_tuser, fifo_out_tlast} = '0;
-        {fifo_out_tdata, fifo_out_tuser} = '0;
-        fifo_ss_rd_rdy = 1'b0;
-        fifo_ss_clear = 1'b0;
+        //{fifo_out_tdata, fifo_out_tuser} = '0;
+        //fifo_ss_rd_rdy = 1'b0;
+        //fifo_ss_clear = 1'b0;
 
-        //if(axi_state == AXI_DECIDE_DEST || axi_state == AXI_SEND_BKEND)begin
         if(axi_state != AXI_WAIT_DATA)begin
-            //{fifo_out_tdata, fifo_out_tstrb, fifo_out_tkeep, fifo_out_tuser, fifo_out_tlast} = fifo_ss_data_out;
             {fifo_out_tdata, fifo_out_tuser} = fifo_ss_data_out;
         end
+        else
+            {fifo_out_tdata, fifo_out_tuser} = '0;
 
-        if(get_next_data_ss)begin // if tuser in SS is 1, AXI_WR need nex trans data
-            fifo_ss_rd_rdy = 1'b1;
-        end
-        //else if((axi_state == AXI_DECIDE_DEST) && (axi_next_state == AXI_WAIT_DATA))
-        //    fifo_ss_rd_rdy = 1'b1;
         if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_SS))begin
             fifo_ss_rd_rdy = 1'b1;
         end
-
-        //if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_SS))begin // clear fifo when transaction done to fix bug
-        //    fifo_ss_clear = 1'b1;
-        //end
+        else if(get_next_data_ss)begin // if tuser in SS is 1, AXI_WR need nex trans data
+            fifo_ss_rd_rdy = 1'b1;
+        end
+        else
+            fifo_ss_rd_rdy = 1'b0;
     end
 
     logic [31:0] fifo_out_tdata_old;
@@ -279,34 +281,27 @@ module axi_ctrl_logic(
     // note this is combinational, so the signals can only exist when state is AXI_DECIDE_DEST, 
     // if the signal need to be used in two clock cycles after the state, have to make a register for it
     always_comb begin
-        //next_ls = 1'b0;
-        //next_ss = 1'b0;
-        wr_mb = 1'b0;
-        rd_mb = 1'b0;
-        wr_aa = 1'b0;
-        rd_aa = 1'b0;
-        rd_unsupp = 1'b0;
-        trig_sm_wr = 1'b0;
-        trig_sm_rd = 1'b0;
-        do_nothing = 1'b0;
-        get_next_data_ss = 1'b0;
-        wstrb_ss = 4'b0;
-        addr_ss = 28'b0;
-        data_ss = 32'b0;
-        trig_int = 1'b0;
-        trig_lm_wr = 1'b0;
-        trig_lm_rd = 1'b0;
-        aa_index = 12'b0;
-        mb_index = 12'b0;
+        //wr_mb = 1'b0;
+        //rd_mb = 1'b0;
+        //wr_aa = 1'b0;
+        //rd_aa = 1'b0;
+        //rd_unsupp = 1'b0;
+        //trig_sm_wr = 1'b0;
+        //trig_sm_rd = 1'b0;
+        //do_nothing = 1'b0;
+        //get_next_data_ss = 1'b0;
+        //wstrb_ss = 4'b0;
+        //addr_ss = 28'b0;
+        //data_ss = 32'b0;
+        //trig_int = 1'b0;
+        //trig_lm_wr = 1'b0;
+        //trig_lm_rd = 1'b0;
+        //aa_index = 12'b0;
+        //mb_index = 12'b0;
 
         next_trans = (next_ss) ? TRANS_SS : TRANS_LS;
 
         if(axi_state == AXI_DECIDE_DEST)begin
-            //if(next_ls)
-            //    next_trans = TRANS_LS;
-            //else if(next_ss)
-            //    next_trans = TRANS_SS;
-
             case(next_trans)
                 TRANS_LS: begin // request come from left side - axilite_slave
                     case(fifo_out_trans_typ)
@@ -408,6 +403,25 @@ module axi_ctrl_logic(
                     endcase
                 end
             endcase
+        end
+        else begin
+            wr_mb = 1'b0;
+            rd_mb = 1'b0;
+            wr_aa = 1'b0;
+            rd_aa = 1'b0;
+            rd_unsupp = 1'b0;
+            trig_sm_wr = 1'b0;
+            trig_sm_rd = 1'b0;
+            do_nothing = 1'b0;
+            get_next_data_ss = 1'b0;
+            wstrb_ss = 4'b0;
+            addr_ss = 28'b0;
+            data_ss = 32'b0;
+            trig_int = 1'b0;
+            trig_lm_wr = 1'b0;
+            trig_lm_rd = 1'b0;
+            aa_index = 12'b0;
+            mb_index = 12'b0;
         end
     end
 
