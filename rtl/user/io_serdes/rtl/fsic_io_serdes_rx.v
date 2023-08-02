@@ -162,8 +162,9 @@ module fsic_io_serdes_rx#(
 	reg [pCLK_RATIO-1:0] rx_sync_fifo;
 	reg rx_sync_fifo_valid;
 
-	always @(posedge ioclk or negedge axis_rst_n)  begin		//use posedge, the simulation result is early 1T in rxdata
-																// - This issue is fixed by use block assigment in clock divider to avoid race condition in simulation
+	always @(negedge ioclk or negedge axis_rst_n)  begin		// Note : the FPGA provide both coreclk and ioclk to FSIC_SOC, the skew of coreclk and ioclk maybe impact by FPGA output timining -> PCB -> FSIC_SOC input timing.
+																// when ioclok early then coreclk in fsic_io_serdes_rx, it may cause hold time issue in rx_shift_reg to rx_sync_fifo.
+																// use negdege ioclk to improve the hold time, but it sacrifice the setup time. 
 		if ( !axis_rst_n ) begin
 			rx_sync_fifo <= 0;
 			rx_sync_fifo_valid <= 0;
