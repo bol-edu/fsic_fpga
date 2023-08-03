@@ -110,7 +110,7 @@ module axi_ctrl_logic(
     assign enough_ls_data = fifo_ls_rd_vld;
     assign enough_ss_data = fifo_ss_rd_vld;
 
-    logic next_ls, next_ss, wr_mb, rd_mb, wr_aa, rd_aa, rd_unsupp, trig_sm_wr, trig_sm_rd, do_nothing, decide_done, trig_int, sync_trig_int, axi_interrupt_done, sync_trig_sm_wr, sync_trig_sm_rd, trig_lm_rd, send_bk_done, trig_lm_wr, sync_trig_lm_rd;
+    logic next_ls, next_ss, wr_mb, rd_mb, wr_aa, rd_aa, rd_unsupp, trig_sm_wr, trig_sm_rd, do_nothing, decide_done, trig_int, sync_trig_int, axi_interrupt_done, sync_trig_sm_wr, sync_trig_sm_rd, trig_lm_rd, send_bk_done, trig_lm_wr, sync_trig_lm_rd, rd_ss_complete;
     logic ls_rd_data_bk, ls_wr_data_done, get_next_data_ss, ss_wr_data_done;
 
     // FSM state, combinational logic
@@ -268,7 +268,7 @@ module axi_ctrl_logic(
     parameter AA_SUPP_LOW = 15'h2100, AA_SUPP_HIGH = 15'h2107, AA_UNSUPP_HIGH = 15'h2FFF;
     parameter FPGA_USER_WP_0 = 15'h0000, FPGA_USER_WP_1 = 15'h1FFF, FPGA_USER_WP_2 = 15'h3000, FPGA_USER_WP_3 = 15'h4FFF, CARAVEL_BASE= 32'h30000000;
     //assign decide_done = wr_mb | rd_mb | wr_aa | rd_aa | rd_unsupp | trig_sm_wr | trig_sm_rd;
-    assign decide_done = wr_mb | rd_mb | wr_aa | rd_aa | rd_unsupp;
+    assign decide_done = wr_mb | rd_mb | wr_aa | rd_aa | rd_unsupp | rd_ss_complete;
     logic [3:0] wstrb_ss;
     logic [27:0] addr_ss;
     logic [31:0] data_ss;
@@ -401,8 +401,9 @@ module axi_ctrl_logic(
                             else
                                 do_nothing = 1'b1;
                         end
-                        2'b11: begin
+                        2'b11: begin // read user project wrapper, data go back from CC through axis
                             data_ss = fifo_out_tdata;
+                            rd_ss_complete = 1'b1;
                         end
                         default: do_nothing = 1'b1;
                     endcase
@@ -425,6 +426,7 @@ module axi_ctrl_logic(
             trig_int = 1'b0;
             trig_lm_wr = 1'b0;
             trig_lm_rd = 1'b0;
+            rd_ss_complete = 1'b0;
             aa_index = 10'b0; // dw address
             mb_index = 10'b0; // dw address
         end
@@ -670,6 +672,17 @@ module axi_ctrl_logic(
                         //TRANS_SS:
                             // this path will not fire, because only wr_mb or fpga write caravel side can go through axis
                             //ss_rd_data_bk <= 1'b1;
+                    endcase
+                end
+                else if(rd_ss_complete)begin
+                    // read data from user project wrapper come back to fpga
+                    case(next_trans)
+                        //TRANS_LS: begin
+                        //end
+                        TRANS_SS: begin
+                            data_return <= data_ss;
+                            ls_rd_data_bk <= 1'b1;
+                        end
                     endcase
                 end
             end
