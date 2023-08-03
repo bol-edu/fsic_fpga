@@ -6,7 +6,7 @@
 //      CREATED: 2023/06/16
 ///////////////////////////////////////////////////////////////////////////////
 
-module axi_fifo#(WIDTH=8, DEPTH=8)(
+module axi_fifo#(WIDTH=8'h8, DEPTH=8'h8)(
     input wire clk,
     input wire rst_n,
     input wire wr_vld,
@@ -40,19 +40,19 @@ module axi_fifo#(WIDTH=8, DEPTH=8)(
                 rd_count <= 8'h0;
             end
             if(rd_rdy && rd_vld && wr_rdy && wr_vld)begin // do read and write
-                rd_pointer <= (rd_pointer == (DEPTH - 1)) ? 8'h0 : rd_pointer + 1;
-                wr_pointer <= (wr_pointer == (DEPTH - 1)) ? 8'h0 : wr_pointer + 1;
+                rd_pointer <= (rd_pointer == (DEPTH - 8'b1)) ? 8'h0 : rd_pointer + 8'b1;
+                wr_pointer <= (wr_pointer == (DEPTH - 8'b1)) ? 8'h0 : wr_pointer + 8'b1;
                 fifo[wr_pointer] <= data_in;
-                wr_count <= wr_count + 1;
-                rd_count <= rd_count + 1;
+                wr_count <= wr_count + 8'b1;
+                rd_count <= rd_count + 8'b1;
             end
             else if(rd_rdy && rd_vld)begin // do read
-                rd_pointer <= (rd_pointer == (DEPTH - 1)) ? 8'h0 : rd_pointer + 1;
-                rd_count <= rd_count + 1;
+                rd_pointer <= (rd_pointer == (DEPTH - 8'b1)) ? 8'h0 : rd_pointer + 8'b1;
+                rd_count <= rd_count + 8'b1;
             end
             else if(wr_rdy && wr_vld)begin // do write
-                wr_pointer <= (wr_pointer == (DEPTH - 1)) ? 8'h0 : wr_pointer + 1;
-                wr_count <= wr_count + 1;
+                wr_pointer <= (wr_pointer == (DEPTH - 8'b1)) ? 8'h0 : wr_pointer + 8'b1;
+                wr_count <= wr_count + 8'b1;
                 fifo[wr_pointer] <= data_in;
             end
         end
@@ -62,7 +62,7 @@ module axi_fifo#(WIDTH=8, DEPTH=8)(
     always_comb begin // use combinational so rd_pointer change reflect instantly
         //data_out = '0; // initialize packed array (as a vector) with all zero
 
-        if(empty == 0)begin
+        if(empty == 1'b0)begin
             data_out = fifo[rd_pointer];
         end
         else
@@ -153,9 +153,9 @@ module axis_master(
     //logic [1:0] fifo_out_tid, fifo_out_user;
     logic [1:0] fifo_out_user;
 
-    parameter AXI_FIFO_DEPTH = 8'd8, AXI_FIFO_WIDTH = 8'd44, AXIS_RDY_TIMEOUT = 8'd5;
+    parameter AXI_FIFO_DEPTH = 8'd8, AXI_FIFO_WIDTH = 8'd42, AXIS_RDY_TIMEOUT = 8'd5;
     logic fifo_wr_vld, fifo_wr_rdy, fifo_rd_vld, fifo_rd_rdy, fifo_clear;
-    logic [43:0] fifo_data_in, fifo_data_out;
+    logic [41:0] fifo_data_in, fifo_data_out;
 
     // FSM state
     enum logic [2:0] {AXIS_WAIT_DATA, AXIS_SEND_DATA} axis_state, axis_next_state;
@@ -209,7 +209,6 @@ module axis_master(
                 axis_tdata = fifo_out_tdata;
                 axis_tstrb = fifo_out_tstrb;
                 axis_tkeep = fifo_out_tkeep;
-                //axis_tid = fifo_out_tid;
                 axis_tuser = fifo_out_user;
                 if(axis_tready)begin
                     next_data = 1'b1;
@@ -254,6 +253,7 @@ module axis_master(
         .data_out(fifo_data_out),
         .wr_rdy(fifo_wr_rdy),
         .rd_vld(fifo_rd_vld),
+        .last(fifo_last),
         .clear(fifo_clear));
 
     // send backend data to fifo
@@ -262,7 +262,6 @@ module axis_master(
         //fifo_wr_vld = 1'b0;
 
         if(bk_start)begin
-            //fifo_data_in = {bk_data, bk_tstrb, bk_tkeep, bk_tid, bk_user};
             fifo_data_in = {bk_data, bk_tstrb, bk_tkeep, bk_user};
             fifo_wr_vld = 1'b1;
         end
@@ -298,6 +297,7 @@ module axis_master(
     end
 
     assign bk_done = (axis_state == AXIS_SEND_DATA) & (axis_next_state == AXIS_WAIT_DATA);
+
     assign axis_tlast = bk_done; // send tlast if transaction done ???
 
 endmodule

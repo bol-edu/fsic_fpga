@@ -94,7 +94,7 @@ module axi_ctrl_logic(
     // FSM state
     enum logic [2:0] {AXI_WAIT_DATA, AXI_DECIDE_DEST, AXI_MOVE_DATA, AXI_SEND_BKEND, AXI_TRIG_INT} axi_state, axi_next_state;
     enum logic {AXI_WR, AXI_RD} fifo_out_trans_typ;
-    enum logic [1:0] {TRANS_LS, TRANS_SS} next_trans, last_trans;
+    enum logic {TRANS_LS, TRANS_SS} next_trans, last_trans;
 
     // FSM state, sequential logic
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
