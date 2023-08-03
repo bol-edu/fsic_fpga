@@ -57,9 +57,9 @@ module axi_ctrl_logic(
     //parameter FIFO_SS_WIDTH = 8'd45, FIFO_SS_DEPTH = 8'd8;
     parameter FIFO_SS_WIDTH = 8'd34, FIFO_SS_DEPTH = 8'd8;
 
-    logic fifo_ls_wr_vld, fifo_ls_wr_rdy, fifo_ls_rd_vld, fifo_ls_rd_rdy, fifo_ls_clear;
+    logic fifo_ls_wr_vld, fifo_ls_wr_rdy, fifo_ls_rd_vld, fifo_ls_rd_rdy, fifo_ls_clear, fifo_ls_last;
     logic [FIFO_LS_WIDTH-1:0] fifo_ls_data_in, fifo_ls_data_out;
-    logic fifo_ss_wr_vld, fifo_ss_wr_rdy, fifo_ss_rd_vld, fifo_ss_rd_rdy, fifo_ss_clear;
+    logic fifo_ss_wr_vld, fifo_ss_wr_rdy, fifo_ss_rd_vld, fifo_ss_rd_rdy, fifo_ss_clear, fifo_ss_last;
     logic [FIFO_SS_WIDTH-1:0] fifo_ss_data_in, fifo_ss_data_out;
 
     // data format:
@@ -75,6 +75,7 @@ module axi_ctrl_logic(
         .data_out(fifo_ls_data_out),
         .wr_rdy(fifo_ls_wr_rdy),
         .rd_vld(fifo_ls_rd_vld),
+        .last(fifo_ls_last),
         .clear(fifo_ls_clear));
 
     // data format:
@@ -89,6 +90,7 @@ module axi_ctrl_logic(
         .data_out(fifo_ss_data_out),
         .wr_rdy(fifo_ss_wr_rdy),
         .rd_vld(fifo_ss_rd_vld),
+        .last(fifo_ss_last),
         .clear(fifo_ss_clear));
 
     // FSM state
