@@ -317,7 +317,16 @@ end
 always @(posedge axis_clk or negedge axi_reset_n) begin
     if (!axi_reset_n) begin
         base_ptr <= {($clog2(N)){1'b0}};
-        hi_req_flag <= {(N){1'b0}};       
+        hi_req_flag <= {(N){1'b0}}; 
+        grant_reg <= 0;
+        frame_start_reg <= 0;   
+        m_axis_tdata_reg <= 0;
+        m_axis_tstrb_reg <= 0;
+        m_axis_tkeep_reg <= 0;
+        m_axis_tlast_reg <= 0;
+        m_axis_tvalid_reg <= 0;
+        m_axis_tuser_reg <= 0;
+        m_axis_tid_reg <= 2'b00;             
     end else begin
         grant_reg <= grant_next;
         frame_start_reg <= frame_start_next;
@@ -403,7 +412,7 @@ end
 
 //for Dexmux
 // Write logic
-always @(posedge axis_clk) begin
+always @(posedge axis_clk or negedge axi_reset_n) begin
     if (is_as_tvalid) begin // for the current Io_serdes design
         mem[wr_ptr_reg[ADDR_WIDTH-1:0]] <= s_axis;
         wr_ptr_reg <= wr_ptr_reg + 1;
@@ -414,7 +423,7 @@ always @(posedge axis_clk) begin
 end
 
 // Read logic
-always @(posedge axis_clk) begin
+always @(posedge axis_clk or negedge axi_reset_n) begin
     as_is_tready_reg <= !above_th;  
     if (wr_ptr_reg != pre_rd_ptr_reg) begin  
         if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
@@ -443,6 +452,9 @@ always @(posedge axis_clk) begin
     if (!axi_reset_n) begin
         as_up_tvalid_reg <= 0; 
         as_aa_tvalid_reg <= 0;
+        as_is_tready_reg <= 0; 
+        rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};
+        pre_rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};          
     end
 end
 
