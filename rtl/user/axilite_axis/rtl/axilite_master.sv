@@ -110,6 +110,8 @@ module axilite_master(
                 axi_wvalid = 1'b1;
                 axi_wdata = cache_wdata;
                 axi_wstrb = cache_strb;
+                axi_awvalid = 1'b0;
+                axi_awaddr = 32'b0;
             end
             default: begin
                 axi_awvalid = 1'b0;
@@ -158,6 +160,8 @@ module axilite_master(
             end
             RD_DRIVE_RDY:begin
                 axi_rready = 1'b1;
+                axi_arvalid = 1'b0;
+                axi_araddr = 32'b0;
             end
             RD_READ_DATA:begin
                 axi_rready = 1'b0;
