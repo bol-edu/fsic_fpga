@@ -247,14 +247,21 @@ module fsic_tb_soc_to_fpga #(
 	//assign #4 Serial_Data_Out_ad_delay = Serial_Data_Out_ad_delay1;
 	//assign #4 txclk_delay = txclk_delay1;
 
-	//change skew
+	wire soc_coreclk_source;
+	wire soc_coreclk;
+	
 	assign fpga_ioclk = ioclk;
-	assign soc_ioclk = ioclk;
+	
+	//change skew in soc_ioclk and soc_coreclk
+	assign #0 soc_ioclk = ioclk;
+	
+	//assign #1 soc_coreclk = soc_coreclk_source;
+	assign #0 soc_coreclk = soc_coreclk_source;
 
 	fsic_clock_div soc_clock_div (
 	.resetb(soc_resetb),
 	.in(soc_ioclk),
-	.out(soc_coreclk)
+	.out(soc_coreclk_source)
 	);
 
 	fsic_clock_div fpga_clock_div (
@@ -276,7 +283,7 @@ module fsic_tb_soc_to_fpga #(
 		.axi_reset_n(~soc_rst),
 		.serial_tclk(soc_txclk),
 		.serial_rclk(fpga_txclk),
-		.ioclk(ioclk),
+		.ioclk(soc_ioclk),
 		.axis_clk(soc_coreclk),
 		.axi_clk(soc_coreclk),
 		
@@ -335,7 +342,7 @@ module fsic_tb_soc_to_fpga #(
 		.axi_reset_n(~fpga_rst),
 		.serial_tclk(fpga_txclk),
 		.serial_rclk(soc_txclk),
-		.ioclk(ioclk),
+		.ioclk(fpga_ioclk),
 		.axis_clk(fpga_coreclk),
 		.axi_clk(fpga_coreclk),
 		
