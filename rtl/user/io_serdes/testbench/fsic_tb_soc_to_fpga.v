@@ -249,24 +249,30 @@ module fsic_tb_soc_to_fpga #(
 
 	wire soc_coreclk_source;
 	wire soc_coreclk;
+	wire soc_coreclk_dly1ns;
+	wire soc_ioclk_dly1ns;
+	reg soc_coreclk_dly_en;
+	reg soc_ioclk_dly_en;
 	
 	assign fpga_ioclk = ioclk;
 	
 	//change skew in soc_ioclk and soc_coreclk
-	assign #0 soc_ioclk = ioclk;
+	assign #1 soc_ioclk_dly1ns = ioclk;
 	
-	//assign #1 soc_coreclk = soc_coreclk_source;
-	assign #0 soc_coreclk = soc_coreclk_source;
-
+	assign #1 soc_coreclk_dly1ns = soc_coreclk_source;
+	
+	assign soc_coreclk = (soc_coreclk_dly_en) ? soc_coreclk_dly1ns : soc_coreclk_source;
+	assign soc_ioclk = (soc_ioclk_dly_en) ? soc_ioclk_dly1ns : ioclk;
+	
 	fsic_clock_div soc_clock_div (
 	.resetb(soc_resetb),
-	.in(soc_ioclk),
+	.in(ioclk),
 	.out(soc_coreclk_source)
 	);
 
 	fsic_clock_div fpga_clock_div (
 	.resetb(fpga_resetb),
-	.in(fpga_ioclk),
+	.in(ioclk),
 	.out(fpga_coreclk)
 	);
 
@@ -400,6 +406,10 @@ module fsic_tb_soc_to_fpga #(
 		error_cnt = 0;
 		ioclk = 1;
 		dlyclk = 1;
+
+		soc_coreclk_dly_en = 0;
+		soc_ioclk_dly_en = 0;
+
 		
 		//write addr channel
 		soc_axi_awvalid=0;
@@ -548,6 +558,7 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 
 
+	reg[31:0] j;
 	reg[31:0] i;
 	reg[31:0]idx1;
 	
@@ -555,96 +566,103 @@ module fsic_tb_soc_to_fpga #(
 		//input [7:0] compare_data;
 
 		begin
-			for (i=0;i<TEST002_CNT;i=i+1) begin
-				$display("test002: TX/RX test - loop %02d, change coreclk phase in soc", i);
-				fork 
-					soc_apply_reset(40+i*10, 40);			//change coreclk phase in soc
-					fpga_apply_reset(40,40);		//fix coreclk phase in fpga
-				join
-				#40;
-				soc_cc_is_enable=1;
-				fpga_cc_is_enable=1;
-				fork 
-					soc_cfg_write(0,1,1,0);
-					fpga_cfg_write(0,1,1,0);
-				join
-				$display($time, "=> soc rxen_ctl=1");
-				$display($time, "=> fpga rxen_ctl=1");
-
-				#400;
-				fork 
-					soc_cfg_write(0,3,1,0);
-					fpga_cfg_write(0,3,1,0);
-				join
-				$display($time, "=> soc txen_ctl=1");
-				$display($time, "=> fpga txen_ctl=1");
-
-				#200;
-				soc_as_is_tdata = 32'h5a5a5a5a;
-				#40;
-
-				//init counter
-				UP_data_send_cnt = 0;
-				UP_data_received_cnt = 0;
+			for (j=0;j<3;j=j+1) begin
+				soc_coreclk_dly_en = j[0];
+				soc_ioclk_dly_en = j[1];
+				$display("test002: UpStream test,  soc_coreclk_dly_en = %b, soc_ioclk_dly_en=%b", soc_coreclk_dly_en, soc_ioclk_dly_en);
 				
-				fork
-					test002_soc();
-					test002_fpga();
-				join
-				
-				#40; //add delay to make sure UP_data_send_buf and UP_data_received_buf is ready for compare.
-				
-				//check result
-				for(idx1=0; idx1<BUF_SIZE; idx1=idx1+1)begin
-					if (UP_data_send_buf[idx1] !== UP_data_received_buf[idx1]) begin
-						$display($time, "=> test002 data compare [ERROR], UP_data_send_buf[%x] = %x, UP_data_received_buf[%x] = %x", idx1, UP_data_send_buf[idx1], idx1, UP_data_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test002 data compare [PASS], UP_data_send_buf[%x] = %x, UP_data_received_buf[%x] = %x", idx1, UP_data_send_buf[idx1], idx1, UP_data_received_buf[idx1]);
-
-					if (UP_tstrb_send_buf[idx1] !== UP_tstrb_received_buf[idx1]) begin
-						$display($time, "=> test002 data compare [ERROR], UP_tstrb_send_buf[%x] = %x, UP_tstrb_received_buf[%x] = %x", idx1, UP_tstrb_send_buf[idx1], idx1, UP_tstrb_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test002 data compare [PASS], UP_tstrb_send_buf[%x] = %x, UP_tstrb_received_buf[%x] = %x", idx1, UP_tstrb_send_buf[idx1], idx1, UP_tstrb_received_buf[idx1]);
-
-
-					if (UP_tkeep_send_buf[idx1] !== UP_tkeep_received_buf[idx1]) begin
-						$display($time, "=> test002 data compare [ERROR], UP_tkeep_send_buf[%x] = %x, UP_tkeep_received_buf[%x] = %x", idx1, UP_tkeep_send_buf[idx1], idx1, UP_tkeep_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test002 data compare [PASS], UP_tkeep_send_buf[%x] = %x, UP_tkeep_received_buf[%x] = %x", idx1, UP_tkeep_send_buf[idx1], idx1, UP_tkeep_received_buf[idx1]);
-
-					if (UP_tlast_send_buf[idx1] !== UP_tlast_received_buf[idx1]) begin
-						$display($time, "=> test002 data compare [ERROR], UP_tlast_send_buf[%x] = %x, UP_tlast_received_buf[%x] = %x", idx1, UP_tlast_send_buf[idx1], idx1, UP_tlast_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test002 data compare [PASS], UP_tlast_send_buf[%x] = %x, UP_tlast_received_buf[%x] = %x", idx1, UP_tlast_send_buf[idx1], idx1, UP_tlast_received_buf[idx1]);
-
-
-					if (UP_tid_send_buf[idx1] !== UP_tid_received_buf[idx1]) begin
-						$display($time, "=> test002 data compare [ERROR], UP_tid_send_buf[%x] = %x, UP_tid_received_buf[%x] = %x", idx1, UP_tid_send_buf[idx1], idx1, UP_tid_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test002 data compare [PASS], UP_tid_send_buf[%x] = %x, UP_tid_received_buf[%x] = %x", idx1, UP_tid_send_buf[idx1], idx1, UP_tid_received_buf[idx1]);
-
-
-					if (UP_tuser_send_buf[idx1] !== UP_tuser_received_buf[idx1]) begin
-						$display($time, "=> test002 data compare [ERROR], UP_tuser_send_buf[%x] = %x, UP_tuser_received_buf[%x] = %x", idx1, UP_tuser_send_buf[idx1], idx1, UP_tuser_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test002 data compare [PASS], UP_tuser_send_buf[%x] = %x, UP_tuser_received_buf[%x] = %x", idx1, UP_tuser_send_buf[idx1], idx1, UP_tuser_received_buf[idx1]);
-
+				for (i=0;i<TEST002_CNT;i=i+1) begin
+					$display("test002: UpStream test - loop %02d, change coreclk phase in soc", i);
+					fork 
+						soc_apply_reset(40+i*10, 40);			//change coreclk phase in soc
+						fpga_apply_reset(40,40);		//fix coreclk phase in fpga
+					join
+					#40;
+					soc_cc_is_enable=1;
+					fpga_cc_is_enable=1;
+					fork 
+						soc_cfg_write(0,1,1,0);
+						fpga_cfg_write(0,1,1,0);
+					join
+					$display($time, "=> soc rxen_ctl=1");
+					$display($time, "=> fpga rxen_ctl=1");
+	
+					#400;
+					fork 
+						soc_cfg_write(0,3,1,0);
+						fpga_cfg_write(0,3,1,0);
+					join
+					$display($time, "=> soc txen_ctl=1");
+					$display($time, "=> fpga txen_ctl=1");
+	
+					#200;
+					soc_as_is_tdata = 32'h5a5a5a5a;
+					#40;
+	
+					//init counter
+					UP_data_send_cnt = 0;
+					UP_data_received_cnt = 0;
+					
+					fork
+						test002_soc();
+						test002_fpga();
+					join
+					
+					#40; //add delay to make sure UP_data_send_buf and UP_data_received_buf is ready for compare.
+					
+					//check result
+					for(idx1=0; idx1<BUF_SIZE; idx1=idx1+1)begin
+						if (UP_data_send_buf[idx1] !== UP_data_received_buf[idx1]) begin
+							$display($time, "=> test002 data compare [ERROR], UP_data_send_buf[%x] = %x, UP_data_received_buf[%x] = %x", idx1, UP_data_send_buf[idx1], idx1, UP_data_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test002 data compare [PASS], UP_data_send_buf[%x] = %x, UP_data_received_buf[%x] = %x", idx1, UP_data_send_buf[idx1], idx1, UP_data_received_buf[idx1]);
+	
+						if (UP_tstrb_send_buf[idx1] !== UP_tstrb_received_buf[idx1]) begin
+							$display($time, "=> test002 data compare [ERROR], UP_tstrb_send_buf[%x] = %x, UP_tstrb_received_buf[%x] = %x", idx1, UP_tstrb_send_buf[idx1], idx1, UP_tstrb_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test002 data compare [PASS], UP_tstrb_send_buf[%x] = %x, UP_tstrb_received_buf[%x] = %x", idx1, UP_tstrb_send_buf[idx1], idx1, UP_tstrb_received_buf[idx1]);
+	
+	
+						if (UP_tkeep_send_buf[idx1] !== UP_tkeep_received_buf[idx1]) begin
+							$display($time, "=> test002 data compare [ERROR], UP_tkeep_send_buf[%x] = %x, UP_tkeep_received_buf[%x] = %x", idx1, UP_tkeep_send_buf[idx1], idx1, UP_tkeep_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test002 data compare [PASS], UP_tkeep_send_buf[%x] = %x, UP_tkeep_received_buf[%x] = %x", idx1, UP_tkeep_send_buf[idx1], idx1, UP_tkeep_received_buf[idx1]);
+	
+						if (UP_tlast_send_buf[idx1] !== UP_tlast_received_buf[idx1]) begin
+							$display($time, "=> test002 data compare [ERROR], UP_tlast_send_buf[%x] = %x, UP_tlast_received_buf[%x] = %x", idx1, UP_tlast_send_buf[idx1], idx1, UP_tlast_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test002 data compare [PASS], UP_tlast_send_buf[%x] = %x, UP_tlast_received_buf[%x] = %x", idx1, UP_tlast_send_buf[idx1], idx1, UP_tlast_received_buf[idx1]);
+	
+	
+						if (UP_tid_send_buf[idx1] !== UP_tid_received_buf[idx1]) begin
+							$display($time, "=> test002 data compare [ERROR], UP_tid_send_buf[%x] = %x, UP_tid_received_buf[%x] = %x", idx1, UP_tid_send_buf[idx1], idx1, UP_tid_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test002 data compare [PASS], UP_tid_send_buf[%x] = %x, UP_tid_received_buf[%x] = %x", idx1, UP_tid_send_buf[idx1], idx1, UP_tid_received_buf[idx1]);
+	
+	
+						if (UP_tuser_send_buf[idx1] !== UP_tuser_received_buf[idx1]) begin
+							$display($time, "=> test002 data compare [ERROR], UP_tuser_send_buf[%x] = %x, UP_tuser_received_buf[%x] = %x", idx1, UP_tuser_send_buf[idx1], idx1, UP_tuser_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test002 data compare [PASS], UP_tuser_send_buf[%x] = %x, UP_tuser_received_buf[%x] = %x", idx1, UP_tuser_send_buf[idx1], idx1, UP_tuser_received_buf[idx1]);
+	
+					end
+					
+					#200;
 				end
-				
-				#200;
 			end
+			#1000;
 		end
 	endtask
 
@@ -709,74 +727,80 @@ module fsic_tb_soc_to_fpga #(
 		//input [7:0] compare_data;
 
 		begin
-			for (m=0;m<TEST003_CNT;m=m+1) begin
+			for (j=0;j<3;j=j+1) begin
+				soc_coreclk_dly_en = j[0];
+				soc_ioclk_dly_en = j[1];
+				$display("test003 : UpStream test with tready toggle,  soc_coreclk_dly_en = %b, soc_ioclk_dly_en=%b", soc_coreclk_dly_en, soc_ioclk_dly_en);
 
-				$display("test003 : TX/RX test with tready toggle - loop %02d", m);
-				fork 
-					//change txen timing in soc
-					test003_soc_init();
-					test003_fpga_init();
-				join 	
-
-				fork 
-					test003_soc();
-					test003_fpga();
-				join 	
-
-				#40; //add delay to make sure UP_data_send_buf and UP_data_received_buf is ready for compare.
-				
-				//check result
-				//check result
-				for(idx1=0; idx1<BUF_SIZE; idx1=idx1+1)begin
-					if (UP_data_send_buf[idx1] !== UP_data_received_buf[idx1]) begin
-						$display($time, "=> test003 data compare [ERROR], UP_data_send_buf[%x] = %x, UP_data_received_buf[%x] = %x", idx1, UP_data_send_buf[idx1], idx1, UP_data_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test003 data compare [PASS], UP_data_send_buf[%x] = %x, UP_data_received_buf[%x] = %x", idx1, UP_data_send_buf[idx1], idx1, UP_data_received_buf[idx1]);
-
-					if (UP_tstrb_send_buf[idx1] !== UP_tstrb_received_buf[idx1]) begin
-						$display($time, "=> test003 data compare [ERROR], UP_tstrb_send_buf[%x] = %x, UP_tstrb_received_buf[%x] = %x", idx1, UP_tstrb_send_buf[idx1], idx1, UP_tstrb_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test003 data compare [PASS], UP_tstrb_send_buf[%x] = %x, UP_tstrb_received_buf[%x] = %x", idx1, UP_tstrb_send_buf[idx1], idx1, UP_tstrb_received_buf[idx1]);
-
-
-					if (UP_tkeep_send_buf[idx1] !== UP_tkeep_received_buf[idx1]) begin
-						$display($time, "=> test003 data compare [ERROR], UP_tkeep_send_buf[%x] = %x, UP_tkeep_received_buf[%x] = %x", idx1, UP_tkeep_send_buf[idx1], idx1, UP_tkeep_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test003 data compare [PASS], UP_tkeep_send_buf[%x] = %x, UP_tkeep_received_buf[%x] = %x", idx1, UP_tkeep_send_buf[idx1], idx1, UP_tkeep_received_buf[idx1]);
-
-					if (UP_tlast_send_buf[idx1] !== UP_tlast_received_buf[idx1]) begin
-						$display($time, "=> test003 data compare [ERROR], UP_tlast_send_buf[%x] = %x, UP_tlast_received_buf[%x] = %x", idx1, UP_tlast_send_buf[idx1], idx1, UP_tlast_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test003 data compare [PASS], UP_tlast_send_buf[%x] = %x, UP_tlast_received_buf[%x] = %x", idx1, UP_tlast_send_buf[idx1], idx1, UP_tlast_received_buf[idx1]);
-
-
-					if (UP_tid_send_buf[idx1] !== UP_tid_received_buf[idx1]) begin
-						$display($time, "=> test003 data compare [ERROR], UP_tid_send_buf[%x] = %x, UP_tid_received_buf[%x] = %x", idx1, UP_tid_send_buf[idx1], idx1, UP_tid_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test003 data compare [PASS], UP_tid_send_buf[%x] = %x, UP_tid_received_buf[%x] = %x", idx1, UP_tid_send_buf[idx1], idx1, UP_tid_received_buf[idx1]);
-
-
-					if (UP_tuser_send_buf[idx1] !== UP_tuser_received_buf[idx1]) begin
-						$display($time, "=> test003 data compare [ERROR], UP_tuser_send_buf[%x] = %x, UP_tuser_received_buf[%x] = %x", idx1, UP_tuser_send_buf[idx1], idx1, UP_tuser_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test003 data compare [PASS], UP_tuser_send_buf[%x] = %x, UP_tuser_received_buf[%x] = %x", idx1, UP_tuser_send_buf[idx1], idx1, UP_tuser_received_buf[idx1]);
-
+				for (m=0;m<TEST003_CNT;m=m+1) begin
+	
+					$display("test003 : UpStream test with tready toggle - loop %02d", m);
+					fork 
+						//change txen timing in soc
+						test003_soc_init();
+						test003_fpga_init();
+					join 	
+	
+					fork 
+						test003_soc();
+						test003_fpga();
+					join 	
+	
+					#40; //add delay to make sure UP_data_send_buf and UP_data_received_buf is ready for compare.
+					
+					//check result
+					//check result
+					for(idx1=0; idx1<BUF_SIZE; idx1=idx1+1)begin
+						if (UP_data_send_buf[idx1] !== UP_data_received_buf[idx1]) begin
+							$display($time, "=> test003 data compare [ERROR], UP_data_send_buf[%x] = %x, UP_data_received_buf[%x] = %x", idx1, UP_data_send_buf[idx1], idx1, UP_data_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test003 data compare [PASS], UP_data_send_buf[%x] = %x, UP_data_received_buf[%x] = %x", idx1, UP_data_send_buf[idx1], idx1, UP_data_received_buf[idx1]);
+	
+						if (UP_tstrb_send_buf[idx1] !== UP_tstrb_received_buf[idx1]) begin
+							$display($time, "=> test003 data compare [ERROR], UP_tstrb_send_buf[%x] = %x, UP_tstrb_received_buf[%x] = %x", idx1, UP_tstrb_send_buf[idx1], idx1, UP_tstrb_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test003 data compare [PASS], UP_tstrb_send_buf[%x] = %x, UP_tstrb_received_buf[%x] = %x", idx1, UP_tstrb_send_buf[idx1], idx1, UP_tstrb_received_buf[idx1]);
+	
+	
+						if (UP_tkeep_send_buf[idx1] !== UP_tkeep_received_buf[idx1]) begin
+							$display($time, "=> test003 data compare [ERROR], UP_tkeep_send_buf[%x] = %x, UP_tkeep_received_buf[%x] = %x", idx1, UP_tkeep_send_buf[idx1], idx1, UP_tkeep_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test003 data compare [PASS], UP_tkeep_send_buf[%x] = %x, UP_tkeep_received_buf[%x] = %x", idx1, UP_tkeep_send_buf[idx1], idx1, UP_tkeep_received_buf[idx1]);
+	
+						if (UP_tlast_send_buf[idx1] !== UP_tlast_received_buf[idx1]) begin
+							$display($time, "=> test003 data compare [ERROR], UP_tlast_send_buf[%x] = %x, UP_tlast_received_buf[%x] = %x", idx1, UP_tlast_send_buf[idx1], idx1, UP_tlast_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test003 data compare [PASS], UP_tlast_send_buf[%x] = %x, UP_tlast_received_buf[%x] = %x", idx1, UP_tlast_send_buf[idx1], idx1, UP_tlast_received_buf[idx1]);
+	
+	
+						if (UP_tid_send_buf[idx1] !== UP_tid_received_buf[idx1]) begin
+							$display($time, "=> test003 data compare [ERROR], UP_tid_send_buf[%x] = %x, UP_tid_received_buf[%x] = %x", idx1, UP_tid_send_buf[idx1], idx1, UP_tid_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test003 data compare [PASS], UP_tid_send_buf[%x] = %x, UP_tid_received_buf[%x] = %x", idx1, UP_tid_send_buf[idx1], idx1, UP_tid_received_buf[idx1]);
+	
+	
+						if (UP_tuser_send_buf[idx1] !== UP_tuser_received_buf[idx1]) begin
+							$display($time, "=> test003 data compare [ERROR], UP_tuser_send_buf[%x] = %x, UP_tuser_received_buf[%x] = %x", idx1, UP_tuser_send_buf[idx1], idx1, UP_tuser_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test003 data compare [PASS], UP_tuser_send_buf[%x] = %x, UP_tuser_received_buf[%x] = %x", idx1, UP_tuser_send_buf[idx1], idx1, UP_tuser_received_buf[idx1]);
+	
+					end
+	
 				end
-
 			end
-
+			#1000;
 		end
 	endtask
 
@@ -890,96 +914,102 @@ module fsic_tb_soc_to_fpga #(
 		//input [7:0] compare_data;
 
 		begin
-			for (i=0;i<TEST004_CNT;i=i+1) begin
-				$display("test004: TX/RX test - loop %02d, change coreclk phase in soc", i);
-				fork 
-					soc_apply_reset(40+i*10, 40);			//change coreclk phase in soc
-					fpga_apply_reset(40,40);		//fix coreclk phase in fpga
-				join
-				#40;
-				soc_cc_is_enable=1;
-				fpga_cc_is_enable=1;
-				fork 
-					soc_cfg_write(0,1,1,0);
-					fpga_cfg_write(0,1,1,0);
-				join
-				$display($time, "=> soc rxen_ctl=1");
-				$display($time, "=> fpga rxen_ctl=1");
-
-				#400;
-				fork 
-					soc_cfg_write(0,3,1,0);
-					fpga_cfg_write(0,3,1,0);
-				join
-				$display($time, "=> soc txen_ctl=1");
-				$display($time, "=> fpga txen_ctl=1");
-
-				#200;
-				fpga_as_is_tdata = 32'h5a5a5a5a;
-				#40;
-
-				//init counter
-				DN_data_send_cnt = 0;
-				DN_data_received_cnt = 0;
-				
-				fork
-					test004_soc();
-					test004_fpga();
-				join
-				
-				#40; //add delay to make sure DN_data_send_buf and DN_data_received_buf is ready for compare.
-				
-				//check result
-				for(idx1=0; idx1<BUF_SIZE; idx1=idx1+1)begin
-					if (DN_data_send_buf[idx1] !== DN_data_received_buf[idx1]) begin
-						$display($time, "=> test004 data compare [ERROR], DN_data_send_buf[%x] = %x, DN_data_received_buf[%x] = %x", idx1, DN_data_send_buf[idx1], idx1, DN_data_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test004 data compare [PASS], DN_data_send_buf[%x] = %x, DN_data_received_buf[%x] = %x", idx1, DN_data_send_buf[idx1], idx1, DN_data_received_buf[idx1]);
-
-					if (DN_tstrb_send_buf[idx1] !== DN_tstrb_received_buf[idx1]) begin
-						$display($time, "=> test004 data compare [ERROR], DN_tstrb_send_buf[%x] = %x, DN_tstrb_received_buf[%x] = %x", idx1, DN_tstrb_send_buf[idx1], idx1, DN_tstrb_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test004 data compare [PASS], DN_tstrb_send_buf[%x] = %x, DN_tstrb_received_buf[%x] = %x", idx1, DN_tstrb_send_buf[idx1], idx1, DN_tstrb_received_buf[idx1]);
-
-
-					if (DN_tkeep_send_buf[idx1] !== DN_tkeep_received_buf[idx1]) begin
-						$display($time, "=> test004 data compare [ERROR], DN_tkeep_send_buf[%x] = %x, DN_tkeep_received_buf[%x] = %x", idx1, DN_tkeep_send_buf[idx1], idx1, DN_tkeep_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test004 data compare [PASS], DN_tkeep_send_buf[%x] = %x, DN_tkeep_received_buf[%x] = %x", idx1, DN_tkeep_send_buf[idx1], idx1, DN_tkeep_received_buf[idx1]);
-
-					if (DN_tlast_send_buf[idx1] !== DN_tlast_received_buf[idx1]) begin
-						$display($time, "=> test004 data compare [ERROR], DN_tlast_send_buf[%x] = %x, DN_tlast_received_buf[%x] = %x", idx1, DN_tlast_send_buf[idx1], idx1, DN_tlast_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test004 data compare [PASS], DN_tlast_send_buf[%x] = %x, DN_tlast_received_buf[%x] = %x", idx1, DN_tlast_send_buf[idx1], idx1, DN_tlast_received_buf[idx1]);
-
-
-					if (DN_tid_send_buf[idx1] !== DN_tid_received_buf[idx1]) begin
-						$display($time, "=> test004 data compare [ERROR], DN_tid_send_buf[%x] = %x, DN_tid_received_buf[%x] = %x", idx1, DN_tid_send_buf[idx1], idx1, DN_tid_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test004 data compare [PASS], DN_tid_send_buf[%x] = %x, DN_tid_received_buf[%x] = %x", idx1, DN_tid_send_buf[idx1], idx1, DN_tid_received_buf[idx1]);
-
-
-					if (DN_tuser_send_buf[idx1] !== DN_tuser_received_buf[idx1]) begin
-						$display($time, "=> test004 data compare [ERROR], DN_tuser_send_buf[%x] = %x, DN_tuser_received_buf[%x] = %x", idx1, DN_tuser_send_buf[idx1], idx1, DN_tuser_received_buf[idx1]);
-						error_cnt = error_cnt + 1;
-					end	
-					else 
-						$display($time, "=> test004 data compare [PASS], DN_tuser_send_buf[%x] = %x, DN_tuser_received_buf[%x] = %x", idx1, DN_tuser_send_buf[idx1], idx1, DN_tuser_received_buf[idx1]);
-
+			for (j=0;j<3;j=j+1) begin
+				soc_coreclk_dly_en = j[0];
+				soc_ioclk_dly_en = j[1];
+				$display("test004: DownStream test,  soc_coreclk_dly_en = %b, soc_ioclk_dly_en=%b", soc_coreclk_dly_en, soc_ioclk_dly_en);
+				for (i=0;i<TEST004_CNT;i=i+1) begin
+					$display("test004: DownStream test - loop %02d, change coreclk phase in soc", i);
+					fork 
+						soc_apply_reset(40+i*10, 40);			//change coreclk phase in soc
+						fpga_apply_reset(40,40);		//fix coreclk phase in fpga
+					join
+					#40;
+					soc_cc_is_enable=1;
+					fpga_cc_is_enable=1;
+					fork 
+						soc_cfg_write(0,1,1,0);
+						fpga_cfg_write(0,1,1,0);
+					join
+					$display($time, "=> soc rxen_ctl=1");
+					$display($time, "=> fpga rxen_ctl=1");
+	
+					#400;
+					fork 
+						soc_cfg_write(0,3,1,0);
+						fpga_cfg_write(0,3,1,0);
+					join
+					$display($time, "=> soc txen_ctl=1");
+					$display($time, "=> fpga txen_ctl=1");
+	
+					#200;
+					fpga_as_is_tdata = 32'h5a5a5a5a;
+					#40;
+	
+					//init counter
+					DN_data_send_cnt = 0;
+					DN_data_received_cnt = 0;
+					
+					fork
+						test004_soc();
+						test004_fpga();
+					join
+					
+					#40; //add delay to make sure DN_data_send_buf and DN_data_received_buf is ready for compare.
+					
+					//check result
+					for(idx1=0; idx1<BUF_SIZE; idx1=idx1+1)begin
+						if (DN_data_send_buf[idx1] !== DN_data_received_buf[idx1]) begin
+							$display($time, "=> test004 data compare [ERROR], DN_data_send_buf[%x] = %x, DN_data_received_buf[%x] = %x", idx1, DN_data_send_buf[idx1], idx1, DN_data_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test004 data compare [PASS], DN_data_send_buf[%x] = %x, DN_data_received_buf[%x] = %x", idx1, DN_data_send_buf[idx1], idx1, DN_data_received_buf[idx1]);
+	
+						if (DN_tstrb_send_buf[idx1] !== DN_tstrb_received_buf[idx1]) begin
+							$display($time, "=> test004 data compare [ERROR], DN_tstrb_send_buf[%x] = %x, DN_tstrb_received_buf[%x] = %x", idx1, DN_tstrb_send_buf[idx1], idx1, DN_tstrb_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test004 data compare [PASS], DN_tstrb_send_buf[%x] = %x, DN_tstrb_received_buf[%x] = %x", idx1, DN_tstrb_send_buf[idx1], idx1, DN_tstrb_received_buf[idx1]);
+	
+	
+						if (DN_tkeep_send_buf[idx1] !== DN_tkeep_received_buf[idx1]) begin
+							$display($time, "=> test004 data compare [ERROR], DN_tkeep_send_buf[%x] = %x, DN_tkeep_received_buf[%x] = %x", idx1, DN_tkeep_send_buf[idx1], idx1, DN_tkeep_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test004 data compare [PASS], DN_tkeep_send_buf[%x] = %x, DN_tkeep_received_buf[%x] = %x", idx1, DN_tkeep_send_buf[idx1], idx1, DN_tkeep_received_buf[idx1]);
+	
+						if (DN_tlast_send_buf[idx1] !== DN_tlast_received_buf[idx1]) begin
+							$display($time, "=> test004 data compare [ERROR], DN_tlast_send_buf[%x] = %x, DN_tlast_received_buf[%x] = %x", idx1, DN_tlast_send_buf[idx1], idx1, DN_tlast_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test004 data compare [PASS], DN_tlast_send_buf[%x] = %x, DN_tlast_received_buf[%x] = %x", idx1, DN_tlast_send_buf[idx1], idx1, DN_tlast_received_buf[idx1]);
+	
+	
+						if (DN_tid_send_buf[idx1] !== DN_tid_received_buf[idx1]) begin
+							$display($time, "=> test004 data compare [ERROR], DN_tid_send_buf[%x] = %x, DN_tid_received_buf[%x] = %x", idx1, DN_tid_send_buf[idx1], idx1, DN_tid_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test004 data compare [PASS], DN_tid_send_buf[%x] = %x, DN_tid_received_buf[%x] = %x", idx1, DN_tid_send_buf[idx1], idx1, DN_tid_received_buf[idx1]);
+	
+	
+						if (DN_tuser_send_buf[idx1] !== DN_tuser_received_buf[idx1]) begin
+							$display($time, "=> test004 data compare [ERROR], DN_tuser_send_buf[%x] = %x, DN_tuser_received_buf[%x] = %x", idx1, DN_tuser_send_buf[idx1], idx1, DN_tuser_received_buf[idx1]);
+							error_cnt = error_cnt + 1;
+						end	
+						else 
+							$display($time, "=> test004 data compare [PASS], DN_tuser_send_buf[%x] = %x, DN_tuser_received_buf[%x] = %x", idx1, DN_tuser_send_buf[idx1], idx1, DN_tuser_received_buf[idx1]);
+	
+					end
+					
+					#200;
 				end
-				
-				#200;
-			end
+			end	
+			#1000;
 		end
 	endtask
 
