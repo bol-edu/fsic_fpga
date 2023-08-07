@@ -232,14 +232,47 @@ module IO_SERDES #(
 		end
 	end
 
+	reg [pDATA_WIDTH-1:0] pre_as_is_tdata_buf;
+	reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tstrb_buf;
+	reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tkeep_buf;
+	reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tid_tuser_buf;
+	reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tlast_tvalid_tready_buf;
+
+	always @(negedge coreclk or negedge axis_rst_n)  begin
+		pre_as_is_tdata_buf <= as_is_tdata;
+		pre_as_is_tstrb_buf <= as_is_tstrb;
+		pre_as_is_tkeep_buf <= as_is_tkeep;
+		pre_as_is_tid_tuser_buf[3:2] <= as_is_tid;
+		pre_as_is_tid_tuser_buf[1:0] <= as_is_tuser;
+		pre_as_is_tlast_tvalid_tready_buf[2] <= as_is_tlast;
+		pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
+		pre_as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
+
+		if ( !axis_rst_n || ~txen) begin
+			pre_as_is_tdata_buf <= 0;
+			pre_as_is_tstrb_buf <= 0;
+			pre_as_is_tkeep_buf <= 0;
+			pre_as_is_tid_tuser_buf <= 0;
+			pre_as_is_tlast_tvalid_tready_buf <= 0;
+		end
+		else begin
+			if (is_as_tready && as_is_tvalid) begin			//data transfer from Axis siwtch to io serdes when is_as_tready=1 and as_is_tvalid=1
+				pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
+			end
+			else begin
+				pre_as_is_tlast_tvalid_tready_buf[1] <= 0;			// set as_is_tvalid =0 to remote side
+			end
+		end
+	end
+
 	reg [pDATA_WIDTH-1:0] as_is_tdata_buf;
 	reg [(pDATA_WIDTH/8)-1:0] as_is_tstrb_buf;
 	reg [(pDATA_WIDTH/8)-1:0] as_is_tkeep_buf;
 	reg [(pDATA_WIDTH/8)-1:0] as_is_tid_tuser_buf;
 	reg [(pDATA_WIDTH/8)-1:0] as_is_tlast_tvalid_tready_buf;
 
-	always @(posedge coreclk or negedge axis_rst_n)  begin
-		if ( !axis_rst_n || ~txen) begin
+	always @(posedge ioclk or negedge axis_rst_n)  begin
+		if ( !axis_rst_n ) begin
 			as_is_tdata_buf <= 0;
 			as_is_tstrb_buf <= 0;
 			as_is_tkeep_buf <= 0;
@@ -247,36 +280,12 @@ module IO_SERDES #(
 			as_is_tlast_tvalid_tready_buf <= 0;
 		end
 		else begin
-			if (is_as_tready && as_is_tvalid) begin			//data transfer from Axis siwtch to io serdes when is_as_tready=1 and as_is_tvalid=1
-				as_is_tdata_buf <= as_is_tdata;
-				as_is_tstrb_buf <= as_is_tstrb;
-				as_is_tkeep_buf <= as_is_tkeep;
-				as_is_tid_tuser_buf[3:2] <= as_is_tid;
-				as_is_tid_tuser_buf[1:0] <= as_is_tuser;
-				as_is_tlast_tvalid_tready_buf[2] <= as_is_tlast;
-				as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
-				as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
-			end
-			else begin
-`ifndef DEBUG_is_as_tready
-				as_is_tdata_buf <= as_is_tdata;
-				as_is_tstrb_buf <= as_is_tstrb;
-				as_is_tkeep_buf <= as_is_tkeep;
-				as_is_tid_tuser_buf[3:2] <= as_is_tid;
-				as_is_tid_tuser_buf[1:0] <= as_is_tuser;
-				as_is_tlast_tvalid_tready_buf[2] <= as_is_tlast;
-				as_is_tlast_tvalid_tready_buf[1] <= 0;			// set as_is_tvalid =0 to remote side
-				as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
-`else// DEBUG_is_as_tready
-				as_is_tdata_buf <= 0;
-				as_is_tstrb_buf <= as_is_tstrb;
-				as_is_tkeep_buf <= as_is_tkeep;
-				as_is_tid_tuser_buf[3:2] <= as_is_tid;
-				as_is_tid_tuser_buf[1:0] <= as_is_tuser;
-				as_is_tlast_tvalid_tready_buf[2] <= as_is_tlast;
-				as_is_tlast_tvalid_tready_buf[1] <= 0;			// set as_is_tvalid =0 to remote side
-				as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
-`endif// DEBUG_is_as_tready
+			if (phase_cnt == 3) begin			//update as_is_*_buf when phase_cnt == 3
+				as_is_tdata_buf <= pre_as_is_tdata_buf;
+				as_is_tstrb_buf <= pre_as_is_tstrb_buf;
+				as_is_tkeep_buf <= pre_as_is_tkeep_buf;
+				as_is_tid_tuser_buf <= pre_as_is_tid_tuser_buf;
+				as_is_tlast_tvalid_tready_buf <= pre_as_is_tlast_tvalid_tready_buf;
 			end
 		end
 	end
