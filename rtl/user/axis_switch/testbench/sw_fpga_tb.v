@@ -18,41 +18,32 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-
 module axis_sw_tb();
-
 parameter   DATA_WIDTH = 32;
 parameter   STRB_WIDTH = DATA_WIDTH/8;
 parameter   USER_WIDTH = 2;
 parameter   TID_WIDTH = 2;
 parameter   VALID_WS_LEN = 2;
-
 reg o_clk, o_rst_n;
-
 //for axi_lite
 //write address channel
 reg 	soc_axi_awvalid;
 reg 	[14:0] soc_axi_awaddr;		
 wire	soc_axi_awready;
-
 //write data channel
 reg 	soc_axi_wvalid;
 reg 	[DATA_WIDTH-1:0] soc_axi_wdata;
 reg 	[(DATA_WIDTH/8)-1:0] soc_axi_wstrb;
 wire	soc_axi_wready;
-
 //read addr channel
 reg 	soc_axi_arvalid;
 reg 	[14:0] soc_axi_araddr;
 wire soc_axi_arready;
-
 //read data channel
 wire soc_axi_rvalid;
 wire [DATA_WIDTH-1:0] soc_axi_rdata;
 reg 	soc_axi_rready;
-
 reg 	soc_cc_as_enable;		//axi_lite enable       
-
 /*
 *for Aribter
 */
@@ -62,21 +53,18 @@ reg [STRB_WIDTH-1:0] strb_0, keep_0;
 reg [USER_WIDTH-1:0] user_0; 
 reg valid_0, hpri_req0, tlast_0;
 wire ready_0;
-
 //Input stream 1
 reg [DATA_WIDTH-1:0] data_1;
 reg [STRB_WIDTH-1:0] strb_1, keep_1;
 reg [USER_WIDTH-1:0] user_1; 
 reg valid_1, tlast_1;
 wire ready_1;
-
 //Input stream 2
 reg [DATA_WIDTH-1:0] data_2;
 reg [STRB_WIDTH-1:0] strb_2, keep_2;
 reg [USER_WIDTH-1:0] user_2; 
 reg valid_2, hpri_req2, tlast_2;
 wire ready_2;
-
 //ouput stream
 wire [DATA_WIDTH-1:0] data_m;
 wire [STRB_WIDTH-1:0] strb_m, keep_m;
@@ -84,7 +72,6 @@ wire valid_m, tlast_m;
 wire [USER_WIDTH-1:0] user_m;
 wire [TID_WIDTH-1:0] tid_m; 
 reg ready_m;
-
 /*
 *for Demux
 */
@@ -96,7 +83,6 @@ reg [STRB_WIDTH-1:0] is_keep;
 reg [TID_WIDTH-1:0] is_tid;
 reg [USER_WIDTH-1:0] is_user;
 wire is_ready;
-
 //ouput stream 0
 wire [DATA_WIDTH-1:0] up_data;
 wire [STRB_WIDTH-1:0] up_keep;
@@ -104,7 +90,6 @@ wire [STRB_WIDTH-1:0] up_strb;
 wire up_valid, up_tlast;
 wire [USER_WIDTH-1:0] up_user;
 reg up_ready;
-
 //ouput stream 1
 wire [DATA_WIDTH-1:0] aa_data;
 wire [STRB_WIDTH-1:0] aa_keep;
@@ -112,16 +97,20 @@ wire [STRB_WIDTH-1:0] aa_strb;
 wire aa_valid, aa_tlast;
 wire [USER_WIDTH-1:0] aa_user;
 reg aa_ready;
-
+//ouput stream 2
+wire [DATA_WIDTH-1:0] ad_data;
+wire [STRB_WIDTH-1:0] ad_keep;
+wire [STRB_WIDTH-1:0] ad_strb;
+wire ad_valid, ad_tlast;
+wire [USER_WIDTH-1:0] ad_user;
+reg ad_ready;
 reg start_test; 
-
 //axi_lite
 task soc_cfg_write;		//input addr, data, strb and valid_delay 
 	input [14:0] axi_awaddr;
 	input [DATA_WIDTH-1:0] axi_wdata;
 	input [3:0] axi_wstrb;
 	input [7:0] valid_delay;
-	
 	begin
 		soc_axi_awaddr <= axi_awaddr;
 		soc_axi_awvalid <= 0;
@@ -140,11 +129,9 @@ task soc_cfg_write;		//input addr, data, strb and valid_delay
 		soc_axi_wvalid <= 0;
 	end
 endtask
-
 task soc_cfg_read;		//input addr and valid_delay 
 	input [14:0] axi_araddr;
 	input [7:0] valid_delay;
-	
 	begin
 		soc_axi_araddr <= axi_araddr;
 		soc_axi_arvalid <= 0;
@@ -156,7 +143,6 @@ task soc_cfg_read;		//input addr and valid_delay
 				@ (posedge o_clk);
 		end
 		$display($time, "=> soc_cfg_read : soc_axi_araddr=%x, soc_axi_arvalid=%b, soc_axi_arready=%b", soc_axi_araddr, soc_axi_arvalid, soc_axi_arready); 
-		
 		soc_axi_arvalid <= 0;
 		repeat (valid_delay) @ (posedge o_clk);
 		soc_axi_rready <= 1;
@@ -168,8 +154,6 @@ task soc_cfg_read;		//input addr and valid_delay
 		soc_axi_rready <= 0;
 	end
 endtask
-
-
 reg[31:0]idx;
 task axis_tx;
         input [7:0] valid_delay;
@@ -198,7 +182,6 @@ task axis_tx;
             tlast_0 <=  1'h0;
 		end
 endtask
-
 reg[31:0]idxh;
 task axis_tx_hi_req;
         input [7:0] valid_delay;
@@ -227,13 +210,11 @@ task axis_tx_hi_req;
 			valid_0 <= 0;
 		end
 endtask
-
 reg[31:0]idx1;
 task axis_tx1;
         input [7:0] valid_delay;
 		begin
 			@ (posedge o_clk);
-			
 			for(idx1=0; idx1<10; idx1=idx1+1)begin
 				data_1 <=  idx1 + 32'h00003330;
 				strb_1 <=  4'hf;
@@ -257,13 +238,11 @@ task axis_tx1;
             tlast_1 <=  1'h0;
 		end
 endtask
-
 reg[31:0]idx2;
 task axis_tx2;
         input [7:0] valid_delay;
 		begin
 			@ (posedge o_clk);
-			
 			for(idx2=0; idx2<10; idx2=idx2+1)begin
 				data_2 <=  idx2 + 32'h00005550;
 				strb_2 <=  4'hf;
@@ -287,13 +266,11 @@ task axis_tx2;
             tlast_2 <=  1'h0;
 		end
 endtask
-
 reg[31:0]idx2h;
 task axis_tx_hi_req2;
         input [7:0] valid_delay;
 		begin
 			@ (posedge o_clk);
-			
 			for(idx2h=0; idx2h<10; idx2h=idx2h+1)begin
 				data_2 <=  idx2h + 32'h00006660;
 				strb_2 <=  4'hf;
@@ -317,7 +294,6 @@ task axis_tx_hi_req2;
 			valid_2 <= 0;
 		end
 endtask
-
 task axis_rx;    
     begin
         ready_m <= 1;
@@ -334,7 +310,6 @@ task axis_rx;
         end                                                                  
     end  
 endtask
-
 //for Demux task
 task is_axis_tx;
     input [DATA_WIDTH-1:0] data_in;
@@ -344,7 +319,6 @@ task is_axis_tx;
     input [TID_WIDTH-1:0] tid_in;        
     input [USER_WIDTH-1:0] user_in;  
     input [VALID_WS_LEN-1:0] valid_wait_state;
-    
     begin    
         is_data = #0 data_in;
         is_strb = strb_in;        
@@ -358,8 +332,6 @@ task is_axis_tx;
         end
         is_valid = 1;
         repeat (1) @ (posedge o_clk); 
-
-
 //test case 1_begin:  when checking valid and ready are 1 from  Io_serses
 /*
         if(!is_ready) begin
@@ -385,7 +357,6 @@ task is_axis_tx;
         end            
     end  
 endtask
-
 task up_axis_rx;
     begin
         up_ready <= 1;
@@ -400,7 +371,6 @@ task up_axis_rx;
         end
     end  
 endtask
-
 task aa_axis_rx;
     reg [4:0] dcount;
     begin
@@ -430,33 +400,47 @@ task aa_axis_rx;
        end
     end  
 endtask
-
+task ad_axis_rx;
+    begin
+        ad_ready <= 1;
+        if(ad_ready && ad_valid) begin
+            $display("AxiDMA stream data is %h", ad_data);
+            $display("strb is %h", ad_strb);            
+            $display("keep is %h", ad_keep);
+            $display("user data is %h", ad_user);
+            if(ad_tlast) begin 
+                $display("This transaction is over");
+            end                 
+        end
+    end   
+endtask
 //for Arbiter Rx
 always @(posedge o_clk) begin
     if(o_rst_n)
         if(start_test == 1)
             axis_rx;
 end
-
 //For Demux Rx
 always @(posedge o_clk) begin
     if(o_rst_n)
         if(start_test == 1)
             up_axis_rx;
 end
-
 always @(posedge o_clk) begin
     if(o_rst_n)
         if(start_test == 1)
             aa_axis_rx;
 end
-
+always @(posedge o_clk) begin
+    if(o_rst_n)
+        if(start_test == 1)
+            ad_axis_rx;
+end
 initial
 begin
 #150
 start_test = 1'b1;  
 end
-
 initial
 begin
     start_test = 1'b0;    
@@ -477,52 +461,43 @@ begin
     soc_axi_araddr = 0;
     //read data channel
     soc_axi_rready = 0;
-    
     soc_cc_as_enable = 0;
-    
     #100;
     soc_cc_as_enable = 1;
     soc_cfg_write(0,0,1,0);		//write offset 0 = 0
     soc_cfg_read(0,0);			//read offset 0
     soc_cfg_write(0,3,1,0);		//write offset 0 = 3
     soc_cfg_read(0,0);			//read offset 0
-
     axis_tx_hi_req(8'h0);
 end
-
 initial
 begin
     #5000 
 	axis_tx(8'h0);    
 end
-
 initial
 begin
 #1000
 axis_tx1(8'h0);
 end
-
 initial
 begin
 #1000
 axis_tx_hi_req2(8'h0);
 end
-
 initial
 begin
     #5000 
     axis_tx2(8'h0);    	
 end
-
 //for Demux
 initial
 begin
     start_test = 1'b0;    
 	o_clk = 0;
 	o_rst_n = 1'b0;
-	#100 o_rst_n = 1;
+	#150 o_rst_n = 1;
 	#1000 
-
     //data, strb, keep, tlast, tid, user, wait 
 	is_axis_tx(16'h2221, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
 	is_axis_tx(16'h2222, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
@@ -542,7 +517,6 @@ begin
 	is_axis_tx(16'h1117, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
 	is_axis_tx(16'h1118, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 					
 	is_axis_tx(16'h1119, 4'hF, 4'hF, 1'b1, 2'b01, 2'b01, 2'b00);
-	
 	#1000 
     //data, strb, keep, tlast, tid, user, wait 
 	is_axis_tx(16'h3331, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
@@ -561,10 +535,18 @@ begin
 	is_axis_tx(16'h5555, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
 	is_axis_tx(16'h5556, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 	  	
 	is_axis_tx(16'h5557, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
-	is_axis_tx(16'h5558, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 	  	
-	is_axis_tx(16'h5559, 4'hF, 4'hF, 1'b1, 2'b01, 2'b01, 2'b00); 	
+	is_axis_tx(16'h5558, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);
+	is_axis_tx(16'h5559, 4'hF, 4'hF, 1'b1, 2'b01, 2'b01, 2'b00);
+	is_axis_tx(16'h6661, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00);
+	is_axis_tx(16'h6662, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 	  	
+	is_axis_tx(16'h6663, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00);  
+	is_axis_tx(16'h6664, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 
+	is_axis_tx(16'h6665, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00);  
+	is_axis_tx(16'h6666, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 	  	
+	is_axis_tx(16'h6667, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00);  
+	is_axis_tx(16'h6668, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 					
+	is_axis_tx(16'h6669, 4'hF, 4'hF, 1'b1, 2'b10, 2'b01, 2'b00);
 end
-
 AXIS_SW uut_AXIS_SW(
 .axi_reset_n(o_rst_n),
 .axis_clk(o_clk),
@@ -637,8 +619,14 @@ AXIS_SW uut_AXIS_SW(
 .as_aa_tlast(aa_tlast),
 .as_aa_tvalid(aa_valid),
 .as_aa_tuser(aa_user),
-.aa_as_tready(aa_ready)
+.aa_as_tready(aa_ready),
+.as_ad_tdata(ad_data),
+.as_ad_tstrb(ad_strb),
+.as_ad_tkeep(ad_keep),
+.as_ad_tlast(ad_tlast),
+.as_ad_tvalid(ad_valid),
+.as_ad_tuser(ad_user),
+.ad_as_tready(ad_ready)
 );
-
 always	#50 o_clk = ~o_clk;
 endmodule
