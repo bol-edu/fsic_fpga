@@ -67,7 +67,7 @@ module fsic_tb_soc_to_fpga #(
 		parameter pDATA_WIDTH   = 32,
 		parameter IOCLK_Period	= 10,
 		parameter DLYCLK_Period	= 1,
-		parameter SHIFT_DEPTH = 5,
+		parameter SHIFT_DEPTH = 10,
 		parameter pRxFIFO_DEPTH = 5,
 		parameter pCLK_RATIO = 4
 	)
@@ -78,6 +78,7 @@ module fsic_tb_soc_to_fpga #(
 		localparam TEST002_CNT	= 4;
 		localparam TEST003_CNT	= 4;
 		localparam TEST004_CNT	= 4;
+		localparam TEST005_CNT	= 4;
 		localparam BUF_SIZE = 16;
 
 	reg [31:0] UP_data_send_cnt;		//upstream (SOC to FPGA) data_send_cnt
@@ -126,13 +127,19 @@ module fsic_tb_soc_to_fpga #(
 	reg soc_resetb;
 	reg fpga_resetb;
 	
+	reg rst;
 	reg ioclk;
 	reg dlyclk;
+	reg [7:0] dly_time;
 	
 	wire soc_ioclk;
 	wire fpga_ioclk;
 	
+	wire soc_txclk_src;
+	wire soc_txclk_dly;
 	wire soc_txclk;
+	wire fpga_txclk_src;
+	wire fpga_txclk_dly;
 	wire fpga_txclk;
 
 	reg [7:0] soc_cfg_expect_data;
@@ -254,6 +261,9 @@ module fsic_tb_soc_to_fpga #(
 	reg soc_coreclk_dly_en;
 	reg soc_ioclk_dly_en;
 	
+	reg soc_txclk_dly_en;
+	reg fpga_txclk_dly_en;
+	
 	assign fpga_ioclk = ioclk;
 	
 	//change skew in soc_ioclk and soc_coreclk
@@ -263,6 +273,9 @@ module fsic_tb_soc_to_fpga #(
 	
 	assign soc_coreclk = (soc_coreclk_dly_en) ? soc_coreclk_dly1ns : soc_coreclk_source;
 	assign soc_ioclk = (soc_ioclk_dly_en) ? soc_ioclk_dly1ns : ioclk;
+	
+	assign soc_txclk = (soc_txclk_dly_en) ? soc_txclk_dly : soc_txclk_src;
+	assign fpga_txclk = (fpga_txclk_dly_en) ? fpga_txclk_dly : fpga_txclk_src;
 	
 	fsic_clock_div soc_clock_div (
 	.resetb(soc_resetb),
@@ -287,7 +300,7 @@ module fsic_tb_soc_to_fpga #(
 	soc_fsic_io_serdes(
 		.axis_rst_n(~soc_rst),
 		.axi_reset_n(~soc_rst),
-		.serial_tclk(soc_txclk),
+		.serial_tclk(soc_txclk_src),
 		.serial_rclk(fpga_txclk),
 		.ioclk(soc_ioclk),
 		.axis_clk(soc_coreclk),
@@ -346,7 +359,7 @@ module fsic_tb_soc_to_fpga #(
 	fpga_fsic_io_serdes(
 		.axis_rst_n(~fpga_rst),
 		.axi_reset_n(~fpga_rst),
-		.serial_tclk(fpga_txclk),
+		.serial_tclk(fpga_txclk_src),
 		.serial_rclk(soc_txclk),
 		.ioclk(fpga_ioclk),
 		.axis_clk(fpga_coreclk),
@@ -396,20 +409,43 @@ module fsic_tb_soc_to_fpga #(
 		.is_as_tready(fpga_is_as_tready)
 	);
 
+	dly_line	#(
+		.SHIFT_DEPTH(SHIFT_DEPTH)
+	)	
+	dly_line_fpga_txclk (
+		.dlyclk(dlyclk),
+		.dly_in(fpga_txclk_src),
+		.rst(rst),
+		.dly_time(dly_time),
+		.dly_out(fpga_txclk_dly)
+	);
+
+	dly_line	#(
+		.SHIFT_DEPTH(SHIFT_DEPTH)
+	)	
+	dly_line_soc_txclk (
+		.dlyclk(dlyclk),
+		.dly_in(soc_txclk_src),
+		.rst(rst),
+		.dly_time(dly_time),
+		.dly_out(soc_txclk_dly)
+	);
 
 
-
-
-
+	
 	// init and reset
 	initial begin
 		error_cnt = 0;
 		ioclk = 1;
 		dlyclk = 1;
+		rst = 1;
+		dly_time=0;
 
 		soc_coreclk_dly_en = 0;
 		soc_ioclk_dly_en = 0;
 
+		soc_txclk_dly_en = 1;
+		fpga_txclk_dly_en = 1;
 		
 		//write addr channel
 		soc_axi_awvalid=0;
@@ -467,10 +503,14 @@ module fsic_tb_soc_to_fpga #(
 		fpga_as_is_tuser=0;
 		fpga_as_is_tready=0;
 
+		#10;
+		rst = 0;
+		
 		test001();	//soc side register test
-		test002();	//TX/RX test - loop with change coreclk phase in soc - soc provide data and valid=1 to fpga
-		test003();	//TX/RX test with tready toggle - loop with change coreclk phase in soc  - soc provide data and valid=1 to fpga
-		test004();  //TX/RX test - loop with change coreclk phase in soc - fpga provide data and valid=1 to soc
+		//test002();	//TX/RX test - loop with change coreclk phase in soc - soc provide data and valid=1 to fpga
+		//test003();	//TX/RX test with tready toggle - loop with change coreclk phase in soc  - soc provide data and valid=1 to fpga
+		//test004();  //TX/RX test - loop with change coreclk phase in soc - fpga provide data and valid=1 to soc
+		test_dlytime();	// dly_time test
 
 		#40;
 		$display("=============================================================================================");
@@ -558,9 +598,31 @@ module fsic_tb_soc_to_fpga #(
 	endtask
 
 
+	reg[31:0] k;
 	reg[31:0] j;
 	reg[31:0] i;
 	reg[31:0]idx1;
+
+	task test_dlytime;
+		//input [7:0] compare_data;
+
+		begin
+			soc_txclk_dly_en = 1;
+			fpga_txclk_dly_en = 1;
+			for (k=0;k<4;k=k+1) begin
+				dly_time = k;
+				$display("test_dlytime: dly_time = %x", dly_time);
+				test002();
+				test003();
+				test004();
+			end
+			soc_txclk_dly_en = 0;
+			fpga_txclk_dly_en = 0;
+			
+			#1000;
+		end
+	endtask
+
 	
 	task test002;
 		//input [7:0] compare_data;
@@ -604,8 +666,8 @@ module fsic_tb_soc_to_fpga #(
 					UP_data_received_cnt = 0;
 					
 					fork
-						test002_soc();
-						test002_fpga();
+						UpStream_test_soc();
+						UpStream_test_fpga();
 					join
 					
 					#40; //add delay to make sure UP_data_send_buf and UP_data_received_buf is ready for compare.
@@ -662,12 +724,14 @@ module fsic_tb_soc_to_fpga #(
 					#200;
 				end
 			end
+			soc_coreclk_dly_en = 0;
+			soc_ioclk_dly_en = 0;
 			#1000;
 		end
 	endtask
 
 
-	task test002_soc;
+	task UpStream_test_soc;
 		//input [7:0] compare_data;
 
 		begin
@@ -689,13 +753,13 @@ module fsic_tb_soc_to_fpga #(
 			end
 			soc_as_is_tvalid <= 0;
 
-			$display($time, "=> test002_soc done");
+			$display($time, "=> UpStream_test_soc done");
 		end
 	endtask
 
 	reg[31:0]idx2;
 
-	task test002_fpga;
+	task UpStream_test_fpga;
 		//input [7:0] compare_data;
 
 		begin
@@ -709,7 +773,7 @@ module fsic_tb_soc_to_fpga #(
 				end
 				$display($time, "=> fpga idx2=%x", idx2);
 			end
-		$display($time, "=> test002_fpga done");
+		$display($time, "=> UpStream_test_fpga done");
 		end
 	endtask
 
@@ -800,6 +864,8 @@ module fsic_tb_soc_to_fpga #(
 	
 				end
 			end
+			soc_coreclk_dly_en = 0;
+			soc_ioclk_dly_en = 0;
 			#1000;
 		end
 	endtask
@@ -1009,6 +1075,8 @@ module fsic_tb_soc_to_fpga #(
 					#200;
 				end
 			end	
+			soc_coreclk_dly_en = 0;
+			soc_ioclk_dly_en = 0;
 			#1000;
 		end
 	endtask
@@ -1372,6 +1440,7 @@ module fsic_tb_soc_to_fpga #(
 		end
 		
 	endtask
+
 
 endmodule
 
