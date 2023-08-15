@@ -43,13 +43,28 @@ module fsic_coreclk_phase_cnt#(
         end
     end
 
+	reg pre_core_clk_toggle;
+	reg sync_core_clk_toggle;
+	
+    always @(posedge ioclk or negedge axis_rst_n) begin
+        if ( !axis_rst_n ) begin
+            pre_core_clk_toggle <= 0;
+            sync_core_clk_toggle <= 0;
+        end
+        else begin
+			pre_core_clk_toggle <= core_clk_toggle;
+			sync_core_clk_toggle <= pre_core_clk_toggle;		//avoid metastable issue.
+        end
+    end
+
+
     always @(posedge ioclk or negedge axis_rst_n) begin
         if ( !axis_rst_n ) begin
             clk_seq <= 0;
         end
         else begin
             clk_seq[pCLK_RATIO-1:1] <=  clk_seq[pCLK_RATIO-2:0];
-            clk_seq[0] <=  core_clk_toggle;
+            clk_seq[0] <=  sync_core_clk_toggle;
         end
     end
 
@@ -59,7 +74,7 @@ module fsic_coreclk_phase_cnt#(
             phase_cnt <= 0;
         end
         else begin
-            if ( (clk_seq == 4'h8) || (clk_seq == 4'h7) )
+            if ( (clk_seq == 4'h3) || (clk_seq == 4'hc) )
                 phase_cnt <= 0;
             else
                 phase_cnt <= phase_cnt + 1;

@@ -52,11 +52,11 @@ assign io_clk = io_in[37];
 
 assign io_oeb[ 7: 0]   =  8'h00;
 
-assign io_oeb[19: 8]   = 12'h000;  // RXD
-assign io_oeb[   20]   =  1'b0;    // RX_CLK
+assign io_oeb[19: 8]   = 12'hFFF;  // RXD
+assign io_oeb[   20]   =  1'b1;    // RX_CLK
 
-assign io_oeb[32:21]   = 12'hFFF;  // TXD
-assign io_oeb[   33]   =  1'b1;    // TX_CLK
+assign io_oeb[32:21]   = 12'h000;  // TXD
+assign io_oeb[   33]   =  1'b0;    // TX_CLK
 
 assign io_oeb[   37]   =  1'b0;    // IO_CLK (from FPGA)
 
