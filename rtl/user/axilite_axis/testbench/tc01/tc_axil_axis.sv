@@ -16,13 +16,18 @@ module tc(axil_axis_interface axi_intf);
     `include "axil_axis_monitor.sv"
     `include "axil_axis_scoreboard.sv"
 
-    axil_axis_scenario_gen gen;
+    aa_scenario_gen gen;
     axil_axis_driver drvr;
     axil_axis_monitor mon;
     axil_axis_scoreboard scrbd;
     mb_axi gen2drvr, gen2scrbd, mon2scrbd;
 
-    constraint axil_axis_scenario::rdy{ // override constraint
+    aa_system_config_rw_aa_scenario scn_rw_aa;
+    aa_system_config_rw_mb_scenario scn_rw_mb;
+    aa_system_transfer_scenario scn_transf;
+    aa_system_single_scenario scn_single;
+
+    constraint aa_base_scenario::rdy{ // override constraint
         //no_rdy_cnt == 0;
     }
 
@@ -39,8 +44,17 @@ module tc(axil_axis_interface axi_intf);
 
     initial begin
         connect();
-        axil_axis_scenario_gen::PKT_NUM = 30;
-        //axil_axis_scenario_gen::PKT_NUM = 500;
+        aa_scenario_gen::PKT_NUM = 500;
+        scn_rw_aa = new();
+        scn_rw_mb = new();
+        scn_transf = new();
+        scn_single = new();
+        gen.scnr_set.push_back(scn_rw_aa);
+        gen.scnr_set.push_back(scn_rw_mb);
+        repeat(8)
+            gen.scnr_set.push_back(scn_transf);
+        repeat(20)
+        gen.scnr_set.push_back(scn_single);
 
         fork
             gen.gen();

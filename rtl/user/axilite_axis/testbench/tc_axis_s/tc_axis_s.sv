@@ -1,30 +1,32 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
 //       MODULE: tc
-//       AUTHOR: zack, Willy
+//       AUTHOR: zack
 // ORGANIZATION: fsic
-//      CREATED: 2023/07/01
+//      CREATED: 2023/06/29
 ///////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ns/1ns
-`include "axil_s_interface.sv"
 
-module tc(axil_s_interface axi_intf);
-    `include "axil_s_scenario.sv"
-    `include "axil_s_driver.sv"
-    `include "axil_s_monitor.sv"
-    `include "axil_s_scoreboard.sv"
-    axil_s_scenario_gen gen;
-    axil_s_driver drvr;
-    axil_s_monitor mon;
-    axil_s_scoreboard scrbd;
+`include "axis_s_interface.sv"
+
+module tc(axis_s_interface axi_intf);
+    `include "axis_s_scenario.sv"
+    `include "axis_s_driver.sv"
+    `include "axis_s_monitor.sv"
+    `include "axis_s_scoreboard.sv"
+
+    axis_s_scenario_gen gen;
+    axis_s_driver drvr;
+    axis_s_monitor mon;
+    axis_s_scoreboard scrbd;
     mb_axi gen2drvr, gen2scrbd, mon2scrbd;
 
-    //constraint axi_scenario::op_limit{
-    //    //axi_op == AXI_WR;
+    //constraint axis_s_scenario::rdy{ // override constraint
+    //    no_rdy_cnt == 0;
     //}
 
-    function void connect();
+    function connect();
         gen2drvr = new();
         gen2scrbd = new();
         mon2scrbd = new();
@@ -37,7 +39,8 @@ module tc(axil_s_interface axi_intf);
 
     initial begin
         connect();
-        axil_s_scenario_gen::PKT_NUM = 1000;
+        //axis_s_scenario_gen::PKT_NUM = 30;
+        axis_s_scenario_gen::PKT_NUM = 500;
 
         fork
             gen.gen();

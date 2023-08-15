@@ -1,31 +1,32 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//       MODULE: axil_axis_scoreboard
+//       MODULE: axis_s_scoreboard
 //       AUTHOR: zack
 // ORGANIZATION: fsic
-//      CREATED: 2023/07/08
+//      CREATED: 2023/06/29
 ///////////////////////////////////////////////////////////////////////////////
 
-class axil_axis_scoreboard;
-    virtual axil_axis_interface.connect intf;
-    aa_base_scenario scnr_scrbd[2];
+class axis_s_scoreboard;
+    virtual axis_s_interface.master intf;
+    axis_s_scenario scnr_scrbd[2];
     mb_axi mb_scrbd[2];
     static int succ_cnt, fail_cnt;
 
-    function new(virtual axil_axis_interface.connect intf, mb_axi mb_gen, mb_mon);
+    function new(virtual axis_s_interface.master intf, mb_axi mb_gen, mb_mon);
         this.intf = intf;
         this.mb_scrbd[0] = mb_gen;
         this.mb_scrbd[1] = mb_mon;
     endfunction
 
     virtual task compare_trans();
+        //$display("scroreeeeeeeeeeeeeeeee");
         fork
             // get trans, put in queue
             while(1)begin
                 mb_scrbd[0].get(scnr_scrbd[0]);
                 mb_scrbd[1].get(scnr_scrbd[1]);
                 if(scnr_scrbd[0].compare(scnr_scrbd[1]))begin
-                    $display($sformatf("%0t, trans %6d compare ok", $time(), scnr_scrbd[0].trans_id));
+                    $display($sformatf("%0t trans %6d compare ok", $time(), scnr_scrbd[0].trans_id));
                     succ_cnt +=1;
                 end
                 else begin
@@ -37,9 +38,10 @@ class axil_axis_scoreboard;
             end
 
             while(1)begin
-                if((succ_cnt + fail_cnt) >= (aa_scenario_gen::PKT_NUM)) break;
+                if((succ_cnt + fail_cnt) >= axis_s_scenario_gen::PKT_NUM) break;
                 else begin
-                    @(posedge intf.axi_ls_aclk);
+                    @(posedge intf.axi_aclk);
+                    //$display("succ_cnt + fail_cnt = %0d", succ_cnt + fail_cnt);
                 end
             end
         join_any
