@@ -105,6 +105,9 @@ module axilite_master(
             WR_WRITE_ADDR:begin
                 axi_awvalid = 1'b1;
                 axi_awaddr = cache_waddr;
+                axi_wvalid = 1'b0;
+                axi_wdata = 32'b0;
+                axi_wstrb = 4'b0;
             end
             WR_WRITE_DATA:begin
                 axi_wvalid = 1'b1;
@@ -157,6 +160,7 @@ module axilite_master(
             RD_READ_ADDR:begin
                 axi_arvalid = 1'b1;
                 axi_araddr = cache_raddr;
+                axi_rready = 1'b0;
             end
             RD_DRIVE_RDY:begin
                 axi_rready = 1'b1;
@@ -165,6 +169,8 @@ module axilite_master(
             end
             RD_READ_DATA:begin
                 axi_rready = 1'b0;
+                axi_arvalid = 1'b0;
+                axi_araddr = 32'b0;
             end
             default: begin
                 axi_arvalid = 1'b0;
