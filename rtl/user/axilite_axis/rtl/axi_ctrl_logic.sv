@@ -553,7 +553,6 @@ module axi_ctrl_logic(
             next_ls <= 1'b0;
             next_ss <= 1'b0;
             ss_wr_data_done <= 1'b0;
-            axi_interrupt <= 1'b0;
             axi_interrupt_done <= 1'b0;
             bk_ls_rdata <= 32'b0;
             bk_ls_rdone <= 1'b0;
@@ -585,7 +584,6 @@ module axi_ctrl_logic(
             if(axi_next_state == AXI_WAIT_DATA)begin
                 ls_rd_data_bk <= 1'b0;
                 ls_wr_data_done <= 1'b0;
-                axi_interrupt <= 1'b0;
                 axi_interrupt_done <= 1'b0;
                 bk_ls_rdata <= 32'b0;
                 bk_ls_rdone <= 1'b0;
@@ -767,14 +765,22 @@ module axi_ctrl_logic(
                 end
             end
             else if(axi_next_state == AXI_TRIG_INT)begin
-                // edge trigger interrupt signal, will be de-assert in next posedge
-                if(mb_int_en)begin
-                    axi_interrupt <= 1'b1;
-                    // update interrupt status, offset 4 bit 0
-                    aa_regs[1][0] <= 1'b1;
-                end
+                // set interrupt status even if mb_int_en is disabled
+                // update interrupt status, offset 4 bit 0
+                aa_regs[1][0] <= 1'b1;
                 axi_interrupt_done <= 1'b1;
+                axi_reg_debug <= REG_WR_AA;
             end
+        end
+    end
+
+    // combinational logic for interrupt control
+    always_comb begin
+        if(aa_regs[0][0] && aa_regs[1][0]) begin
+            axi_interrupt = 1'b1;
+        end
+        else begin
+            axi_interrupt = 1'b0;
         end
     end
 
