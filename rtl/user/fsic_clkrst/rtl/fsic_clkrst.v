@@ -68,9 +68,9 @@ assign uck2_rst_n = uck2_rst_nr[2];
 
 // ----------------------------------------------------------
 // IRQ
-assign user_irq[0] = high_pri_irq;
+assign user_irq[2] = high_pri_irq;
 assign user_irq[1] = low__pri_irq;
-assign user_irq[2] = mb_irq;
+assign user_irq[0] = mb_irq;
 
 
 // ----------------------------------------------------------
