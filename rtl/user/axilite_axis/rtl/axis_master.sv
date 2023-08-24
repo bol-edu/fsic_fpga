@@ -15,7 +15,7 @@ module axi_fifo#(WIDTH=8'h8, DEPTH=8'h8)(
     input wire clear,
     input wire [WIDTH - 1:0] data_in,
     output logic [WIDTH - 1:0] data_out,
-    output logic wr_rdy,
+    output logic out_wr_rdy,
     output logic rd_vld,
     output logic last
 );
@@ -23,7 +23,7 @@ module axi_fifo#(WIDTH=8'h8, DEPTH=8'h8)(
     logic [WIDTH - 1:0] fifo [DEPTH - 1:0];
     logic [7:0] wr_pointer, rd_pointer;
     logic [7:0] wr_count, rd_count, wr_count_pre;
-    logic empty, full, sync_rd_vld;
+    logic empty, full, sync_rd_vld, near_full, wr_rdy;
 
     // pointer and water level, use valid and ready to handshake
     always_ff@(posedge clk or negedge rst_n)begin
@@ -93,8 +93,10 @@ module axi_fifo#(WIDTH=8'h8, DEPTH=8'h8)(
                 rd_vld = 1'b0;
                 last = 1'b1;
             end
-            else if((wr_count - rd_count) > 8'h1) // normal data, not last
+            else if((wr_count - rd_count) > 8'h1)begin // normal data, not last
                 rd_vld = 1'b1;
+                last = 1'b0;
+            end
             else if(wr_count == 8'h1 && rd_count == 8'h0 && ~sync_rd_vld)begin // for short transaction only have one clock data
                 rd_vld = 1'b1;
                 last = 1'b0;
@@ -105,10 +107,14 @@ module axi_fifo#(WIDTH=8'h8, DEPTH=8'h8)(
             end
         end
         else begin // for control_logic
-            if((wr_count - rd_count) > 8'h1)
+            if((wr_count - rd_count) > 8'h1)begin
                 rd_vld = 1'b1;
-            else if((wr_count - rd_count) == 8'h1)
+                last = 1'b0;
+            end
+            else if((wr_count - rd_count) == 8'h1)begin
                 rd_vld = 1'b1;
+                last = 1'b0;
+            end
             else begin
                 rd_vld = 1'b0;
                 last = 1'b0;
@@ -119,11 +125,17 @@ module axi_fifo#(WIDTH=8'h8, DEPTH=8'h8)(
             wr_rdy = 1'b1;
         else
             wr_rdy = 1'b0;
+
+        if(near_full == 1'b0) // reserve fifo to fix if two consecutive write will fail
+            out_wr_rdy = 1'b1;
+        else
+            out_wr_rdy = 1'b0;
     end
 
     always_comb begin
         empty = ((wr_count - rd_count) == 8'h0);
-        full = ((wr_count - rd_count) == DEPTH - 8'h1); // reserve one if ready too late
+        near_full = ((wr_count - rd_count) >= DEPTH - 8'h2); // reserve fifo to fix if two consecutive write will fail
+        full = ((wr_count - rd_count) == DEPTH); // real full
     end
 
 endmodule
@@ -210,7 +222,7 @@ module axis_master(
                     axis_next_state = AXIS_SEND_DATA;
                 end
             AXIS_SEND_DATA:
-                if(fifo_last && enough_data == 1'b0)begin // one cycle data
+                if(fifo_last && ~enough_data)begin // one cycle data
                     axis_next_state = AXIS_SEND_LAST;
                 end
                 else if(fifo_last && axis_tready)begin // last data
@@ -254,6 +266,11 @@ module axis_master(
             else begin
                 next_data = 1'b0;
             end
+            axis_tvalid = 1'b0;
+            axis_tdata = 32'h0;
+            axis_tstrb = 4'h0;
+            axis_tkeep = 4'h0;
+            axis_tuser = 2'h0;
         end
         else if(axis_state == AXIS_SEND_DATA)begin // normal data
             axis_tvalid = 1'b1;
@@ -294,7 +311,7 @@ module axis_master(
             if(axis_tready)
                 no_rdy_count <= 8'h0;
             else
-                no_rdy_count <= no_rdy_count + 1'b1;
+                no_rdy_count <= no_rdy_count + 8'b1;
         else
             no_rdy_count <= 8'h0;
     end
@@ -309,7 +326,7 @@ module axis_master(
         .hack(1'b1),
         .data_in(fifo_data_in),
         .data_out(fifo_data_out),
-        .wr_rdy(fifo_wr_rdy),
+        .out_wr_rdy(fifo_wr_rdy),
         .rd_vld(fifo_rd_vld),
         .last(fifo_last),
         .clear(fifo_clear));

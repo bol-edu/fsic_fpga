@@ -1,26 +1,26 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//       MODULE: axil_s_scenario
-//       AUTHOR: zack, Willy
+//       MODULE: axil_m_scenario
+//       AUTHOR: zack
 // ORGANIZATION: fsic
-//      CREATED: 2023/07/01
+//      CREATED: 2023/05/17
 ///////////////////////////////////////////////////////////////////////////////
 
 typedef enum bit [3:0] {AXI_WR, AXI_RD} axi_operation;
 
-class axil_s_scenario;
+class axil_m_scenario;
     int trans_id;
     static int trans_id_st;
     rand axi_operation axi_op;
-
-    rand bit [14:0] wr_addr;
+    rand bit [11:0] wr_addr;
     rand bit [31:0] wr_data;
     rand bit [3:0] wr_strb;
 
-    rand bit [14:0] rd_addr;
+    rand bit [11:0] rd_addr;
     rand bit [31:0] rd_data;
 
-    //extern constraint op_limit;
+
+    extern constraint op_limit;
     function new();
         //this.randomize();
     endfunction
@@ -46,7 +46,7 @@ class axil_s_scenario;
         trans_id = trans_id_st;
     endfunction
 
-    function bit compare(axil_s_scenario tr_cmp);
+    function bit compare(axil_m_scenario tr_cmp);
         int err_cnt;
 
         err_cnt = 0;
@@ -64,10 +64,10 @@ class axil_s_scenario;
     endfunction
 endclass
 
-typedef mailbox #(axil_s_scenario) mb_axi;
+typedef mailbox #(axil_m_scenario) mb_axi;
 
-class axil_s_scenario_gen;
-    axil_s_scenario scnr;
+class axil_m_scenario_gen;
+    axil_m_scenario scnr;
     mb_axi mb_scnr[2];
     static int PKT_NUM;
 
@@ -80,6 +80,7 @@ class axil_s_scenario_gen;
         for(int i=0; i < PKT_NUM; i++)begin
             scnr = new();
             scnr.randomize();
+            //scnr.display();
             mb_scnr[0].put(scnr);
             mb_scnr[1].put(scnr);
         end

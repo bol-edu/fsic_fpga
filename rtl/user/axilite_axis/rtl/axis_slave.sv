@@ -11,7 +11,6 @@ module axis_slave(
     output logic [31:0] bk_data,
     output logic [3:0] bk_tstrb,
     output logic [3:0] bk_tkeep,
-    //output logic [1:0] bk_tid,
     output logic [1:0] bk_user,
     output logic bk_tlast,
     input wire bk_ready,
@@ -25,7 +24,6 @@ module axis_slave(
     input wire [3:0] axis_tstrb,
     input wire [3:0] axis_tkeep,
     input wire axis_tlast,
-    //input wire [1:0] axis_tid,
     input wire [1:0] axis_tuser,
     output logic axis_tready
 );
@@ -43,7 +41,7 @@ module axis_slave(
     // axis_tlast ________________/-\_________
 
     // FSM state
-    enum logic [2:0] {AXIS_WAIT_BACKEND, AXIS_RECV_DATA, AXIS_OUTPUT_DATA} axis_state, axis_next_state;
+    enum logic [2:0] {AXIS_WAIT_BACKEND, AXIS_OUTPUT_DATA} axis_state, axis_next_state;
 
     // FSM state, sequential logic, axis
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
@@ -61,16 +59,19 @@ module axis_slave(
 
         case(axis_state)
             AXIS_WAIT_BACKEND:
-                if(bk_ready)begin
-                    axis_next_state = AXIS_RECV_DATA;
-                end
-            AXIS_RECV_DATA:
-                if(axis_tvalid)begin
+                if(bk_ready && axis_tvalid)begin
                     axis_next_state = AXIS_OUTPUT_DATA;
                 end
-                else begin
-                    axis_next_state = AXIS_RECV_DATA;
-                end
+                //else if(bk_ready)begin
+                //    axis_next_state = AXIS_RECV_DATA;
+                //end
+            //AXIS_RECV_DATA:
+            //    if(bk_ready && axis_tvalid)begin
+            //        axis_next_state = AXIS_OUTPUT_DATA;
+            //    end
+            //    else begin
+            //        axis_next_state = AXIS_RECV_DATA;
+            //    end
             AXIS_OUTPUT_DATA:
                 if(axis_tvalid && bk_ready)begin
                     axis_next_state = AXIS_OUTPUT_DATA;
@@ -87,11 +88,11 @@ module axis_slave(
     always_comb begin
         //axis_tready = 1'b0;
 
-        case(axis_state)
+        case(axis_next_state) // if axis_state, axis_tready will be one clock late than bk_ready, so the data on frontend will be accepted but actually do not enter fifo because bk_ready is low now
             //AXIS_WAIT_BACKEND: // do nothing
-            AXIS_RECV_DATA:begin
-                axis_tready = 1'b1;
-            end
+            //AXIS_RECV_DATA:begin
+            //    axis_tready = 1'b1;
+            //end
             AXIS_OUTPUT_DATA:begin
                 axis_tready = 1'b1;
             end
@@ -113,20 +114,18 @@ module axis_slave(
             bk_data = axis_tdata;
             bk_tstrb = axis_tstrb;
             bk_tkeep = axis_tkeep;
-            //bk_tid = axis_tid;
             bk_user = axis_tuser;
             bk_tlast = axis_tlast;
             bk_valid = 1'b1;
         end
-        else if(axis_state == AXIS_OUTPUT_DATA && axis_next_state == AXIS_WAIT_BACKEND && bk_ready == 1'b0)begin // bk_ready falling, but the data is valid. EXCEPTION: short transaction only one clock cycle data
+        /*else if(axis_state == AXIS_OUTPUT_DATA && axis_next_state == AXIS_WAIT_BACKEND && bk_ready == 1'b0)begin // bk_ready falling, but the data is valid. EXCEPTION: short transaction only one clock cycle data
             bk_data = axis_tdata;
             bk_tstrb = axis_tstrb;
             bk_tkeep = axis_tkeep;
-            //bk_tid = axis_tid;
             bk_user = axis_tuser;
             bk_tlast = axis_tlast;
             bk_valid = axis_tvalid; // solve short transaction
-        end
+        end*/
         else begin
             bk_data = 32'h0;
             bk_tstrb = 4'h0;

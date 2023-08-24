@@ -1,11 +1,19 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+//       MODULE: top
+//       AUTHOR: zack
+// ORGANIZATION: fsic
+//      CREATED: 2023/05/17
+///////////////////////////////////////////////////////////////////////////////
+
 `timescale 1ns/1ns
 
 module top();
     event evt_wr_addr, evt_wr_data, evt_001, evt_002;
 
-    axil_s_interface axi_intf();
+    axil_m_interface axi_intf();
     tc testcase(axi_intf);
-    axilite_slave axil_s(
+    axilite_master axi_lite_m(
         .axi_aclk(axi_intf.axi_aclk),
         .axi_aresetn(axi_intf.axi_aresetn),
         .axi_awvalid(axi_intf.axi_awvalid),
@@ -26,13 +34,11 @@ module top();
         .bk_waddr(axi_intf.bk_waddr),
         .bk_wdata(axi_intf.bk_wdata),
         .bk_wstrb(axi_intf.bk_wstrb),
-//        .bk_wdone(axi_intf.bk_wdone),
+        .bk_wdone(axi_intf.bk_wdone),
         .bk_rstart(axi_intf.bk_rstart),
         .bk_raddr(axi_intf.bk_raddr),
         .bk_rdata(axi_intf.bk_rdata),
-        .bk_rdone(axi_intf.bk_rdone),
-
-        .cc_aa_enable(axi_intf.cc_aa_enable) //Add cc_aa_enable
+        .bk_rdone(axi_intf.bk_rdone)
     );
 
     bit clk = 0, rst = 0;
@@ -52,7 +58,7 @@ module top();
     assign axi_intf.axi_aresetn = rst;
 
     initial begin
-        $dumpfile("axil_s.vcd");
+        $dumpfile("axil_m.vcd");
         $dumpvars(0, top);
         $dumpvars(0, top.testcase);
     end
