@@ -1,1 +1,1 @@
-../rtl/sw_caravel.v
+sw_caravel.v
