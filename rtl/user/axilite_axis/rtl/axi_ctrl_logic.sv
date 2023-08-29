@@ -413,7 +413,7 @@ module axi_ctrl_logic(
                             data_ss = fifo_out_tdata;
                             rd_ss_complete = 1'b1;
                         end
-                        default: do_nothing = 1'b1;
+                        // default: do_nothing = 1'b1; // fix go do_nothing when tuser=0
                     endcase
                 end
             endcase
