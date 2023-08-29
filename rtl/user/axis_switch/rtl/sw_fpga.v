@@ -166,6 +166,7 @@ reg [WIDTH-1:0] mem[(2**ADDR_WIDTH)-1:0];
 reg as_up_tvalid_reg; 
 reg as_aa_tvalid_reg;
 reg as_ad_tvalid_reg; 
+reg delaynext; 
 wire above_th = ((wr_ptr_reg - rd_ptr_reg) > TH_reg);
 reg as_is_tready_reg;   
 wire [WIDTH-1:0] s_axis;
@@ -405,26 +406,44 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
     if (wr_ptr_reg != pre_rd_ptr_reg) begin  
         if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
             as_up_tvalid_reg <= 1;
+			rd_ptr_reg <= pre_rd_ptr_reg;  
             if(up_as_tready) begin
-                rd_ptr_reg <= pre_rd_ptr_reg;   
                 pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-            end else
+				if(delaynext == 1) begin
+					as_up_tvalid_reg <= 0;
+					delaynext <= 0;
+				end
+            end else begin	
                pre_rd_ptr_reg <= pre_rd_ptr_reg;
+			   delaynext <= 1;	
+			end	
         end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin  
             as_aa_tvalid_reg <= 1;
+			rd_ptr_reg <= pre_rd_ptr_reg;  
             if(aa_as_tready) begin
-               rd_ptr_reg <= pre_rd_ptr_reg;  
-               pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-            end else
+				pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
+				if(delaynext == 1) begin
+					as_aa_tvalid_reg <= 0;
+					delaynext <= 0;
+				end
+            end else begin	
                pre_rd_ptr_reg <= pre_rd_ptr_reg;
+			   delaynext <= 1;	
+			end			   
 //output stream for AxiDMA in FPGA side
         end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b10) begin
             as_ad_tvalid_reg <= 1;
+			rd_ptr_reg <= pre_rd_ptr_reg;  
             if(ad_as_tready) begin
-               rd_ptr_reg <= pre_rd_ptr_reg;  
-               pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-            end else
+				pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
+				if(delaynext == 1) begin
+					as_ad_tvalid_reg <= 0;
+					delaynext <= 0;
+				end
+            end else begin	
                pre_rd_ptr_reg <= pre_rd_ptr_reg; 
+			   delaynext <= 1;	
+			end			   
         end else begin
             as_up_tvalid_reg <= 0;
             as_aa_tvalid_reg <= 0;
@@ -441,7 +460,8 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
 		as_ad_tvalid_reg <= 0;
         as_is_tready_reg <= 0;
         rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};
-        pre_rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};            
+        pre_rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};  
+		delaynext <= 0;		
     end
 end
 assign as_up_tvalid = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? as_up_tvalid_reg: 0;   
