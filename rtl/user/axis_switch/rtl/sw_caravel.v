@@ -130,7 +130,7 @@ localparam USER_OFFSET  = TID_OFFSET  + TID_WIDTH;
 localparam WIDTH        = USER_OFFSET + USER_WIDTH;
 //axi_lite reg
 //FIFO threshold setting
-reg [3:0] TH_reg = 4'h5; //offset0, bit3:0
+reg [3:0] TH_reg = 4'h6; //offset0, bit3:0
 wire axi_awvalid_in;
 wire axi_wvalid_in;
 wire axi_awready_out;
@@ -223,6 +223,8 @@ assign as_up_tready = grant_reg[0] && is_as_tready;
 assign as_aa_tready = grant_reg[1] && is_as_tready;
 assign as_la_tready = grant_reg[2] && is_as_tready;    
 always @* begin
+    shift_req = 0;
+    shift_hi_req = 0;
     if(frame_start_reg == 1'b0) begin 
         if(hi_req) begin
             case (base_ptr)
@@ -242,9 +244,9 @@ always @* begin
     end       
 end
 always @* begin
+    shift_grant[2:0] = 3'b000;
+    shift_hi_grant[2:0] = 3'b000;    
     if(frame_start_reg == 1'b0) begin 
-        shift_hi_grant[2:0] = 3'b000;    
-        shift_grant[2:0] = 3'b000;
         if(hi_req) begin
             if (shift_hi_req[0])       shift_hi_grant[0] = 1'b1;
             else if (shift_hi_req[1])  shift_hi_grant[1] = 1'b1; 
@@ -274,7 +276,9 @@ always @* begin
             endcase
         end
         if(grant_next != 0) frame_start_next = 1'b1;
+        else frame_start_next = 1'b0; 
     end else begin
+        grant_next = grant_reg; 
         if ((grant_reg == 3'b001)||(grant_reg == 3'b010)||(grant_reg == 3'b100)) begin
             if (m_axis_tlast_reg == 1'b1)  //meet end condition                            
                 frame_start_next = 1'b0;
@@ -384,52 +388,17 @@ end
 //for Dexmux
 // Write logic
 always @(posedge axis_clk or negedge axi_reset_n) begin
-    if (is_as_tvalid) begin // for the current Io_serdes design
-        mem[wr_ptr_reg[ADDR_WIDTH-1:0]] <= s_axis;
-        wr_ptr_reg <= wr_ptr_reg + 1;
-    end
     if (!axi_reset_n) begin
         wr_ptr_reg <= {ADDR_WIDTH+1{1'b0}};
-    end
+    end else begin
+	    if (is_as_tvalid) begin // for the current Io_serdes design
+	        mem[wr_ptr_reg[ADDR_WIDTH-1:0]] <= s_axis;
+	        wr_ptr_reg <= wr_ptr_reg + 1;
+	    end
+    end	    
 end
 // Read logic
 always @(posedge axis_clk or negedge axi_reset_n) begin
-    as_is_tready_reg <= !above_th;  
-    if (wr_ptr_reg != pre_rd_ptr_reg) begin  
-        if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
-            as_up_tvalid_reg <= 1;
-			rd_ptr_reg <= pre_rd_ptr_reg;  
-            if(up_as_tready) begin
-                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-				if(delaynext == 1) begin
-					as_up_tvalid_reg <= 0;
-					delaynext <= 0;
-				end
-            end else begin	
-               pre_rd_ptr_reg <= pre_rd_ptr_reg;
-			   delaynext <= 1;	
-			end	
-        end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin  
-            as_aa_tvalid_reg <= 1;
-			rd_ptr_reg <= pre_rd_ptr_reg;  
-            if(aa_as_tready) begin
-				pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-				if(delaynext == 1) begin
-					as_aa_tvalid_reg <= 0;
-					delaynext <= 0;
-				end
-            end else begin	
-               pre_rd_ptr_reg <= pre_rd_ptr_reg;
-			   delaynext <= 1;	
-			end			   
-        end else begin
-            as_up_tvalid_reg <= 0;
-            as_aa_tvalid_reg <= 0;
-        end
-    end else begin
-        as_up_tvalid_reg <= 0;
-        as_aa_tvalid_reg <= 0;
-    end       
     if (!axi_reset_n) begin
         as_up_tvalid_reg <= 0; 
         as_aa_tvalid_reg <= 0;
@@ -437,6 +406,43 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
         rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};
         pre_rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};  
 		delaynext <= 0;		
+    end else begin
+	    as_is_tready_reg <= !above_th;  
+	    if (wr_ptr_reg != pre_rd_ptr_reg) begin  
+	        if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
+	            as_up_tvalid_reg <= 1;
+				rd_ptr_reg <= pre_rd_ptr_reg;  
+	            if(up_as_tready) begin
+	                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
+					if(delaynext == 1) begin
+						as_up_tvalid_reg <= 0;
+						delaynext <= 0;
+					end
+	            end else begin	
+	               pre_rd_ptr_reg <= pre_rd_ptr_reg;
+				   delaynext <= 1;	
+				end	
+	        end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin  
+	            as_aa_tvalid_reg <= 1;
+				rd_ptr_reg <= pre_rd_ptr_reg;  
+	            if(aa_as_tready) begin
+					pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
+					if(delaynext == 1) begin
+						as_aa_tvalid_reg <= 0;
+						delaynext <= 0;
+					end
+	            end else begin	
+	               pre_rd_ptr_reg <= pre_rd_ptr_reg;
+				   delaynext <= 1;	
+				end			   
+	        end else begin
+	            as_up_tvalid_reg <= 0;
+	            as_aa_tvalid_reg <= 0;
+	        end
+	    end else begin
+	        as_up_tvalid_reg <= 0;
+	        as_aa_tvalid_reg <= 0;
+	    end       
     end
 end
 assign as_up_tvalid = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? as_up_tvalid_reg: 0;   
