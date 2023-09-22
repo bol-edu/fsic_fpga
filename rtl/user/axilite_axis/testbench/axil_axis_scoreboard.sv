@@ -8,7 +8,7 @@
 
 class axil_axis_scoreboard;
     virtual axil_axis_interface.connect intf;
-    axil_axis_scenario scnr_scrbd[2];
+    aa_base_scenario scnr_scrbd[2];
     mb_axi mb_scrbd[2];
     static int succ_cnt, fail_cnt;
 
@@ -37,7 +37,7 @@ class axil_axis_scoreboard;
             end
 
             while(1)begin
-                if((succ_cnt + fail_cnt) >= (axil_axis_scenario_gen::PKT_NUM)) break;
+                if((succ_cnt + fail_cnt) >= (aa_scenario_gen::PKT_NUM)) break;
                 else begin
                     @(posedge intf.axi_ls_aclk);
                 end

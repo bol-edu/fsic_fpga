@@ -37,7 +37,7 @@ module tc(axil_s_interface axi_intf);
 
     initial begin
         connect();
-        axil_s_scenario_gen::PKT_NUM = 300;
+        axil_s_scenario_gen::PKT_NUM = 1000;
 
         fork
             gen.gen();

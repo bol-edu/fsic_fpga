@@ -13,12 +13,12 @@ class axil_s_scenario;
     static int trans_id_st;
     rand axi_operation axi_op;
 
-    rand logic [14:0] wr_addr;
-    rand logic [31:0] wr_data;
-    rand logic [3:0] wr_strb;
+    rand bit [14:0] wr_addr;
+    rand bit [31:0] wr_data;
+    rand bit [3:0] wr_strb;
 
-    rand logic [14:0] rd_addr;
-    rand logic [31:0] rd_data;
+    rand bit [14:0] rd_addr;
+    rand bit [31:0] rd_data;
 
     //extern constraint op_limit;
     function new();

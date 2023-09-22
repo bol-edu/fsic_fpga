@@ -8,19 +8,19 @@
 
 module axilite_master(
     // backend source to trigger the axilite master transaction
-    input logic bk_wstart,
-    input logic [31:0] bk_waddr,
-    input logic [31:0] bk_wdata,
-    input logic [3:0]  bk_wstrb,
+    input wire bk_wstart,
+    input wire [31:0] bk_waddr,
+    input wire [31:0] bk_wdata,
+    input wire [3:0]  bk_wstrb,
     output logic bk_wdone,
-    input logic bk_rstart,
-    input logic [31:0] bk_raddr,
+    input wire bk_rstart,
+    input wire [31:0] bk_raddr,
     output logic [31:0] bk_rdata,
     output logic bk_rdone,
 
     // frontend - axilite master
-    input logic axi_aclk,
-    input logic axi_aresetn,
+    input wire axi_aclk,
+    input wire axi_aresetn,
     output logic axi_awvalid,
     output logic [31:0] axi_awaddr,
     output logic axi_wvalid,
@@ -29,11 +29,11 @@ module axilite_master(
     output logic axi_arvalid,
     output logic [31:0] axi_araddr,
     output logic axi_rready,
-    input logic [31:0] axi_rdata,
-    input logic axi_awready,
-    input logic axi_wready,
-    input logic axi_arready,
-    input logic axi_rvalid
+    input wire [31:0] axi_rdata,
+    input wire axi_awready,
+    input wire axi_wready,
+    input wire axi_arready,
+    input wire axi_rvalid
 );
 
     // backend interface
@@ -94,24 +94,35 @@ module axilite_master(
 
     // FSM state, combinational logic, output control
     always_comb begin
-        axi_awvalid = 1'b0;
-        axi_awaddr = 32'b0;
-        axi_wvalid = 1'b0;
-        axi_wdata = 32'b0;
-        axi_wstrb = 4'b0;
+        //axi_awvalid = 1'b0;
+        //axi_awaddr = 32'b0;
+        //axi_wvalid = 1'b0;
+        //axi_wdata = 32'b0;
+        //axi_wstrb = 4'b0;
 
         case(axi_wr_state)
             //WR_WAIT_ADDR: // do nothing
             WR_WRITE_ADDR:begin
                 axi_awvalid = 1'b1;
                 axi_awaddr = cache_waddr;
+                axi_wvalid = 1'b0;
+                axi_wdata = 32'b0;
+                axi_wstrb = 4'b0;
             end
             WR_WRITE_DATA:begin
                 axi_wvalid = 1'b1;
                 axi_wdata = cache_wdata;
                 axi_wstrb = cache_strb;
+                axi_awvalid = 1'b0;
+                axi_awaddr = 32'b0;
             end
-            //default:
+            default: begin
+                axi_awvalid = 1'b0;
+                axi_awaddr = 32'b0;
+                axi_wvalid = 1'b0;
+                axi_wdata = 32'b0;
+                axi_wstrb = 4'b0;
+            end
         endcase
     end
 
@@ -140,23 +151,32 @@ module axilite_master(
 
     // FSM state, combinational logic, output control
     always_comb begin
-        axi_arvalid = 1'b0;
-        axi_araddr = 32'b0;
-        axi_rready = 1'b0;
+        //axi_arvalid = 1'b0;
+        //axi_araddr = 32'b0;
+        //axi_rready = 1'b0;
 
         case(axi_rd_state)
             //RD_WAIT_ADDR: // do nothing
             RD_READ_ADDR:begin
                 axi_arvalid = 1'b1;
                 axi_araddr = cache_raddr;
+                axi_rready = 1'b0;
             end
             RD_DRIVE_RDY:begin
                 axi_rready = 1'b1;
+                axi_arvalid = 1'b0;
+                axi_araddr = 32'b0;
             end
             RD_READ_DATA:begin
                 axi_rready = 1'b0;
+                axi_arvalid = 1'b0;
+                axi_araddr = 32'b0;
             end
-            //default:
+            default: begin
+                axi_arvalid = 1'b0;
+                axi_araddr = 32'b0;
+                axi_rready = 1'b0;
+            end
         endcase
     end
 
@@ -202,23 +222,31 @@ module axilite_master(
     
     // backend interface, combinational logic
     always_comb begin
-        wr_addr_go = 1'b0;
-        bk_wdone = 1'b0;
-        rd_addr_go = 1'b0;
-        bk_rdone = 1'b0;
+        //wr_addr_go = 1'b0;
+        //bk_wdone = 1'b0;
+        //rd_addr_go = 1'b0;
+        //bk_rdone = 1'b0;
 
         if((cache_wstart == 1'b1) && (axi_wr_state == WR_WAIT_ADDR))begin
             wr_addr_go = 1'b1;
         end
+        else
+            wr_addr_go = 1'b0;
         if((axi_wr_state == WR_WRITE_DATA) && (axi_wr_next_state == WR_WAIT_ADDR))begin
             bk_wdone = 1'b1;
         end
+        else
+            bk_wdone = 1'b0;
         if((cache_rstart == 1'b1) && (axi_rd_state == RD_WAIT_ADDR))begin
             rd_addr_go = 1'b1;
         end
+        else
+            rd_addr_go = 1'b0;
         if((axi_rd_state == RD_READ_DATA) && (axi_rd_next_state == RD_WAIT_ADDR))begin
             bk_rdone = 1'b1;
         end
+        else
+            bk_rdone = 1'b0;
     end
 
 endmodule

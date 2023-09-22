@@ -9,9 +9,11 @@
 `timescale 1ns/1ns
 
 module top();
-    event evt_get_data, evt_get_data2, evt_001, evt_002, evt_003;
+    event evt_001, evt_002, evt_003, evt_004, evt_005;
     static int no_rdy_trans, no_rdy_cnt;
-    
+    int sm_largest_fifo_level, clls_largest_fifo_level, clss_largest_fifo_level;
+    event ls_rd_done, ls_wr_done, ss_done;
+
     //logic axis_tvalid, axis_tlast, axis_tready;
     //logic [31:0] axis_tdata;
     //logic [3:0] axis_tstrb, axis_tkeep;

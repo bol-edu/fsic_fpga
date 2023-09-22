@@ -1,11 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////
-//
-//       MODULE: top
-//       AUTHOR: zack, Willy
-// ORGANIZATION: fsic
-//      CREATED: 2023/07/01
-///////////////////////////////////////////////////////////////////////////////
-
 `timescale 1ns/1ns
 
 module top();
@@ -34,6 +26,7 @@ module top();
         .bk_waddr(axi_intf.bk_waddr),
         .bk_wdata(axi_intf.bk_wdata),
         .bk_wstrb(axi_intf.bk_wstrb),
+//        .bk_wdone(axi_intf.bk_wdone),
         .bk_rstart(axi_intf.bk_rstart),
         .bk_raddr(axi_intf.bk_raddr),
         .bk_rdata(axi_intf.bk_rdata),
@@ -57,13 +50,13 @@ module top();
 
     assign axi_intf.axi_aclk = clk;
     assign axi_intf.axi_aresetn = rst;
-    
+
     initial begin
-        $dumpfile("axi_lite.vcd");
+        $dumpfile("axil_s.vcd");
         $dumpvars(0, top);
         $dumpvars(0, top.testcase);
     end
-    
+
     initial begin
         #(200000ns) $finish();
     end

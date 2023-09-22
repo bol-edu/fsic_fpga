@@ -144,9 +144,16 @@ class port:
     else:
       return("INTF")
 
-
   def set_conn_name(self, conn_name):
     self.conn_name = conn_name
+
+  def upd_width(self, new_wid):   # only update width if new width is wider, new_wid should be numerical string
+    if( self.wid_is_num ):  # check width type (int or string)
+      if( self.width < int(new_wid) ):
+        self.width = int(new_wid)
+    else:
+      print("Error, upd_width only support port with numerical width")
+      sys.exit()
 
 
 
@@ -195,6 +202,9 @@ class conn(port):
   def get_conn_name(self):
     return(self.name)
 
+  def get_conn_width(self):
+    return(self.width)
+
   def set_src_inst(self, src_inst_name):
     self.src_isnt_name = src_inst_name
 
@@ -207,7 +217,8 @@ class conn(port):
   def set_dst_port(self, dst_port_name):
     self.dst_port_name = dst_port_name
 
-
+# def upd_width(self, width):
+#   self.upd_width(width)
 
 
 
@@ -225,7 +236,7 @@ class sub_module:
 #   self.inst_name = name
 
   def add_port(self, port_name):
-    # check port_name duplicated or not)
+  # check port_name duplicated or not)
   # print("add_port called: " + port_name)
     for prt in self.port_list:
      if( prt.name == port_name ):
@@ -562,6 +573,36 @@ class top_module(sub_module):
     conx = conn(conn_name)
     conx.set_conn_width(width)
     self.conn_list.append(conx)
+
+  def chk_conn(self, conn_name):
+    # get conn first
+    for conx in self.conn_list:
+      if( conx.get_conn_name() == conn_name ):
+        return True
+    return False
+
+
+
+  # update width if wider
+  def upd_conn_wire(self, conn_name, width):
+    # get conn first
+    if( width.isnumeric() ):       # check width string is pure number
+      for conx in self.conn_list:
+        if( conx.get_conn_name() == conn_name ):
+        # print(width)
+          conx.upd_width(width)
+    else:
+      print("Error, upd_conn_wire only support numerical width string")
+      sys.exit()
+
+
+
+#   conx = conn(conn_name)
+#   conx.set_conn_width(width)
+#   self.conn_list.append(conx)
+
+
+
 
   def add_conn_intf(self, intf_name, intf_inst):
     conx = conn(intf_inst)
@@ -1015,7 +1056,11 @@ def build_top_module(work_sheet, top_modu):
                 # add top wire
               # conn = get_port_top_conn(port_n)
               # conn += post_str[coln_idx-1]
-                if( not col_modo.chk_port(sptn) ):   # same output port connect to multiple load, wire only need declared once
+
+              # if( top_modo.chk_port(sptn) ):       # same output port connect to multiple load, wire only need declared once
+              #  top_modu.upd_conn_wire(conn, wid)   # widest width of top wire
+              # else:
+                if( not top_modu.chk_conn(conn) ):   # same output port connect to multiple load, wire only need declared once
                  top_modu.add_conn_wire(conn, wid)
 
                 # ---------------------------------------------------------- 

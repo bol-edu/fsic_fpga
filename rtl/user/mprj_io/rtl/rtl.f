@@ -1,1 +1,1 @@
-../rtl/mprj_io.dummy_io.vd
+../rtl/mprj_io.sv

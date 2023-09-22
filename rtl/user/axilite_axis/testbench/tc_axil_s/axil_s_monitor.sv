@@ -10,9 +10,9 @@ class axil_s_monitor;
     virtual axil_s_interface.master intf;
     axil_s_scenario scnr_mon[2];
     mb_axi mb_mon;
-    logic [14:0] wr_addr, rd_addr;
-    logic [31:0] wr_data, rd_data;
-    logic [3:0] wr_strb;
+    bit [14:0] wr_addr, rd_addr;
+    bit [31:0] wr_data, rd_data;
+    bit [3:0] wr_strb;
     int packet_cnt = 0;
 
     function new(virtual axil_s_interface.master intf, mb_axi mb_mon);

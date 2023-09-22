@@ -1,1 +1,1 @@
-../rtl/axis_switch.v
+sw_caravel.v
