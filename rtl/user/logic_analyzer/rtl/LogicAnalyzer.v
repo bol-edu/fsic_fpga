@@ -386,7 +386,7 @@ module LOGIC_ANLZ #( parameter pADDR_WIDTH   = 15,
             la_hpri_req_o <= 1'b0;
             transfered_count <= 4'b0;
             pop_stm <= 2'b0;
-            fifo_latchdata[0] <= 32'b0;
+            fifo_latchdata <= 32'b0;
             fifo_latchavaliable <= 1'b0;
             r_ptr <= 0;                        
             r_valid <= 1'b0;
@@ -423,7 +423,7 @@ module LOGIC_ANLZ #( parameter pADDR_WIDTH   = 15,
                     if (transfered_count == pop_cond) begin
                         transfered_count <= 4'b0;                    
                         pop_stm <= 2'b0;
-                        fifo_latchdata[0] <= 32'b0;
+                        fifo_latchdata <= 32'b0;
                         fifo_latchavaliable <= 1'b0;
                         r_valid <= 1'b1;
                         m_tvalid_o <= 1'b0;
