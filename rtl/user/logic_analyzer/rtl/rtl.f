@@ -1,1 +1,2 @@
-../rtl/logic_anlz.dummy_io.vd
+../rtl/LogicAnalyzer.v
+../rtl/Sram.v
