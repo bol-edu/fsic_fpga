@@ -23,81 +23,34 @@ module axi_ctrl_logic(
     input wire bk_lm_rdone,
 
     // backend interface, axilite_slave (LS)
-    input wire bk_ls_wstart,
-    input wire [14:0] bk_ls_waddr,
+    input wire bk_ls_rd_wr,
+    input wire [14:0] bk_ls_addr,
     input wire [31:0] bk_ls_wdata,
     input wire [3:0]  bk_ls_wstrb,
-    input wire bk_ls_rstart,
-    input wire [14:0] bk_ls_raddr,
     output logic [31:0] bk_ls_rdata,
-    output logic bk_ls_rdone,
+    input wire bk_ls_valid,
+    output logic bk_ls_ready,
 
     // backend interface, axis_master (SM)
-    output logic bk_sm_start,
     output logic [31:0] bk_sm_data,
-    output logic [3:0] bk_sm_tstrb,
-    output logic [3:0] bk_sm_tkeep,
-    //output logic [1:0] bk_sm_tid,
     output logic [1:0] bk_sm_user,
-    input wire bk_sm_nordy,
-    input wire bk_sm_done,
+    output logic bk_sm_valid,
+    input wire bk_sm_ready,
 
     // backend interface, axis_slave (SS)
     input wire [31:0] bk_ss_data,
-    input wire [3:0] bk_ss_tstrb,
-    input wire [3:0] bk_ss_tkeep,
-    //input wire [1:0] bk_ss_tid,
     input wire [1:0] bk_ss_user,
-    input wire bk_ss_tlast,
     output logic bk_ss_ready,
     input wire bk_ss_valid
 );
 
-    parameter FIFO_LS_WIDTH = 8'd52, FIFO_LS_DEPTH = 8'd8;
-    //parameter FIFO_SS_WIDTH = 8'd45, FIFO_SS_DEPTH = 8'd8;
-    parameter FIFO_SS_WIDTH = 8'd34, FIFO_SS_DEPTH = 8'd8;
-
-    logic fifo_ls_wr_vld, fifo_ls_wr_rdy, fifo_ls_rd_vld, fifo_ls_rd_rdy, fifo_ls_clear, fifo_ls_last;
-    logic [FIFO_LS_WIDTH-1:0] fifo_ls_data_in, fifo_ls_data_out;
-    logic fifo_ss_wr_vld, fifo_ss_wr_rdy, fifo_ss_rd_vld, fifo_ss_rd_rdy, fifo_ss_clear, fifo_ss_last;
-    logic [FIFO_SS_WIDTH-1:0] fifo_ss_data_in, fifo_ss_data_out;
-
-    // data format:
-    // if write: {rd_wr_1bit, waddr_15bit, wdata_32bit, wstrb_4bit}, total 52bit
-    // if read:  {rd_wr_1bit, raddr_15bit, padding_zero_36bit},      total 52bit
-    axi_fifo #(.WIDTH(FIFO_LS_WIDTH), .DEPTH(FIFO_LS_DEPTH)) fifo_ls(
-        .clk(axi_aclk),
-        .rst_n(axi_aresetn),
-        .wr_vld(fifo_ls_wr_vld),
-        .rd_rdy(fifo_ls_rd_rdy),
-        .hack(1'b0),
-        .data_in(fifo_ls_data_in),
-        .data_out(fifo_ls_data_out),
-        .out_wr_rdy(fifo_ls_wr_rdy),
-        .rd_vld(fifo_ls_rd_vld),
-        .last(fifo_ls_last),
-        .clear(fifo_ls_clear));
-
-    // data format:
-    // {data_32bit, user_2bit}, total 34bit
-    axi_fifo #(.WIDTH(FIFO_SS_WIDTH), .DEPTH(FIFO_SS_DEPTH)) fifo_ss(
-        .clk(axi_aclk),
-        .rst_n(axi_aresetn),
-        .wr_vld(fifo_ss_wr_vld),
-        .rd_rdy(fifo_ss_rd_rdy),
-        .hack(1'b0),
-        .data_in(fifo_ss_data_in),
-        .data_out(fifo_ss_data_out),
-        .out_wr_rdy(fifo_ss_wr_rdy),
-        .rd_vld(fifo_ss_rd_vld),
-        .last(fifo_ss_last),
-        .clear(fifo_ss_clear));
-
     // FSM state
-    enum logic [2:0] {AXI_WAIT_DATA, AXI_DECIDE_DEST, AXI_MOVE_DATA, AXI_SEND_BKEND, AXI_TRIG_INT} axi_state, axi_next_state;
-    enum logic {AXI_WR, AXI_RD} fifo_out_trans_typ;
+    enum logic [2:0] {AXI_WAIT_DATA, AXI_FETCH_DATA, AXI_DECIDE_DEST, AXI_MOVE_DATA, AXI_SEND_BKEND, AXI_TRIG_INT} axi_state, axi_next_state;
+    enum logic {AXI_WR, AXI_RD} trans_typ;
     enum logic {TRANS_LS, TRANS_SS} next_trans, last_trans;
     enum logic [2:0] {REG_IDLE, REG_RST, REG_RD_AA, REG_WR_AA, REG_RD_MB, REG_WR_MB} axi_reg_debug; // for verification purpose, add a monitor point for registers
+    enum logic [2:0] {SS_WAIT_GET_SECND, SS_SEND_BKRDY, SS_WAIT_BKVLD, SS_SECND_DATA} ss_secnd_state, ss_secnd_next_state;
+    enum logic [2:0] {SM_WAIT_SEND_DATA, SM_SEND_BK_DATA, SM_SEND_DATA_DONE} sm_state, sm_next_state;
 
     // FSM state, sequential logic
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
@@ -109,10 +62,6 @@ module axi_ctrl_logic(
         end
     end
 
-    logic enough_ls_data, enough_ss_data;
-    assign enough_ls_data = fifo_ls_rd_vld;
-    assign enough_ss_data = fifo_ss_rd_vld;
-
     logic next_ls, next_ss, wr_mb, rd_mb, wr_aa, rd_aa, rd_unsupp, trig_sm_wr, trig_sm_rd, do_nothing, decide_done, trig_int, sync_trig_int, axi_interrupt_done, sync_trig_sm_wr, sync_trig_sm_rd, trig_lm_rd, send_bk_done, trig_lm_wr, sync_trig_lm_rd, rd_ss_complete;
     logic ls_rd_data_bk, ls_wr_data_done, get_next_data_ss, ss_wr_data_done;
 
@@ -122,9 +71,11 @@ module axi_ctrl_logic(
 
         case(axi_state)
             AXI_WAIT_DATA:
-                if(enough_ls_data || enough_ss_data)begin
-                    axi_next_state = AXI_DECIDE_DEST;
+                if(bk_ls_valid || bk_ss_valid)begin
+                    axi_next_state = AXI_FETCH_DATA;
                 end
+            AXI_FETCH_DATA: // one clock delay make sure data stable
+                axi_next_state = AXI_DECIDE_DEST;
             AXI_DECIDE_DEST:
                 if(decide_done)begin
                     axi_next_state = AXI_MOVE_DATA;
@@ -153,123 +104,174 @@ module axi_ctrl_logic(
         endcase
     end
 
-    logic [35:0] read_padding_zero;
-    assign read_padding_zero = 36'b0;
-
-    // send backend data to LS fifo
+    // assign trans_typ = bk_ls_rd_wr; // xsim do not allow this
     always_comb begin
-        //fifo_ls_data_in = '0;
-        //fifo_ls_wr_vld = 1'b0;
-        //read_padding_zero = 36'b0;
-
-        // note: potential bug if bk_ls_wstart && bk_ls_rstart both 1, but this case will not happen if config_ctrl use cc_aa_enable for read/write exclusively
-        if(bk_ls_wstart)begin
-            fifo_ls_data_in = {AXI_WR, bk_ls_waddr, bk_ls_wdata, bk_ls_wstrb};
-            fifo_ls_wr_vld = 1'b1;
-        end
-        else if(bk_ls_rstart)begin
-            fifo_ls_data_in = {AXI_RD, bk_ls_raddr, read_padding_zero};
-            fifo_ls_wr_vld = 1'b1;
-        end
-        else begin
-            fifo_ls_data_in = '0;
-            fifo_ls_wr_vld = 1'b0;
-        end
+        if(bk_ls_rd_wr == 1'b0) trans_typ = AXI_WR;
+        else trans_typ = AXI_RD;
     end
 
-    // send backend data to SS fifo
+    // get data from LS
     always_comb begin
-        //fifo_ss_data_in = '0;
-        //fifo_ss_wr_vld = 1'b0;
-        //bk_ss_ready =  1'b0;
-
-        if(bk_ss_valid)begin
-            fifo_ss_data_in = {bk_ss_data, bk_ss_user};
-            fifo_ss_wr_vld = 1'b1;
-        end
-        else begin
-            fifo_ss_data_in = '0;
-            fifo_ss_wr_vld = 1'b0;
-        end
-
-        if(fifo_ss_wr_rdy == 1'b0)begin // fifo full, tell SS do not receive new data
-            bk_ss_ready = 1'b0;
-        end
-        else
-            bk_ss_ready = 1'b1;
-    end
-
-    logic [14:0] fifo_out_waddr, fifo_out_raddr;
-    logic [31:0] fifo_out_wdata;
-    logic [3:0] fifo_out_wstrb;
-
-    assign fifo_ls_clear = 1'b0;
-
-    // get data from LS fifo
-    always_comb begin
-        //{fifo_out_trans_typ, fifo_out_waddr, fifo_out_raddr, fifo_out_wdata, fifo_out_wstrb} = '0;
-        //fifo_ls_rd_rdy = 1'b0;
-        //fifo_ls_clear = 1'b0;
-
-        //if(axi_state != AXI_WAIT_DATA)begin
-            if(fifo_ls_data_out[FIFO_LS_WIDTH-1] == AXI_WR)begin
-                {fifo_out_trans_typ, fifo_out_waddr, fifo_out_wdata, fifo_out_wstrb} = fifo_ls_data_out;
-                fifo_out_raddr = 15'b0;
-            end
-            else if(fifo_ls_data_out[FIFO_LS_WIDTH-1] == AXI_RD)begin
-                {fifo_out_trans_typ, fifo_out_raddr} = fifo_ls_data_out[FIFO_LS_WIDTH-1:36]; // wdata + wstrb total 36bit
-                fifo_out_waddr = 15'b0;
-                fifo_out_wstrb = 4'b0;
-                fifo_out_wdata = 32'b0;
-            end
-            else
-                {fifo_out_trans_typ, fifo_out_waddr, fifo_out_raddr, fifo_out_wdata, fifo_out_wstrb} = '0;
-        //end
-        //else
-        //    {fifo_out_trans_typ, fifo_out_waddr, fifo_out_raddr, fifo_out_wdata, fifo_out_wstrb} = '0;
-
         if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_LS))begin // can send next data
-            fifo_ls_rd_rdy = 1'b1;
+            bk_ls_ready = 1'b1;
         end
         else
-            fifo_ls_rd_rdy = 1'b0;
+            bk_ls_ready = 1'b0;
     end
 
-    logic [31:0] fifo_out_tdata;
-    //logic [3:0] fifo_out_tstrb, fifo_out_tkeep;
-    logic [1:0] fifo_out_tuser;
-    //logic fifo_out_tlast;
+    logic [31:0] first_ss_tdata;
+    logic [1:0] first_ss_tuser;
 
-    assign fifo_ss_clear = 1'b0;
+    // get first data from SS
+    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
+        if(~axi_aresetn)begin
+            first_ss_tdata <= 32'b0;
+            first_ss_tuser <= 2'b0;
+        end
+        else begin
+            if(axi_next_state == AXI_FETCH_DATA)begin
+                first_ss_tdata <= bk_ss_data;
+                first_ss_tuser <= bk_ss_user;
+            end
+        end
+    end
 
-    // get data from SS fifo
+    // get second data from SS 
+    // FSM state, sequential logic
+    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
+        if(~axi_aresetn)begin
+            ss_secnd_state <= SS_WAIT_GET_SECND;
+        end
+        else begin
+            ss_secnd_state <= ss_secnd_next_state;
+        end
+    end
+
+    logic get_secnd_data_ss, secnd_data_ss_valid, secnd_data_done;
+    logic [6:0] secnd_data_cnt;
+    logic [31:0] secnd_data_ss;
+    parameter AFTER_3_CLK = 7'h3;
+
+    // FSM state, combinational logic, get second SS data if required
     always_comb begin
-        //{fifo_out_tdata, fifo_out_tuser} = '0;
-        //fifo_ss_rd_rdy = 1'b0;
-        //fifo_ss_clear = 1'b0;
+        ss_secnd_next_state = ss_secnd_state;
 
-        if(axi_state != AXI_WAIT_DATA)begin
-            {fifo_out_tdata, fifo_out_tuser} = fifo_ss_data_out;
-        end
-        else
-            {fifo_out_tdata, fifo_out_tuser} = '0;
-
-        if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_SS))begin
-            fifo_ss_rd_rdy = 1'b1;
-        end
-        else if(get_next_data_ss)begin // if tuser in SS is 1, AXI_WR need nex trans data
-            fifo_ss_rd_rdy = 1'b1;
-        end
-        else
-            fifo_ss_rd_rdy = 1'b0;
+        case(ss_secnd_state)
+            SS_WAIT_GET_SECND:
+                if(get_secnd_data_ss)begin
+                    ss_secnd_next_state = SS_SEND_BKRDY;
+                end
+            SS_SEND_BKRDY:
+                ss_secnd_next_state = SS_WAIT_BKVLD;
+            SS_WAIT_BKVLD:
+                if(secnd_data_cnt >= AFTER_3_CLK && bk_ss_valid)
+                    ss_secnd_next_state = SS_SECND_DATA;
+            SS_SECND_DATA:
+                if(secnd_data_done)
+                    ss_secnd_next_state = SS_WAIT_GET_SECND;
+            default:
+                ss_secnd_next_state = SS_WAIT_GET_SECND;
+        endcase
     end
 
-    logic [31:0] fifo_out_tdata_old;
-    always_ff@(posedge axi_aclk or negedge axi_aresetn) // keep old data from SS
-        if(~axi_aresetn)
-            fifo_out_tdata_old <= 32'b0;
+    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
+        if(~axi_aresetn)begin
+            secnd_data_cnt <= 7'h0;
+        end
+        else begin
+            if(ss_secnd_state == SS_WAIT_BKVLD)
+                secnd_data_cnt <= secnd_data_cnt + 7'h1;
+            else
+                secnd_data_cnt <= 7'h0;
+        end
+    end
+
+    logic set_bk_ss_ready;
+    // FSM state, latch logic, output control
+    always_latch begin
+        case(ss_secnd_state)
+            SS_WAIT_GET_SECND:begin
+                secnd_data_ss_valid = 1'b0;
+                set_bk_ss_ready = 1'b0;
+            end
+            SS_SEND_BKRDY:
+                set_bk_ss_ready = 1'b1;
+            SS_WAIT_BKVLD:
+                set_bk_ss_ready = 1'b0;
+            SS_SECND_DATA: begin
+                secnd_data_ss = bk_ss_data;
+                secnd_data_ss_valid = 1'b1;
+            end
+            //default:
+        endcase
+    end
+
+    always_comb begin
+        if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_SS))begin
+            bk_ss_ready = 1'b1;
+        end
+        else if(set_bk_ss_ready)begin // if tuser in SS is 1, AXI_WR need next trans data
+            bk_ss_ready = 1'b1;
+        end
         else
-            fifo_out_tdata_old <= fifo_out_tdata;
+            bk_ss_ready = 1'b0;
+    end
+
+    // send data to SM
+    // FSM state, sequential logic
+    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
+        if(~axi_aresetn)begin
+            sm_state <= SM_WAIT_SEND_DATA;
+        end
+        else begin
+            sm_state <= sm_next_state;
+        end
+    end
+
+    logic sm_send_data;
+    // FSM state, combinational logic, send data to SM
+    always_comb begin
+        sm_next_state = sm_state;
+
+        case(sm_state)
+            SM_WAIT_SEND_DATA:
+                if(sm_send_data)
+                    sm_next_state = SM_SEND_BK_DATA;
+            SM_SEND_BK_DATA:
+                if(bk_sm_ready)
+                    sm_next_state = SM_SEND_DATA_DONE;
+            SM_SEND_DATA_DONE:
+                sm_next_state = SM_WAIT_SEND_DATA;
+            default:
+                sm_next_state = SM_WAIT_SEND_DATA;
+        endcase
+    end
+
+    // FSM state, latch logic, output control
+    always_latch begin
+        case(sm_state)
+            SM_WAIT_SEND_DATA:
+                bk_sm_valid = 1'b0;
+            SM_SEND_BK_DATA:
+                bk_sm_valid = 1'b1;
+            SM_SEND_DATA_DONE:
+                bk_sm_valid = 1'b0;
+            //default:
+        endcase
+    end
+
+    logic [3:0] sm_data_cnt;
+    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
+        if(~axi_aresetn)begin
+            sm_data_cnt <= 4'h0;
+        end
+        else begin
+            if(axi_next_state == AXI_SEND_BKEND && bk_sm_ready)
+                sm_data_cnt <= sm_data_cnt + 4'h1;
+            else if(axi_next_state == AXI_WAIT_DATA)
+                sm_data_cnt <= 4'h0;
+        end
+    end
 
     parameter MB_SUPP_LOW = 15'h2000, MB_SUPP_HIGH = 15'h201F;
     parameter AA_SUPP_LOW = 15'h2100, AA_SUPP_HIGH = 15'h2107, AA_UNSUPP_HIGH = 15'h2FFF;
@@ -279,16 +281,19 @@ module axi_ctrl_logic(
     logic [3:0] wstrb_ss;
     logic [27:0] addr_ss;
     logic [31:0] data_ss;
-    logic [1:0] ss_data_cnt, lm_rd_cnt;
+    logic [1:0] lm_rd_cnt;
     logic lm_rd_bk_sent;
     // note: dw address access
     logic [9:0]aa_index; // for index of aa_regs 
     logic [9:0]mb_index; // for index of mb_regs 
 
+    assign next_trans = (next_ss) ? TRANS_SS : TRANS_LS;
+
     // compute control signals according to source (LS / SS) and address range
     // note this is combinational, so the signals can only exist when state is AXI_DECIDE_DEST, 
     // if the signal need to be used in two clock cycles after the state, have to make a register for it
-    always_comb begin
+//    always_comb begin
+    always_latch begin
         //wr_mb = 1'b0;
         //rd_mb = 1'b0;
         //wr_aa = 1'b0;
@@ -308,60 +313,60 @@ module axi_ctrl_logic(
         //aa_index = 10'b0;
         //mb_index = 10'b0;
 
-        next_trans = (next_ss) ? TRANS_SS : TRANS_LS;
+        //next_trans = (next_ss) ? TRANS_SS : TRANS_LS;
 
         if(axi_state == AXI_DECIDE_DEST)begin
             case(next_trans)
                 TRANS_LS: begin // request come from left side - axilite_slave
-                    case(fifo_out_trans_typ)
+                    case(trans_typ)
                         AXI_WR: begin
-                            if( (fifo_out_waddr >= MB_SUPP_LOW) &&
-                                (fifo_out_waddr <= MB_SUPP_HIGH))begin // local access MB_reg
+                            if( (bk_ls_addr >= MB_SUPP_LOW) &&
+                                (bk_ls_addr <= MB_SUPP_HIGH))begin // local access MB_reg
                                 wr_mb = 1'b1;
                                 trig_sm_wr = 1'b1;
                                 // compute related index for dw address
-                                mb_index = fifo_out_waddr[11:2] - MB_SUPP_LOW[11:2];
+                                mb_index = bk_ls_addr[11:2] - MB_SUPP_LOW[11:2];
                             end
-                            else if((fifo_out_waddr >= AA_SUPP_LOW) &&
-                                    (fifo_out_waddr <= AA_SUPP_HIGH))begin // local access AA_reg
+                            else if((bk_ls_addr >= AA_SUPP_LOW) &&
+                                    (bk_ls_addr <= AA_SUPP_HIGH))begin // local access AA_reg
                                 wr_aa = 1'b1;
                                 // compute related index for dw address
-                                aa_index = fifo_out_waddr[11:2] - AA_SUPP_LOW[11:2];
+                                aa_index = bk_ls_addr[11:2] - AA_SUPP_LOW[11:2];
                             end
-                            else if((fifo_out_waddr >= MB_SUPP_LOW) &&
-                                    (fifo_out_waddr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported, ignored
+                            else if((bk_ls_addr >= MB_SUPP_LOW) &&
+                                    (bk_ls_addr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported, ignored
                                 do_nothing = 1'b1;
                             end
-                            else if(((fifo_out_waddr >= FPGA_USER_WP_0) &&
-                                     (fifo_out_waddr <= FPGA_USER_WP_1)) ||
-                                    ((fifo_out_waddr >= FPGA_USER_WP_2) &&
-                                     (fifo_out_waddr <= FPGA_USER_WP_3)))begin // fpga side access caravel usesr project wrapper, this do not fire in caravel side
+                            else if(((bk_ls_addr >= FPGA_USER_WP_0) &&
+                                     (bk_ls_addr <= FPGA_USER_WP_1)) ||
+                                    ((bk_ls_addr >= FPGA_USER_WP_2) &&
+                                     (bk_ls_addr <= FPGA_USER_WP_3)))begin // fpga side access caravel usesr project wrapper, this do not fire in caravel side
                                 trig_sm_wr = 1'b1;
                             end
                             else
                                 do_nothing = 1'b1;
                         end
                         AXI_RD: begin
-                            if( (fifo_out_raddr >= MB_SUPP_LOW) &&
-                                (fifo_out_raddr <= MB_SUPP_HIGH))begin // local access MB_reg
+                            if( (bk_ls_addr >= MB_SUPP_LOW) &&
+                                (bk_ls_addr <= MB_SUPP_HIGH))begin // local access MB_reg
                                 rd_mb = 1'b1;
                                 // compute related index for dw address
-                                mb_index = fifo_out_raddr[11:2] - MB_SUPP_LOW[11:2];
+                                mb_index = bk_ls_addr[11:2] - MB_SUPP_LOW[11:2];
                             end
-                            else if((fifo_out_raddr >= AA_SUPP_LOW) &&
-                                    (fifo_out_raddr <= AA_SUPP_HIGH))begin // local access AA_reg
+                            else if((bk_ls_addr >= AA_SUPP_LOW) &&
+                                    (bk_ls_addr <= AA_SUPP_HIGH))begin // local access AA_reg
                                 rd_aa = 1'b1;
                                 // compute related index for dw address
-                                aa_index = fifo_out_raddr[11:2] - AA_SUPP_LOW[11:2];
+                                aa_index = bk_ls_addr[11:2] - AA_SUPP_LOW[11:2];
                             end
-                            else if((fifo_out_raddr >= MB_SUPP_LOW) &&
-                                    (fifo_out_raddr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported
+                            else if((bk_ls_addr >= MB_SUPP_LOW) &&
+                                    (bk_ls_addr <= AA_UNSUPP_HIGH))begin // in MB AA range but is unsupported
                                 rd_unsupp = 1'b1;
                             end
-                            else if(((fifo_out_raddr >= FPGA_USER_WP_0) &&
-                                     (fifo_out_raddr <= FPGA_USER_WP_1)) ||
-                                    ((fifo_out_raddr >= FPGA_USER_WP_2) &&
-                                     (fifo_out_raddr <= FPGA_USER_WP_3)))begin // fpga side access caravel usesr project wrapper, this do not fire in caravel side
+                            else if(((bk_ls_addr >= FPGA_USER_WP_0) &&
+                                     (bk_ls_addr <= FPGA_USER_WP_1)) ||
+                                    ((bk_ls_addr >= FPGA_USER_WP_2) &&
+                                     (bk_ls_addr <= FPGA_USER_WP_3)))begin // fpga side access caravel usesr project wrapper, this do not fire in caravel side
                                 trig_sm_rd = 1'b1;
                             end
                             else
@@ -374,16 +379,16 @@ module axi_ctrl_logic(
                     endcase
                 end
                 TRANS_SS: begin // request come from right side - axis_slave
-                    case(fifo_out_tuser)
+                    case(first_ss_tuser)
                         2'b01: begin // axis slave two-cycle data with tuser = 2'b01, can be converted to axilite write address / write data
-                            if(ss_data_cnt == 2'b0)begin
-                                get_next_data_ss = 1'b1;
-                            end
-                            else if(ss_data_cnt == 2'b1)begin
-                                wstrb_ss = fifo_out_tdata_old[31:28];
-                                addr_ss = fifo_out_tdata_old[27:0];
-                                data_ss = fifo_out_tdata;
-                                get_next_data_ss = 1'b0;
+                            get_secnd_data_ss = 1'b1;
+                            secnd_data_done = 1'b0;
+
+                            if(secnd_data_ss_valid)begin
+                                wstrb_ss = first_ss_tdata[31:28];
+                                addr_ss = first_ss_tdata[27:0];
+                                data_ss = secnd_data_ss;
+                                get_secnd_data_ss = 1'b0;
 
                                 if( (addr_ss >= {13'b0, MB_SUPP_LOW}) &&
                                     (addr_ss <= {13'b0, MB_SUPP_HIGH}))begin // remote access MB_reg, write
@@ -398,10 +403,11 @@ module axi_ctrl_logic(
                                 end
                                 else
                                     do_nothing = 1'b1; // ???????
+                                secnd_data_done = 1'b1;
                             end
                         end
                         2'b10: begin // axis slave one-cycle data with tuser = 2'b10, can be converted to axilite read address
-                            addr_ss = fifo_out_tdata[27:0];
+                            addr_ss = first_ss_tdata[27:0];
                             if((addr_ss >= {13'b0, FPGA_USER_WP_0}) &&
                                (addr_ss <= {13'b0, FPGA_USER_WP_3}))begin
                                     trig_lm_rd = 1'b1;
@@ -410,7 +416,7 @@ module axi_ctrl_logic(
                                 do_nothing = 1'b1;
                         end
                         2'b11: begin // read user project wrapper, data go back from CC through axis
-                            data_ss = fifo_out_tdata;
+                            data_ss = first_ss_tdata;
                             rd_ss_complete = 1'b1;
                         end
                         // default: do_nothing = 1'b1; // fix go do_nothing when tuser=0
@@ -437,22 +443,8 @@ module axi_ctrl_logic(
             rd_ss_complete = 1'b0;
             aa_index = 10'b0; // dw address
             mb_index = 10'b0; // dw address
-        end
-    end
-
-    // counter for SS
-    always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
-        if(~axi_aresetn)begin
-            ss_data_cnt <= 2'b0;
-        end
-        else begin
-            if((axi_state == AXI_DECIDE_DEST) && (next_trans == TRANS_SS) &&
-                (fifo_out_tuser == 2'b01))
-                ss_data_cnt <= ss_data_cnt + 2'b1;
-            else if((axi_next_state == AXI_SEND_BKEND) && (next_trans == TRANS_LS))
-                ss_data_cnt <= ss_data_cnt + 2'b1;
-            else
-                ss_data_cnt <= 2'b0;
+            get_secnd_data_ss = 1'b0;
+            secnd_data_done = 1'b0;
         end
     end
 
@@ -463,7 +455,7 @@ module axi_ctrl_logic(
         end
         else begin
             if((axi_next_state == AXI_SEND_BKEND) && (next_trans == TRANS_SS) &&
-                (fifo_out_tuser == 2'b10))
+                (first_ss_tuser == 2'b10))
                 lm_rd_cnt <= lm_rd_cnt + 2'b1;
             else
                 lm_rd_cnt <= 2'b0;
@@ -498,8 +490,8 @@ module axi_ctrl_logic(
         end
     end
 
-    assign bk_sm_tstrb = 4'b0;
-    assign bk_sm_tkeep = 4'b0;
+    //assign bk_sm_tstrb = 4'b0;
+    //assign bk_sm_tkeep = 4'b0;
 
     logic [31:0] data_return;
     // registerName     offset Address
@@ -555,8 +547,8 @@ module axi_ctrl_logic(
             ss_wr_data_done <= 1'b0;
             axi_interrupt_done <= 1'b0;
             bk_ls_rdata <= 32'b0;
-            bk_ls_rdone <= 1'b0;
-            bk_sm_start <= 1'b0;
+            //bk_ls_rdone <= 1'b0;
+            //bk_sm_valid <= 1'b0;
             bk_sm_data <= 32'b0;
             bk_sm_user <= 2'b0;
             send_bk_done <= 1'b0;
@@ -570,12 +562,13 @@ module axi_ctrl_logic(
             data_return <= 32'b0;
             have_sent_sm <= 1'b0;
             axi_reg_debug <= REG_RST;
+            sm_send_data <= 1'b0;
         end
         else begin
-            if(axi_state == AXI_WAIT_DATA && axi_next_state == AXI_DECIDE_DEST)begin
+            if(axi_state == AXI_WAIT_DATA && axi_next_state == AXI_FETCH_DATA)begin
                 // decide next transaction is LS / SS by round robin
-                next_ls <= enough_ls_data & (~enough_ss_data | (last_trans == TRANS_SS));
-                next_ss <= enough_ss_data & (~enough_ls_data | (last_trans == TRANS_LS));
+                next_ls <= bk_ls_valid & (~bk_ss_valid | (last_trans == TRANS_SS));
+                next_ss <= bk_ss_valid & (~bk_ls_valid | (last_trans == TRANS_LS));
             end
 
             if(axi_state == AXI_DECIDE_DEST && axi_next_state != AXI_DECIDE_DEST)
@@ -586,8 +579,8 @@ module axi_ctrl_logic(
                 ls_wr_data_done <= 1'b0;
                 axi_interrupt_done <= 1'b0;
                 bk_ls_rdata <= 32'b0;
-                bk_ls_rdone <= 1'b0;
-                bk_sm_start <= 1'b0;
+                //bk_ls_rdone <= 1'b0;
+                //bk_sm_valid <= 1'b0;
                 bk_sm_data <= 32'b0;
                 bk_sm_user <= 2'b0;
                 send_bk_done <= 1'b0;
@@ -605,10 +598,10 @@ module axi_ctrl_logic(
                     // write MB_reg
                     case(next_trans)
                         TRANS_LS: begin
-                            if(fifo_out_wstrb[0]) mb_regs[mb_index][7: 0] <= fifo_out_wdata[7:0];
-                            if(fifo_out_wstrb[1]) mb_regs[mb_index][15:8] <= fifo_out_wdata[15:8];
-                            if(fifo_out_wstrb[2]) mb_regs[mb_index][23:16] <= fifo_out_wdata[23:16];
-                            if(fifo_out_wstrb[3]) mb_regs[mb_index][31:24] <= fifo_out_wdata[31:24];
+                            if(bk_ls_wstrb[0]) mb_regs[mb_index][7: 0] <= bk_ls_wdata[7:0];
+                            if(bk_ls_wstrb[1]) mb_regs[mb_index][15:8] <= bk_ls_wdata[15:8];
+                            if(bk_ls_wstrb[2]) mb_regs[mb_index][23:16] <= bk_ls_wdata[23:16];
+                            if(bk_ls_wstrb[3]) mb_regs[mb_index][31:24] <= bk_ls_wdata[31:24];
                             ls_wr_data_done <= 1'b1;
                             axi_reg_debug <= REG_WR_MB;
                         end
@@ -642,19 +635,19 @@ module axi_ctrl_logic(
                             // offset 0
                             if(aa_index == 10'b0)begin
                                 // bit 0 RW, other bits RO
-                                if(fifo_out_wstrb[0]) aa_regs[aa_index][0] <= fifo_out_wdata[0];
+                                if(bk_ls_wstrb[0]) aa_regs[aa_index][0] <= bk_ls_wdata[0];
                             end
                             // offset 4
                             else if(aa_index == 10'b1)begin
                                 // bit 0 RW1C, other bits RO
-                                if(fifo_out_wstrb[0]) aa_regs[aa_index][0] <= aa_regs[aa_index][0] & ~fifo_out_wdata[0];
+                                if(bk_ls_wstrb[0]) aa_regs[aa_index][0] <= aa_regs[aa_index][0] & ~bk_ls_wdata[0];
                             end
                             // other offset registers, should not come here due to we only support aa_regs[1:0]
                             else begin
-                                if(fifo_out_wstrb[0]) aa_regs[aa_index][7: 0] <= fifo_out_wdata[7:0];
-                                if(fifo_out_wstrb[1]) aa_regs[aa_index][15:8] <= fifo_out_wdata[15:8];
-                                if(fifo_out_wstrb[2]) aa_regs[aa_index][23:16] <= fifo_out_wdata[23:16];
-                                if(fifo_out_wstrb[3]) aa_regs[aa_index][31:24] <= fifo_out_wdata[31:24];
+                                if(bk_ls_wstrb[0]) aa_regs[aa_index][7: 0] <= bk_ls_wdata[7:0];
+                                if(bk_ls_wstrb[1]) aa_regs[aa_index][15:8] <= bk_ls_wdata[15:8];
+                                if(bk_ls_wstrb[2]) aa_regs[aa_index][23:16] <= bk_ls_wdata[23:16];
+                                if(bk_ls_wstrb[3]) aa_regs[aa_index][31:24] <= bk_ls_wdata[31:24];
                             end
                             ls_wr_data_done <= 1'b1;
                             axi_reg_debug <= REG_WR_AA;
@@ -704,26 +697,26 @@ module axi_ctrl_logic(
             end
             else if(axi_next_state == AXI_SEND_BKEND)begin
                 if(sync_trig_sm_rd && ~have_sent_sm)begin
-                    bk_sm_start <= 1'b1;
-                    bk_sm_data <= {17'b0, fifo_out_raddr};
+                    sm_send_data <= 1'b1;
+                    bk_sm_data <= {17'b0, bk_ls_addr};
                     bk_sm_user <= 2'b10;
                     //send_bk_done <= 1'b1;
                     have_sent_sm <= 1'b1;
                 end
                 else if(ls_rd_data_bk)begin
                     bk_ls_rdata <= data_return;
-                    bk_ls_rdone <= 1'b1;
+                    //bk_ls_rdone <= 1'b1;
                     send_bk_done <= 1'b1;
                 end
-                else if((trig_sm_wr || sync_trig_sm_wr) && ~have_sent_sm)begin
-                    if(ss_data_cnt == 2'b0)begin
-                        bk_sm_start <= 1'b1;
-                        bk_sm_data <= {fifo_out_wstrb, 13'b0, fifo_out_waddr};
+                else if((trig_sm_wr || sync_trig_sm_wr) && ~have_sent_sm)begin                    
+                    if(sm_data_cnt == 2'b0)begin
+                        sm_send_data <= 1'b1;
+                        bk_sm_data <= {bk_ls_wstrb, 13'b0, bk_ls_addr};
                         bk_sm_user <= 2'b01;
                     end
-                    else if(ss_data_cnt == 2'b1)begin
-                        bk_sm_start <= 1'b1;
-                        bk_sm_data <= fifo_out_wdata;
+                    else if(sm_data_cnt == 2'b1)begin
+                        sm_send_data <= 1'b1;
+                        bk_sm_data <= bk_ls_wdata;
                         bk_sm_user <= 2'b01;
                         //send_bk_done <= 1'b1;
                         have_sent_sm <= 1'b1;
@@ -751,7 +744,7 @@ module axi_ctrl_logic(
 
                     if(bk_lm_rdone && ~have_sent_sm)begin // data return from config_ctrl axilite slave
                         // trigger axis master send data to fpga
-                        bk_sm_start <= 1'b1;
+                        sm_send_data <= 1'b1;
                         bk_sm_data <= bk_lm_rdata;
                         bk_sm_user <= 2'b11; // return data
                         //send_bk_done <= 1'b1;
@@ -759,8 +752,8 @@ module axi_ctrl_logic(
                     end
                 end
                 if(have_sent_sm)begin
-                    bk_sm_start <= 1'b0;
-                    if(bk_sm_done) // wait SM send transaction
+                    sm_send_data <= 1'b0;
+                    if(bk_sm_ready) // wait SM send transaction
                         send_bk_done <= 1'b1;
                 end
             end

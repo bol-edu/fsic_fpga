@@ -56,10 +56,10 @@ module AXIL_AXIS #( parameter pADDR_WIDTH   = 12,
   input  wire          axis_rst_n
 );
 
-    logic bk_lm_wstart, bk_lm_wdone, bk_lm_rstart, bk_lm_rdone, bk_ls_wstart, bk_ls_wdone, bk_ls_rstart, bk_ls_rdone, bk_sm_start, bk_sm_nordy, bk_sm_done, bk_ss_tlast, bk_ss_ready, bk_ss_valid;
+    logic bk_lm_wstart, bk_lm_wdone, bk_lm_rstart, bk_lm_rdone, bk_ls_rd_wr, bk_ls_valid, bk_ls_ready, bk_sm_valid, bk_sm_ready, bk_ss_ready, bk_ss_valid;
     logic [1:0] bk_sm_user, bk_ss_user;
-    logic [3:0] bk_lm_wstrb, bk_ls_wstrb, bk_sm_tstrb, bk_sm_tkeep, bk_ss_tstrb, bk_ss_tkeep;
-    logic [14:0] bk_ls_waddr, bk_ls_raddr;
+    logic [3:0] bk_lm_wstrb, bk_ls_wstrb;
+    logic [14:0] bk_ls_addr;
     logic [31:0] bk_lm_waddr, bk_lm_wdata, bk_lm_raddr, bk_lm_rdata, bk_ls_wdata, bk_ls_rdata, bk_sm_data, bk_ss_data;
 
     axilite_master lm(
@@ -113,14 +113,13 @@ module AXIL_AXIS #( parameter pADDR_WIDTH   = 12,
         .axi_rready(s_rready),
 
         // backend source to receive the axilite slave transaction
-        .bk_wstart(bk_ls_wstart),
-        .bk_waddr(bk_ls_waddr),
+        .bk_rd_wr(bk_ls_rd_wr),
+        .bk_addr(bk_ls_addr),
         .bk_wdata(bk_ls_wdata),
         .bk_wstrb(bk_ls_wstrb),
-        .bk_rstart(bk_ls_rstart),
-        .bk_raddr(bk_ls_raddr),
         .bk_rdata(bk_ls_rdata),
-        .bk_rdone(bk_ls_rdone),
+        .bk_valid(bk_ls_valid),
+        .bk_ready(bk_ls_ready),
 
         .cc_aa_enable(cc_aa_enable)
     );
@@ -135,19 +134,14 @@ module AXIL_AXIS #( parameter pADDR_WIDTH   = 12,
         .axis_tstrb(aa_as_tstrb),
         .axis_tkeep(aa_as_tkeep),
         .axis_tlast(aa_as_tlast),
-        //.axis_tid(),
         .axis_tuser(aa_as_tuser),
         .axis_tready(as_aa_tready),
 
         // backend source to trigger the axis master transaction
-        .bk_start(bk_sm_start),
         .bk_data(bk_sm_data),
-        .bk_tstrb(bk_sm_tstrb),
-        .bk_tkeep(bk_sm_tkeep),
-        //.bk_tid(bk_sm_tid),
         .bk_user(bk_sm_user),
-        .bk_nordy(bk_sm_nordy),
-        .bk_done(bk_sm_done)
+        .bk_valid(bk_sm_valid),
+        .bk_ready(bk_sm_ready)
     );
 
     axis_slave ss(
@@ -160,17 +154,12 @@ module AXIL_AXIS #( parameter pADDR_WIDTH   = 12,
         .axis_tstrb(as_aa_tstrb),
         .axis_tkeep(as_aa_tkeep),
         .axis_tlast(as_aa_tlast),
-        //.axis_tid(),
         .axis_tuser(as_aa_tuser),
         .axis_tready(aa_as_tready),
 
         // backend source to receive the axis slave transaction
         .bk_data(bk_ss_data),
-        .bk_tstrb(bk_ss_tstrb),
-        .bk_tkeep(bk_ss_tkeep),
-        //.bk_tid(bk_ss_tid),
         .bk_user(bk_ss_user),
-        .bk_tlast(bk_ss_tlast),
         .bk_ready(bk_ss_ready),
         .bk_valid(bk_ss_valid)
     );
@@ -192,32 +181,23 @@ module AXIL_AXIS #( parameter pADDR_WIDTH   = 12,
         .bk_lm_rdone(bk_lm_rdone),
 
         // backend interface, axilite_slave (LS)
-        .bk_ls_wstart(bk_ls_wstart),
-        .bk_ls_waddr(bk_ls_waddr),
+        .bk_ls_rd_wr(bk_ls_rd_wr),
+        .bk_ls_addr(bk_ls_addr),
         .bk_ls_wdata(bk_ls_wdata),
         .bk_ls_wstrb(bk_ls_wstrb),
-        .bk_ls_rstart(bk_ls_rstart),
-        .bk_ls_raddr(bk_ls_raddr),
         .bk_ls_rdata(bk_ls_rdata),
-        .bk_ls_rdone(bk_ls_rdone),
+        .bk_ls_valid(bk_ls_valid),
+        .bk_ls_ready(bk_ls_ready),
 
         // backend interface, axis_master (SM)
-        .bk_sm_start(bk_sm_start),
         .bk_sm_data(bk_sm_data),
-        .bk_sm_tstrb(bk_sm_tstrb),
-        .bk_sm_tkeep(bk_sm_tkeep),
-        //.bk_sm_tid(bk_sm_tid),
         .bk_sm_user(bk_sm_user),
-        .bk_sm_nordy(bk_sm_nordy),
-        .bk_sm_done(bk_sm_done),
+        .bk_sm_valid(bk_sm_valid),
+        .bk_sm_ready(bk_sm_ready),
 
         // backend interface, axis_slave (SS)
         .bk_ss_data(bk_ss_data),
-        .bk_ss_tstrb(bk_ss_tstrb),
-        .bk_ss_tkeep(bk_ss_tkeep),
-        //.bk_ss_tid(bk_ss_tid),
         .bk_ss_user(bk_ss_user),
-        .bk_ss_tlast(bk_ss_tlast),
         .bk_ss_ready(bk_ss_ready),
         .bk_ss_valid(bk_ss_valid)
     );
