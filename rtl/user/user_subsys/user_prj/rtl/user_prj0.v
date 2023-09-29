@@ -46,22 +46,97 @@ module USER_PRJ0 #( parameter pADDR_WIDTH   = 12,
   input  wire                        uck2_rst_n
 );
 
+localparam	FIFO_WIDTH = 4 + 1 + 1 + pDATA_WIDTH;		//tid, tstrb, tkeep, tlast, tdata
 
-assign awready       = 1'b0;
-assign arready       = 1'b0;
-assign wready        = 1'b0;
-assign rvalid        = 1'b0;
-assign rdata         = {pDATA_WIDTH{1'b0}};
-assign ss_tready     = 1'b0;
-assign sm_tvalid     = 1'b0;
-assign sm_tdata      = {pDATA_WIDTH{1'b0}};
-assign sm_tid        = 3'b0;
-assign sm_tstrb      = 4'b0;
-assign sm_tkeep      = 1'b0;
-assign sm_tlast      = 1'b0;
+wire awvalid_in;
+wire wvalid_in;
+
+reg [31:0] RegisterData;
+
+//write addr channel
+assign 	awvalid_in	= awvalid; 
+wire awready_out;
+assign awready = awready_out;
+
+//write data channel
+assign 	wvalid_in	= wvalid;
+wire wready_out;
+assign wready = wready_out;
+
+// if both awvalid_in=1 and wvalid_in=1 then output awready_out = 1 and wready_out = 1
+assign awready_out = (awvalid_in && wvalid_in) ? 1 : 0;
+assign wready_out = (awvalid_in && wvalid_in) ? 1 : 0;
+
+assign arready = 1;
+
+assign rvalid = 1;
+assign rdata =  RegisterData;
+
+//write register
+always @(posedge axi_clk or negedge axi_reset_n)  begin
+  if ( !axi_reset_n ) begin
+    RegisterData <= 32'haa55aa55;
+  end
+  else begin
+    if ( awvalid_in && wvalid_in ) begin		//when awvalid_in=1 and wvalid_in=1 means awready_out=1 and wready_out=1
+      if (awaddr[11:2] == 10'h000 ) begin //offset 0
+        if ( wstrb[0] == 1) RegisterData[7:0] <= wdata[7:0];
+        if ( wstrb[1] == 1) RegisterData[15:8] <= wdata[15:8];
+        if ( wstrb[2] == 1) RegisterData[23:16] <= wdata[23:16];
+        if ( wstrb[3] == 1) RegisterData[31:24] <= wdata[31:24];  
+      end
+      else begin
+        RegisterData <= RegisterData;
+      end
+    end
+  end
+end
+
+reg [2:0] r_ptr;
+reg [2:0] w_ptr;
+reg [(FIFO_WIDTH-1) : 0] fifo[7:0];
+
+wire full;
+wire empty;
+
+assign empty = (r_ptr == w_ptr);
+assign full = (r_ptr == (w_ptr+1) );
+
+assign ss_tready = !full;
+
+//for push to fifo
+always @(posedge axis_clk or negedge axis_rst_n)  begin
+  if ( !axis_rst_n ) begin
+    w_ptr <= 0;
+  end
+  else begin
+	if ( ss_tready && ss_tvalid) begin
+		fifo[w_ptr] <= {ss_tstrb, ss_tkeep, ss_tlast, ss_tdata}; 
+		w_ptr <= w_ptr + 1;
+	end
+  end
+end  
+
+//for pop from fifo
+assign {sm_tstrb, sm_tkeep, sm_tlast, sm_tdata} = fifo[r_ptr];
+assign sm_tvalid = !empty;
+always @(posedge axis_clk or negedge axis_rst_n)  begin
+  if ( !axis_rst_n ) begin
+    r_ptr <= 0;
+  end
+  else begin
+	if ( sm_tready && sm_tvalid) begin
+		r_ptr <= r_ptr + 1;
+	end
+  end
+end  
+
+assign sm_tid = 3'b000;		//[TODO] remove tid in user project.
 assign low__pri_irq  = 1'b0;
 assign High_pri_req  = 1'b0;
 assign la_data_o     = 24'b0;
 
 
 endmodule // USER_PRJ0
+
+
