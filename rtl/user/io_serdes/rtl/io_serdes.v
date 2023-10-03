@@ -238,7 +238,9 @@ module IO_SERDES #(
 	reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tid_tuser_buf;
 	reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tlast_tvalid_tready_buf;
 
-	always @(negedge coreclk or negedge axis_rst_n)  begin
+	wire txen_rst_n = axis_rst_n & txen;
+
+	always @(negedge coreclk or negedge txen_rst_n)  begin
 		pre_as_is_tdata_buf <= as_is_tdata;
 		pre_as_is_tstrb_buf <= as_is_tstrb;
 		pre_as_is_tkeep_buf <= as_is_tkeep;
@@ -248,13 +250,13 @@ module IO_SERDES #(
 		pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
 		pre_as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
 
-		if ( !axis_rst_n || ~txen) begin
+		if ( !txen_rst_n ) begin
 			pre_as_is_tdata_buf <= 0;
 			pre_as_is_tstrb_buf <= 0;
 			pre_as_is_tkeep_buf <= 0;
 			pre_as_is_tid_tuser_buf <= 0;
 			pre_as_is_tlast_tvalid_tready_buf <= 0;
-		end
+		end 
 		else begin
 			if (is_as_tready && as_is_tvalid) begin			//data transfer from Axis siwtch to io serdes when is_as_tready=1 and as_is_tvalid=1
 				pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;

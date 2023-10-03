@@ -67,32 +67,92 @@ module AXIL_SLAV #( parameter pADDR_WIDTH   = 12,
   input  wire                 [4: 0] user_prj_sel
 );
 
+wire  [3:0] axi_awready_bus;
+assign axi_awready = |axi_awready_bus;
 
-assign awvalid_0     = 1'b0;
-assign awaddr        = 12'b0;
-assign arvalid_0     = 1'b0;
-assign araddr        = 12'b0;
-assign wvalid_0      = 1'b0;
-assign wstrb_0       = 4'b0;
-assign wdata         = {pDATA_WIDTH{1'b0}};
-assign rready        = 1'b0;
-assign awvalid_1     = 1'b0;
-assign arvalid_1     = 1'b0;
-assign wvalid_1      = 1'b0;
-assign wstrb_1       = 4'b0;
-assign awvalid_2     = 1'b0;
-assign arvalid_2     = 1'b0;
-assign wvalid_2      = 1'b0;
-assign wstrb_2       = 4'b0;
-assign awvalid_3     = 1'b0;
-assign arvalid_3     = 1'b0;
-assign wvalid_3      = 1'b0;
-assign wstrb_3       = 4'b0;
-assign axi_awready   = 1'b0;
-assign axi_arready   = 1'b0;
-assign axi_wready    = 1'b0;
-assign axi_rvalid    = 1'b0;
-assign axi_rdata     = {pDATA_WIDTH{1'b0}};
+wire  [3:0] axi_wready_bus;
+assign axi_wready = |axi_wready_bus;
+
+wire  [3:0] axi_arready_bus;
+assign axi_arready = |axi_arready_bus;
+
+wire  [3:0] axi_rvalid_bus;
+assign axi_rvalid = |axi_rvalid_bus;
+
+wire  [(pDATA_WIDTH-1) : 0] axi_rdata_bus[3:0];
+assign axi_rdata = axi_rdata_bus[0] | axi_rdata_bus[1] | axi_rdata_bus[2] | axi_rdata_bus[3];
+
+//user project 0 
+assign awvalid_0 = ( (user_prj_sel == 5'b00000) && cc_up_enable) ? axi_awvalid : 0;
+assign axi_awready_bus[0] = ( (user_prj_sel == 5'b00000) && cc_up_enable) ? awready_0 : 0;
+assign awaddr = axi_awaddr[11:0];
+assign wstrb_0 = axi_wstrb;    //[TODO] share wstrb for all user projects.
+
+assign wvalid_0 = ( (user_prj_sel == 5'b00000) && cc_up_enable) ? axi_wvalid : 0;
+assign axi_wready_bus[0] = ( (user_prj_sel == 5'b00000) && cc_up_enable) ? wready_0 : 0;
+assign wdata = axi_wdata;
+
+assign arvalid_0 = ( (user_prj_sel == 5'b00000) && cc_up_enable) ? axi_arvalid : 0;
+assign axi_arready_bus[0] = ( (user_prj_sel == 5'b00000) && cc_up_enable) ? arready_0 : 0;
+assign araddr = axi_araddr;
+
+assign axi_rvalid_bus[0] = ( (user_prj_sel == 5'b00000) && cc_up_enable) ? rvalid_0 : 0;
+assign rready = axi_rready;
+assign axi_rdata_bus[0] = ( (user_prj_sel == 5'b00000) && cc_up_enable) ? rdata_0 : 0;
+
+//user project 1 
+assign awvalid_1 = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? axi_awvalid : 0;
+assign axi_awready_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? awready_0 : 0;
+assign awaddr = axi_awaddr[11:0];
+assign wstrb_1 = axi_wstrb;    //[TODO] share wstrb for all user projects.
+
+assign wvalid_1 = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? axi_wvalid : 0;
+assign axi_wready_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? wready_0 : 0;
+assign wdata = axi_wdata;
+
+assign arvalid_1 = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? axi_arvalid : 0;
+assign axi_arready_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? arready_0 : 0;
+assign araddr = axi_araddr;
+
+assign axi_rvalid_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? rvalid_0 : 0;
+assign rready = axi_rready;
+assign axi_rdata_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? rdata_0 : 0;
+
+//user project 2 
+assign awvalid_2 = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? axi_awvalid : 0;
+assign axi_awready_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? awready_0 : 0;
+assign awaddr = axi_awaddr[11:0];
+assign wstrb_2 = axi_wstrb;    //[TODO] share wstrb for all user projects.
+
+assign wvalid_2 = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? axi_wvalid : 0;
+assign axi_wready_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? wready_0 : 0;
+assign wdata = axi_wdata;
+
+assign arvalid_2 = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? axi_arvalid : 0;
+assign axi_arready_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? arready_0 : 0;
+assign araddr = axi_araddr;
+
+assign axi_rvalid_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? rvalid_0 : 0;
+assign rready = axi_rready;
+assign axi_rdata_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? rdata_0 : 0;
+
+//user project 3 
+assign awvalid_3 = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? axi_awvalid : 0;
+assign axi_awready_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? awready_0 : 0;
+assign awaddr = axi_awaddr[11:0];
+assign wstrb_3 = axi_wstrb;    //[TODO] share wstrb for all user projects.
+
+assign wvalid_3 = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? axi_wvalid : 0;
+assign axi_wready_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? wready_0 : 0;
+assign wdata = axi_wdata;
+
+assign arvalid_3 = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? axi_arvalid : 0;
+assign axi_arready_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? arready_0 : 0;
+assign araddr = axi_araddr;
+
+assign axi_rvalid_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? rvalid_0 : 0;
+assign rready = axi_rready;
+assign axi_rdata_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? rdata_0 : 0;
 
 
 endmodule // AXIL_SLAV
@@ -144,14 +204,56 @@ module AXIS_MSTR #( parameter pADDR_WIDTH   = 12,
   input  wire                 [4: 0] user_prj_sel
 );
 
+//common part
+assign sm_tready =  m_tready;
 
-assign sm_tready     = 1'b0;
-assign m_tvalid      = 1'b0;
-assign m_tdata       = {pDATA_WIDTH{1'b0}};
-assign m_tuser       = 2'b0;
-assign m_tstrb       = 4'b0;
-assign m_tkeep       = 4'b0;
-assign m_tlast       = 1'b0;
+//bus
+wire [3:0] sm_tvalid_bus;
+assign	m_tvalid = |sm_tvalid_bus;
+
+wire [(pDATA_WIDTH-1) : 0] sm_tdata_bus[3:0];
+assign	m_tdata = sm_tdata_bus[0] | sm_tdata_bus[1] | sm_tdata_bus[2] | sm_tdata_bus[3];
+
+//wire [2: 0] sm_tid_bus;
+
+wire [3: 0] sm_tstrb_bus[3:0];
+assign	m_tstrb = sm_tstrb_bus[0] | sm_tstrb_bus[1] | sm_tstrb_bus[2] | sm_tstrb_bus[3];
+
+wire [3: 0] sm_tkeep_bus[3:0];
+assign	m_tkeep = sm_tkeep_bus[0] | sm_tkeep_bus[1] | sm_tkeep_bus[2] | sm_tkeep_bus[3];
+
+wire [3: 0] sm_tlast_bus[3:0];
+assign	m_tlast = sm_tlast_bus[0] | sm_tlast_bus[1] | sm_tlast_bus[2] | sm_tlast_bus[3];
+
+//user project 0 
+assign sm_tvalid_bus[0] =  (user_prj_sel == 5'b00000)  ? sm_tvalid_0 : 0;
+assign sm_tdata_bus[0] = (user_prj_sel == 5'b00000)  ? sm_tdata_0 : 0;
+assign sm_tstrb_bus[0] = (user_prj_sel == 5'b00000)  ? sm_tstrb_0 : 0;
+assign sm_tkeep_bus[0] = (user_prj_sel == 5'b00000)  ? sm_tkeep_0 : 0;
+assign sm_tlast_bus[0] = (user_prj_sel == 5'b00000)  ? sm_tlast_0 : 0;
+
+//user project 1 
+assign sm_tvalid_bus[1] =  (user_prj_sel == 5'b00001)  ? sm_tvalid_1 : 0;
+assign sm_tdata_bus[1] = (user_prj_sel == 5'b00001)  ? sm_tdata_1 : 0;
+assign sm_tstrb_bus[1] = (user_prj_sel == 5'b00001)  ? sm_tstrb_1 : 0;
+assign sm_tkeep_bus[1] = (user_prj_sel == 5'b00001)  ? sm_tkeep_1 : 0;
+assign sm_tlast_bus[1] = (user_prj_sel == 5'b00001)  ? sm_tlast_1 : 0;
+
+//user project 2 
+assign sm_tvalid_bus[2] =  (user_prj_sel == 5'b00010)  ? sm_tvalid_2 : 0;
+assign sm_tdata_bus[2] = (user_prj_sel == 5'b00010)  ? sm_tdata_2 : 0;
+assign sm_tstrb_bus[2] = (user_prj_sel == 5'b00010)  ? sm_tstrb_2 : 0;
+assign sm_tkeep_bus[2] = (user_prj_sel == 5'b00010)  ? sm_tkeep_2 : 0;
+assign sm_tlast_bus[2] = (user_prj_sel == 5'b00010)  ? sm_tlast_2 : 0;
+
+//user project 3 
+assign sm_tvalid_bus[3] =  (user_prj_sel == 5'b00011)  ? sm_tvalid_3 : 0;
+assign sm_tdata_bus[3] = (user_prj_sel == 5'b00011)  ? sm_tdata_3 : 0;
+assign sm_tstrb_bus[3] = (user_prj_sel == 5'b00011)  ? sm_tstrb_3 : 0;
+assign sm_tkeep_bus[3] = (user_prj_sel == 5'b00011)  ? sm_tkeep_3 : 0;
+assign sm_tlast_bus[3] = (user_prj_sel == 5'b00011)  ? sm_tlast_3 : 0;
+
+assign m_tuser       = 2'b00;		//MUST be 2'b00 for user project output axis from UP to AS.
 
 
 endmodule // AXIS_MSTR
@@ -191,17 +293,33 @@ module AXIS_SLAV #( parameter pADDR_WIDTH   = 12,
   input  wire                 [4: 0] user_prj_sel
 );
 
+//common part
+assign ss_tdata =  s_tdata;
+assign ss_tuser =  2'b00;		//UP always received tuser = 2'b00, the tuser is used by AS, should not send to UP.
+assign ss_tstrb =  s_tstrb;
+assign ss_tkeep =  s_tkeep;
+assign ss_tlast =  s_tlast;
 
-assign ss_tvalid_0   = 1'b0;
-assign ss_tdata      = {pDATA_WIDTH{1'b0}};
-assign ss_tuser      = 2'b0;
-assign ss_tstrb      = 4'b0;
-assign ss_tkeep      = 4'b0;
-assign ss_tlast      = 1'b0;
-assign ss_tvalid_1   = 1'b0;
-assign ss_tvalid_2   = 1'b0;
-assign ss_tvalid_3   = 1'b0;
-assign s_tready      = 1'b0;
+wire [3:0] s_tready_bus;
+assign	s_tready = |s_tready_bus;
+
+//user project 0 
+assign ss_tvalid_0 =  (user_prj_sel == 5'b00000)  ? s_tvalid : 0;
+assign s_tready_bus[0] = (user_prj_sel == 5'b00000)  ? ss_tready_0 : 0;
+
+//user project 1 
+assign ss_tvalid_1 =  (user_prj_sel == 5'b00001)  ? s_tvalid : 0;
+assign s_tready_bus[1] = (user_prj_sel == 5'b00001)  ? ss_tready_1 : 0;
+
+//user project 2 
+assign ss_tvalid_2 =  (user_prj_sel == 5'b00010)  ? s_tvalid : 0;
+assign s_tready_bus[2] = (user_prj_sel == 5'b00010)  ? ss_tready_2 : 0;
+
+//user project 3 
+assign ss_tvalid_3 =  (user_prj_sel == 5'b00011)  ? s_tvalid : 0;
+assign s_tready_bus[3] = (user_prj_sel == 5'b00011)  ? ss_tready_3 : 0;
+
+
 
 
 endmodule // AXIS_SLAV
@@ -263,73 +381,8 @@ assign up_la_data    = 24'b0;
 
 
 endmodule // LA_MUX
-// This code snippet was auto generated by xls2vlog.py from source file: ./user_project_wrapper.xlsx
-// User: josh
-// Date: Sep-22-23
 
 
-
-module USER_PRJ #( parameter pADDR_WIDTH   = 12,
-                   parameter pDATA_WIDTH   = 32
-                 )
-(
-  output wire                        awready,
-  output wire                        arready,
-  output wire                        wready,
-  output wire                        rvalid,
-  output wire  [(pDATA_WIDTH-1) : 0] rdata,
-  input  wire                        awvalid,
-  input  wire                [11: 0] awaddr,
-  input  wire                        arvalid,
-  input  wire                [11: 0] araddr,
-  input  wire                        wvalid,
-  input  wire                 [3: 0] wstrb,
-  input  wire  [(pDATA_WIDTH-1) : 0] wdata,
-  input  wire                        rready,
-  input  wire                        ss_tvalid,
-  input  wire  [(pDATA_WIDTH-1) : 0] ss_tdata,
-  input  wire                 [1: 0] ss_tuser,
-  input  wire                 [3: 0] ss_tstrb,
-  input  wire                 [3: 0] ss_tkeep,
-  input  wire                        ss_tlast,
-  input  wire                        sm_tready,
-  output wire                        ss_tready,
-  output wire                        sm_tvalid,
-  output wire  [(pDATA_WIDTH-1) : 0] sm_tdata,
-  output wire                 [2: 0] sm_tid,
-  output wire                 [3: 0] sm_tstrb,
-  output wire                        sm_tkeep,
-  output wire                        sm_tlast,
-  output wire                        low__pri_irq,
-  output wire                        High_pri_req,
-  output wire                [23: 0] la_data_o,
-  input  wire                        axi_clk,
-  input  wire                        axis_clk,
-  input  wire                        axi_reset_n,
-  input  wire                        axis_rst_n,
-  input  wire                        user_clock2,
-  input  wire                        uck2_rst_n
-);
-
-
-assign awready       = 1'b0;
-assign arready       = 1'b0;
-assign wready        = 1'b0;
-assign rvalid        = 1'b0;
-assign rdata         = {pDATA_WIDTH{1'b0}};
-assign ss_tready     = 1'b0;
-assign sm_tvalid     = 1'b0;
-assign sm_tdata      = {pDATA_WIDTH{1'b0}};
-assign sm_tid        = 3'b0;
-assign sm_tstrb      = 4'b0;
-assign sm_tkeep      = 1'b0;
-assign sm_tlast      = 1'b0;
-assign low__pri_irq  = 1'b0;
-assign High_pri_req  = 1'b0;
-assign la_data_o     = 24'b0;
-
-
-endmodule // USER_PRJ
 // This code snippet was auto generated by xls2vlog.py from source file: ./user_project_wrapper.xlsx
 // User: josh
 // Date: Sep-22-23
@@ -547,7 +600,7 @@ AXIL_SLAV #(.pADDR_WIDTH( 12 ),
 
 
 
-USER_PRJ #(.pADDR_WIDTH( 12 ),
+USER_PRJ0 #(.pADDR_WIDTH( 12 ),
            .pDATA_WIDTH( 32 )) U_USRPRJ0 (
                                           .awready      (awready_0),               // O  
                                           .arready      (arready_0),               // O  
@@ -594,7 +647,7 @@ USER_PRJ #(.pADDR_WIDTH( 12 ),
 
 
 
-USER_PRJ #(.pADDR_WIDTH( 12 ),
+USER_PRJ1 #(.pADDR_WIDTH( 12 ),
            .pDATA_WIDTH( 32 )) U_USRPRJ1 (
                                           .awready      (awready_1),               // O  
                                           .arready      (arready_1),               // O  
@@ -641,7 +694,7 @@ USER_PRJ #(.pADDR_WIDTH( 12 ),
 
 
 
-USER_PRJ #(.pADDR_WIDTH( 12 ),
+USER_PRJ2 #(.pADDR_WIDTH( 12 ),
            .pDATA_WIDTH( 32 )) U_USRPRJ2 (
                                           .awready      (awready_2),               // O  
                                           .arready      (arready_2),               // O  
@@ -688,7 +741,7 @@ USER_PRJ #(.pADDR_WIDTH( 12 ),
 
 
 
-USER_PRJ #(.pADDR_WIDTH( 12 ),
+USER_PRJ3 #(.pADDR_WIDTH( 12 ),
            .pDATA_WIDTH( 32 )) U_USRPRJ3 (
                                           .awready      (awready_3),               // O  
                                           .arready      (arready_3),               // O  
@@ -859,3 +912,4 @@ LA_MUX #(.pADDR_WIDTH( 12 ),
 
 
 endmodule // USER_SUBSYS
+

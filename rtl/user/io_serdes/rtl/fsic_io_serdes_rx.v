@@ -45,8 +45,10 @@ module fsic_io_serdes_rx#(
 
 	assign w_ptr_graycode_bit0 = w_ptr[1] ^  w_ptr[0];
 
-	always @(negedge rxclk or negedge axis_rst_n)  begin
-		if ( !axis_rst_n || !rxen ) begin
+	wire rxen_rst_n = axis_rst_n & rxen;
+
+	always @(negedge rxclk or negedge rxen_rst_n)  begin
+		if ( !rxen_rst_n ) begin
 			w_ptr <= 0;
 		end
 		else begin
@@ -61,8 +63,8 @@ module fsic_io_serdes_rx#(
 	reg [pRxFIFO_DEPTH-1:0] RxFifo;
 
 
-	always @(negedge rxclk or negedge axis_rst_n) begin
-		if ( !axis_rst_n || !rxen ) begin
+	always @(negedge rxclk or negedge rxen_rst_n) begin
+		if ( !rxen_rst_n ) begin
 			RxFifo <= 0;
 		end
 		else begin
