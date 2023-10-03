@@ -349,8 +349,17 @@ module IRQ_MUX #( parameter pADDR_WIDTH=10
 );
 
 
-assign low__pri_irq    = 1'b0;
-assign high_pri_irq    = 1'b0;
+assign low__pri_irq = (user_prj_sel == 5'b00000) ? low__pri_irq_0 :
+                      (user_prj_sel == 5'b00001) ? low__pri_irq_1 :
+                      (user_prj_sel == 5'b00010) ? low__pri_irq_2 :
+                      (user_prj_sel == 5'b00011) ? low__pri_irq_3 :
+                      1'b0;
+                      
+assign high_pri_irq = (user_prj_sel == 5'b00000) ? High_pri_req_0 :
+                      (user_prj_sel == 5'b00001) ? High_pri_req_1 :
+                      (user_prj_sel == 5'b00010) ? High_pri_req_2 :
+                      (user_prj_sel == 5'b00011) ? High_pri_req_3 :
+                      1'b0;
 
 
 endmodule // IRQ_MUX
@@ -377,8 +386,11 @@ module LA_MUX #( parameter pADDR_WIDTH   = 12,
 );
 
 
-assign up_la_data    = 24'b0;
-
+assign up_la_data = (user_prj_sel == 5'b00000) ? la_data_0 :
+                    (user_prj_sel == 5'b00001) ? la_data_1 :
+                    (user_prj_sel == 5'b00010) ? la_data_2 :
+                    (user_prj_sel == 5'b00011) ? la_data_3 :
+                    24'b0;
 
 endmodule // LA_MUX
 
