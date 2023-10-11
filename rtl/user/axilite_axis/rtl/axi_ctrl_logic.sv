@@ -6,6 +6,8 @@
 //      CREATED: 2023/07/05
 ///////////////////////////////////////////////////////////////////////////////
 
+`timescale 1 ns / 1 ps
+
 module axi_ctrl_logic(
     input wire axi_aclk,
     input wire axi_aresetn,

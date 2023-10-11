@@ -1,0 +1,53 @@
+## Headers
+../../rtl/header/defines.v
+../../rtl/header/user_defines.v
+
+## User project
+../../rtl/user/axilite_axis/rtl/axi_ctrl_logic.sv
+../../rtl/user/axilite_axis/rtl/axil_axis.sv
+../../rtl/user/axilite_axis/rtl/axilite_master.sv
+../../rtl/user/axilite_axis/rtl/axilite_slave.sv
+../../rtl/user/axilite_axis/rtl/axis_master.sv
+../../rtl/user/axilite_axis/rtl/axis_slave.sv
+../../rtl/user/axis_switch/rtl/sw_caravel.v
+../../rtl/user/config_ctrl/rtl/config_ctrl.v
+../../rtl/user/fsic_clkrst/rtl/fsic_clkrst.v
+../../rtl/user/io_serdes/rtl/fsic_coreclk_phase_cnt.v
+../../rtl/user/io_serdes/rtl/fsic_io_serdes_rx.v
+../../rtl/user/io_serdes/rtl/io_serdes.v
+../../rtl/user/logic_analyzer/rtl/LogicAnalyzer.v
+../../rtl/user/logic_analyzer/rtl/Sram.v
+../../rtl/user/mprj_io/rtl/mprj_io.sv
+../../rtl/user/user_subsys/user_prj/rtl/user_prj0.v
+../../rtl/user/user_subsys/user_prj/rtl/user_prj1.v
+../../rtl/user/user_subsys/user_prj/rtl/user_prj2.v
+../../rtl/user/user_subsys/user_prj/rtl/user_prj3.v
+../../rtl/user/user_subsys/rtl/user_subsys.all.v
+../../rtl/user/rtl/fsic.v
+../../rtl/user/rtl/user_project_wrapper.v
+
+## VIP
+../../vip/tbuart.v
+../../vip/bram.v
+##../../vip/spiflash.v
+
+## DFFRAM Behavioral Model
+../../vip/RAM256.v
+../../vip/RAM128.v
+
+## Mgmt Core Wrapper
+../../rtl/soc-efabless/mgmt_core.v
+../../rtl/soc-efabless/mgmt_core_wrapper.v
+../../rtl/soc-efabless/VexRiscv_MinDebugCache.v
+
+## These blocks need to stay in RTL
+../../rtl/soc/mprj_io.v
+
+## These blocks only needed for RTL sims							     
+../../rtl/soc-efabless/housekeeping_spi.v
+../../rtl/soc/spiflash.v
+../../rtl/soc/chip_io.v
+../../rtl/soc/gpio_control_block.v
+../../rtl/soc/gpio_defaults_block.v
+../../rtl/soc/housekeeping.v
+../../rtl/soc/caravel.v

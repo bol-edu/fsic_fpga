@@ -21,6 +21,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+//FSIC (0x30000000)
+#define reg_fsic_up (*(volatile uint32_t*)0x30000000)
+#define reg_fsic_la (*(volatile uint32_t*)0x30001000)
+#define reg_fsic_aa (*(volatile uint32_t*)0x30002000)
+#define reg_fsic_is (*(volatile uint32_t*)0x30003000)
+#define reg_fsic_as (*(volatile uint32_t*)0x30004000)
+#define reg_fsic_cc (*(volatile uint32_t*)0x30005000)
+
 // User Project Control (0x2300_0000)
 #define reg_mprj_xfer (*(volatile uint32_t*)0x26000000)
 #define reg_mprj_pwr  (*(volatile uint32_t*)0x26000004)
