@@ -153,12 +153,8 @@ reg [TID_WIDTH-1:0]         m_axis_tid_reg;
 //FIFO control pointer
 reg [ADDR_WIDTH:0] wr_ptr_reg = {ADDR_WIDTH+1{1'b0}};
 reg [ADDR_WIDTH:0] rd_ptr_reg = {ADDR_WIDTH+1{1'b0}};
-reg [ADDR_WIDTH:0] pre_rd_ptr_reg = {ADDR_WIDTH+1{1'b0}};   
 (* ramstyle = "no_rw_check" *)
 reg [WIDTH-1:0] mem[(2**ADDR_WIDTH)-1:0];
-reg as_up_tvalid_reg; 
-reg as_aa_tvalid_reg;
-reg delaynext; 
 wire above_th = ((wr_ptr_reg - rd_ptr_reg) > TH_reg);
 reg as_is_tready_reg;   
 wire [WIDTH-1:0] s_axis;
@@ -171,7 +167,6 @@ generate
     assign s_axis[USER_OFFSET +: USER_WIDTH]        = is_as_tuser;
 endgenerate
 wire [WIDTH-1:0] m_axis = mem[rd_ptr_reg[ADDR_WIDTH-1:0]];    
-wire [WIDTH-1:0] pre_m_axis = mem[pre_rd_ptr_reg[ADDR_WIDTH-1:0]];  
 assign as_is_tready = as_is_tready_reg;     
 //for axi_lite
 //write addr channel
@@ -398,60 +393,37 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
     end	    
 end
 // Read logic
+wire empty = (wr_ptr_reg == rd_ptr_reg);    
+wire as_up_data_transfer = (as_up_tvalid_out && up_as_tready);    
+wire as_aa_data_transfer = (as_aa_tvalid_out && aa_as_tready);
 always @(posedge axis_clk or negedge axi_reset_n) begin
     if (!axi_reset_n) begin
-        as_up_tvalid_reg <= 0; 
-        as_aa_tvalid_reg <= 0;
         as_is_tready_reg <= 0;
         rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};
-        pre_rd_ptr_reg <= {ADDR_WIDTH+1{1'b0}};  
-		delaynext <= 0;		
     end else begin
 	    as_is_tready_reg <= !above_th;  
-	    if (wr_ptr_reg != pre_rd_ptr_reg) begin  
-	        if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
-	            as_up_tvalid_reg <= 1;
-				rd_ptr_reg <= pre_rd_ptr_reg;  
-	            if(up_as_tready) begin
-	                pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-					if(delaynext == 1) begin
-						as_up_tvalid_reg <= 0;
-						delaynext <= 0;
-					end
-	            end else begin	
-	               pre_rd_ptr_reg <= pre_rd_ptr_reg;
-				   delaynext <= 1;	
+	    if (!empty) begin  
+	        if(m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) begin
+	            if(as_up_data_transfer) begin
+	                rd_ptr_reg <= rd_ptr_reg + 1;
 				end	
-	        end else if(pre_m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin  
-	            as_aa_tvalid_reg <= 1;
-				rd_ptr_reg <= pre_rd_ptr_reg;  
-	            if(aa_as_tready) begin
-					pre_rd_ptr_reg <= pre_rd_ptr_reg + 1;
-					if(delaynext == 1) begin
-						as_aa_tvalid_reg <= 0;
-						delaynext <= 0;
-					end
-	            end else begin	
-	               pre_rd_ptr_reg <= pre_rd_ptr_reg;
-				   delaynext <= 1;	
+	        end else if(m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) begin  
+	            if(as_aa_data_transfer) begin
+					rd_ptr_reg <= rd_ptr_reg + 1;
 				end			   
-	        end else begin
-	            as_up_tvalid_reg <= 0;
-	            as_aa_tvalid_reg <= 0;
 	        end
-	    end else begin
-	        as_up_tvalid_reg <= 0;
-	        as_aa_tvalid_reg <= 0;
 	    end       
     end
 end
-assign as_up_tvalid = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? as_up_tvalid_reg: 0;   
+wire as_up_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) && !empty; 
+wire as_aa_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) && !empty;
+assign as_up_tvalid = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? as_up_tvalid_out: 0;  
 assign as_up_tdata = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[pDATA_WIDTH - 1:0]: 0;
 assign as_up_tstrb = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[STRB_OFFSET +: pDATA_WIDTH/8]: 0;
 assign as_up_tkeep = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[KEEP_OFFSET +: pDATA_WIDTH/8]: 0;
 assign as_up_tlast = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[LAST_OFFSET]: 0;
 assign as_up_tuser = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[USER_OFFSET +: USER_WIDTH]: 0;
-assign as_aa_tvalid =  (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? as_aa_tvalid_reg: 0;  
+assign as_aa_tvalid =  (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? as_aa_tvalid_out: 0; 
 assign as_aa_tdata = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[pDATA_WIDTH-1:0]: 0;
 assign as_aa_tstrb = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[STRB_OFFSET +: pDATA_WIDTH/8]: 0;
 assign as_aa_tkeep = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[KEEP_OFFSET +: pDATA_WIDTH/8]: 0;
