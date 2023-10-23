@@ -54,16 +54,21 @@ proc checkRequiredFiles { origin_dir} {
  "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/io_serdes/rtl/io_serdes.v"]"\
  "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/logic_analyzer/rtl/LogicAnalyzer.v"]"\
  "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/logic_analyzer/rtl/Sram.v"]"\
- "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/mprj_io/rtl/mprj_io.sv"]"\ 
- "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/user_prj/rtl/user_prj0.v"]"\  
- "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/user_prj/rtl/user_prj1.v"]"\  
- "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/user_prj/rtl/user_prj2.v"]"\  
- "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/user_prj/rtl/user_prj3.v"]"\  
- "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/rtl/user_subsys.all.v"]"\  
- "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/rtl/$user_design_file"]"\  
- "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/rtl/user_project_wrapper.v"]"\  
+ "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/mprj_io/rtl/mprj_io.sv"]"\
+ "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/user_prj/rtl/user_prj0.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/user_prj/rtl/user_prj1.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/user_prj/rtl/user_prj2.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/user_prj/rtl/user_prj3.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/user_subsys/rtl/user_subsys.all.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/rtl/$user_design_file"]"\
+ "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/user/rtl/user_project_wrapper.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/fpga/rtl/PL/ps_axil.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/fpga/rtl/PL/aa_wrapper.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/fpga/rtl/PL/io_serdes.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/fpga/rtl/PL/sw_fpga.v"]"\
+ "[file normalize "$origin_dir/vvd_srcs/fpga/rtl/PL/ps_is_wrapper.v"]"\
  "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/header/user_defines.v"]"\
- "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/header/defines.v"]"\ 
+ "[file normalize "$origin_dir/vvd_srcs/caravel_soc/rtl/header/defines.v"]"\
   ]
   foreach ifile $files {
     if { ![file isfile $ifile] } {
@@ -246,6 +251,11 @@ set files [list \
  [file normalize "${origin_dir}/vvd_srcs/caravel_soc/rtl/user/user_subsys/rtl/user_subsys.all.v"] \
  [file normalize "${origin_dir}/vvd_srcs/caravel_soc/rtl/user/rtl/${user_design_file}"] \
  [file normalize "${origin_dir}/vvd_srcs/caravel_soc/rtl/user/rtl/user_project_wrapper.v"] \
+ [file normalize "${origin_dir}/vvd_srcs/fpga/rtl/PL/ps_axil.v"] \
+ [file normalize "${origin_dir}/vvd_srcs/fpga/rtl/PL/aa_wrapper.v"] \
+ [file normalize "${origin_dir}/vvd_srcs/fpga/rtl/PL/io_serdes.v"] \
+ [file normalize "${origin_dir}/vvd_srcs/fpga/rtl/PL/sw_fpga.v"] \
+ [file normalize "${origin_dir}/vvd_srcs/fpga/rtl/PL/ps_is_wrapper.v"] \
  [file normalize "${origin_dir}/vvd_srcs/caravel_soc/rtl/header/user_defines.v"] \
  [file normalize "${origin_dir}/vvd_srcs/caravel_soc/rtl/header/defines.v"] \
 ]
