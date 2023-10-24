@@ -25,7 +25,7 @@ module ps_is_wrapper(
     input [11:0] ps_is_txd,
     input ps_ioclk,
     output ps_is_rclk,
-    output ps_is_rxd,
+    output [11:0] ps_is_rxd,
     output [37:0] caravel_mprj_in,
     input [37:0] caravel_mprj_out
     );
