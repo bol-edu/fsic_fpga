@@ -19,6 +19,8 @@
 #include <defs.h>
 #include <stub.c>
 
+#define FSIC_FW
+
 // --------------------------------------------------------
 
 /*
@@ -33,7 +35,9 @@ void main()
 {
 	int j;
 	int value;
-
+#ifdef FSIC_FW
+	int flag = 0;
+#endif
 	/* Set up the housekeeping SPI to be connected internally so	*/
 	/* that external pin changes don't affect it.			*/
 
@@ -117,8 +121,12 @@ void main()
 	if (value == 0x00000006) {
 		reg_fsic_as = 0x0000000F;		
 		value = reg_fsic_as;			
-		if(value == 0x0000000F)
+		if(value == 0x0000000F) {
 			reg_mprj_datal = 0xAB4C0000;
+#ifdef FSIC_FW		
+			flag += 0x11110000;
+#endif
+		}
 	}	
 
 	// Checking FSIC CC Configuration Path
@@ -126,8 +134,12 @@ void main()
 	if (value == 0x00000000) {
 		reg_fsic_is = 0x00000003;		
 		value = reg_fsic_is;			
-		if(value == 0x00000003)
+		if(value == 0x00000003) {
 			reg_mprj_datal = 0xAB4D0000;
+#ifdef FSIC_FW
+			flag += 0x22220000;
+#endif			
+		}
 	}		
 
 	// Checking FSIC CC Configuration Path
@@ -135,8 +147,12 @@ void main()
 	if (value == 0x00000000) {
 		reg_fsic_cc = 0x0000001F;		
 		value = reg_fsic_cc;			
-		if(value == 0x0000001F)
+		if(value == 0x0000001F) {
 			reg_mprj_datal = 0xAB4E0000;
+#ifdef FSIC_FW			
+			flag += 0x44440000;
+#endif
+		}
 	}	
 
 	// Checking FSIC LA Configuration Path
@@ -144,10 +160,17 @@ void main()
 	if (value == 0x00000000) {
 		reg_fsic_la = 0x00123456;		
 		value = reg_fsic_la;			
-		if(value == 0x00123456)
+		if(value == 0x00123456) {
 			reg_mprj_datal = 0xAB4F0000;
+#ifdef FSIC_FW			
+			flag += 0x88880000;
+#endif			
+		}
 	}
 
 	reg_mprj_datal = 0xAB510000;
+#ifdef FSIC_FW	
+	reg_mprj_datal = flag;
+#endif
 }
 
