@@ -41,48 +41,99 @@ module ps_axil(
 	output wire          s_axi_wready,	
 	input  wire   [3: 0] s_axi_wstrb,
 	input  wire          s_axi_wvalid,	
-	
-	////////////////////////////////
-	// AXI-Lite Master, to Slaves //
-	////////////////////////////////
-	input  wire          axi_awready0,		//for AXIS_SWITCH
-	input  wire          axi_wready0,
-	input  wire          axi_arready0,
-	input  wire  [31: 0] axi_rdata0,
-	input  wire          axi_rvalid0,	
-	input  wire          axi_wready1,		//for AXIL_AXIS
-	input  wire          axi_awready1,
-	input  wire          axi_arready1,
-	input  wire  [31: 0] axi_rdata1,
-	input  wire          axi_rvalid1,
-	input  wire          axi_awready2,		//for IO_SERDES
-	input  wire          axi_wready2,
-	input  wire          axi_arready2,
-	input  wire  [31: 0] axi_rdata2,
-	input  wire          axi_rvalid2,	
-	output wire          axi_awvalid,
-	output wire  [14: 0] axi_awaddr,
-	output wire          axi_wvalid,
-	output wire  [31: 0] axi_wdata,
-	output wire   [3: 0] axi_wstrb,
-	output wire          axi_arvalid,
-	output wire  [14: 0] axi_araddr,
-	output wire          axi_rready,	
-	
-	//////////////////////
-	// Target Selection //
-	//////////////////////
-	output wire          aa_enable,
-	output wire          as_enable,
-	output wire          is_enable,
+
+	//////////////////
+	// FSIC Signals //
+	//////////////////
+	output wire aa_mb_irq,
+	input wire  is_ioclk,
+	input wire [11:0] is_serial_rxd,
+	input wire  is_serial_rclk,
+	output wire [11:0] is_serial_txd,
+	output wire  is_serial_tclk,
 
 	/////////////////////////////
 	// Global AXI-Lite Signals //
 	/////////////////////////////
 	input  wire          axi_clk,
-	input  wire          axi_reset_n
+	input  wire          axi_reset_n,
+	input  wire          axis_clk,
+	input  wire          axi_rst_n
     );
-    
+
+	////////////////////////////////
+	// AXI-Lite Master, to Slaves //
+	////////////////////////////////
+	//Input
+	wire          axi_awready0;		//for AXIS_SWITCH
+	wire          axi_wready0;
+	wire          axi_arready0;
+	wire  [31: 0] axi_rdata0;
+	wire          axi_rvalid0;
+	wire          axi_wready1;		//for AXIL_AXIS
+	wire          axi_awready1;
+	wire          axi_arready1;
+	wire  [31: 0] axi_rdata1;
+	wire          axi_rvalid1;
+	wire          axi_awready2;		//for IO_SERDES
+	wire          axi_wready2;
+	wire          axi_arready2;
+	wire  [31: 0] axi_rdata2;
+	wire          axi_rvalid2;
+	//Output
+	wire          axi_awvalid;
+	wire  [14: 0] axi_awaddr;
+	wire          axi_wvalid;
+	wire  [31: 0] axi_wdata;
+	wire   [3: 0] axi_wstrb;
+	wire          axi_arvalid;
+	wire  [14: 0] axi_araddr;
+	wire          axi_rready;	
+	
+	//////////////////////
+	// Target Selection //
+	//////////////////////
+	//Output
+	wire          aa_enable;
+	wire          as_enable;
+	wire          is_enable;
+
+	///////////////////////
+	// Stream Connection //
+	///////////////////////
+	wire [31:0] is_as_tdata;
+	wire [3:0] is_as_tstrb;
+	wire [3:0] is_as_tkeep;
+	wire is_as_tlast;
+	wire [1:0] is_as_tid;
+	wire is_as_tvalid;
+	wire [1:0] is_as_tuser;
+	wire as_is_tready;
+
+	wire [31:0] as_is_tdata;
+	wire [3:0] as_is_tstrb;
+	wire [3:0] as_is_tkeep;
+	wire as_is_tlast;
+	wire [1:0]as_is_tid;
+	wire as_is_tvalid;
+	wire [1:0]as_is_tuser;
+	wire is_as_tready;
+
+	wire [31:0] as_aa_tdata;
+	wire [3:0] as_aa_tstrb;
+	wire [3:0] as_aa_tkeep;
+	wire as_aa_tlast;
+	wire as_aa_tvalid;
+	wire [1:0] as_aa_tuser;
+	wire aa_as_tready;
+	
+	wire [31:0] aa_as_tdata;
+	wire [3:0] aa_as_tstrb;
+	wire [3:0] aa_as_tkeep;
+	wire aa_as_tlast;
+	wire aa_as_tvalid;
+	wire [1:0] aa_as_tuser;
+	wire as_aa_tready;
     
 	////////////////////////////
 	// Internal Signals begin //
@@ -377,6 +428,159 @@ module ps_axil(
 			as_enable_o <= ( ps_axi_request_add[31:12] == 20'h60006 )? 1'b1 : 1'b0;
 			is_enable_o <= ( ps_axi_request_add[31:12] == 20'h60007 )? 1'b1 : 1'b0;
 		end
-	end		
+	end	
+
+AXIS_SWz #(.pADDR_WIDTH( 15 ),
+           .pDATA_WIDTH( 32 )) 
+	PL_AS (
+		.axi_reset_n(axi_reset_n),
+		.axis_clk(axis_clk),
+		.axis_rst_n(axis_rst_n),
+		//axi_lite slave interface
+		//write addr channel
+		.axi_awvalid(axi_awvalid),
+		.axi_awaddr(axi_awaddr),
+		.axi_awready(axi_awready0),		//o
+		//write data channel
+		.axi_wvalid(axi_wvalid),
+		.axi_wdata(axi_wdata),
+		.axi_wstrb(axi_wstrb),
+		.axi_wready(axi_wready0),		//o
+		//read addr channel
+		.axi_arvalid(axi_arvalid),
+		.axi_araddr(axi_araddr),
+		.axi_arready(axi_arready0),		//o
+		//read data channel
+		.axi_rvalid(axi_rvalid0),		//o
+		.axi_rdata(axi_rdata0),		//o
+		.axi_rready(axi_rready),
+		.cc_as_enable(as_enable),
+		//AXI Stream inputs for Axis Axilite grant 1
+		.aa_as_tdata(aa_as_tdata),
+		.aa_as_tstrb(aa_as_tstrb),
+		.aa_as_tkeep(aa_as_tkeep),   
+		.aa_as_tlast(aa_as_tlast),       
+		.aa_as_tvalid(aa_as_tvalid),
+		.aa_as_tuser(aa_as_tuser),       
+		.as_aa_tready(as_aa_tready),	//o
+		//AXI Stream outputs for IO Serdes
+		.as_is_tdata(as_is_tdata),
+		.as_is_tstrb(as_is_tstrb),
+		.as_is_tkeep(as_is_tkeep), 
+		.as_is_tlast(as_is_tlast),        
+		.as_is_tid(as_is_tid), 
+		.as_is_tvalid(as_is_tvalid),
+		.as_is_tuser(as_is_tuser),     
+		.is_as_tready(is_as_tready),	//i
+		//AXI Input Stream for IO_Serdes
+		.is_as_tdata(is_as_tdata),
+		.is_as_tstrb(is_as_tstrb),    
+		.is_as_tkeep(is_as_tkeep),
+		.is_as_tlast(is_as_tlast),
+		.is_as_tid(is_as_tid),
+		.is_as_tvalid(is_as_tvalid),
+		.is_as_tuser(is_as_tuser),
+		.as_is_tready(as_is_tready),	//o
+		//AXI Output Stream for Axis_Axilite
+		.as_aa_tdata(as_aa_tdata),
+		.as_aa_tstrb(as_aa_tstrb),    
+		.as_aa_tkeep(as_aa_tkeep),
+		.as_aa_tlast(as_aa_tlast),    
+		.as_aa_tvalid(as_aa_tvalid),
+		.as_aa_tuser(as_aa_tuser), 
+		.aa_as_tready(aa_as_tready)	//i
+	);
+
+AXIL_AXIS #(.pADDR_WIDTH( 15 ),
+            .pDATA_WIDTH( 32 )) 
+	PL_AA (
+		//AXIL
+		.s_wready(axi_wready1),	//o  
+		.s_awready(axi_awready1),	//o  
+		.s_arready(axi_arready1), 	//o  
+		.s_rdata(axi_rdata1),		//o
+		.s_rvalid(axi_rvalid1),    //o
+		.s_awvalid(axi_awvalid),
+		.s_awaddr(axi_awaddr),
+		.s_wvalid(axi_wvalid),
+		.s_wdata(axi_wdata),
+		.s_wstrb(axi_wstrb),
+		.s_arvalid(axi_arvalid),
+		.s_araddr(axi_araddr),
+		.s_rready(axi_rready),
+		.cc_aa_enable(aa_enable),
+		//AS->AA
+		.as_aa_tdata(as_aa_tdata),
+		.as_aa_tstrb(as_aa_tstrb),
+		.as_aa_tkeep(as_aa_tkeep),
+		.as_aa_tlast(as_aa_tlast),
+		.as_aa_tvalid(as_aa_tvalid),
+		.as_aa_tuser(as_aa_tuser),
+		.aa_as_tready(aa_as_tready),	//o
+		//AA->AS
+		.aa_as_tdata(aa_as_tdata),		//o
+		.aa_as_tstrb(aa_as_tstrb),		//o
+		.aa_as_tkeep(aa_as_tkeep),		//o
+		.aa_as_tlast(aa_as_tlast),		//o
+		.aa_as_tvalid(aa_as_tvalid),	//o
+		.aa_as_tuser(aa_as_tuser),		//o
+		.as_aa_tready(as_aa_tready),		
+		//Otheraxi_rready
+ 		.mb_irq(aa_mb_irq),	//o
+		.axi_clk(axi_clk),
+		.axi_reset_n(axi_reset_n),
+		.axis_clk(axis_clk),
+		.axis_rst_n(axis_rst_n)
+	);	
+
+IO_SERDES #(.pSERIALIO_WIDTH( 12 ),
+             .pADDR_WIDTH( 15 ),
+             .pDATA_WIDTH( 32 ),
+             .pRxFIFO_DEPTH( 5 ),
+             .pCLK_RATIO( 4 )) 
+	PL_IS (
+		.axi_awready(axi_awready2),	//o
+		.axi_wready(axi_wready2),	//o
+		.axi_arready(axi_arready2),	//o
+		.axi_rdata(axi_rdata2),		//o
+		.axi_rvalid(axi_rvalid2),	//o
+		.axi_awvalid(axi_awvalid),
+		.axi_awaddr(axi_awaddr),
+		.axi_wvalid(axi_wvalid),
+		.axi_wdata(axi_wdata),
+		.axi_wstrb(axi_wstrb),
+		.axi_arvalid(axi_arvalid),
+		.axi_araddr(axi_araddr),
+		.axi_rready(axi_rready),
+		.cc_is_enable(is_enable),
+
+		.is_as_tdata(is_as_tdata),		//o
+		.is_as_tstrb(is_as_tstrb),		//o
+		.is_as_tkeep(is_as_tkeep),		//o
+		.is_as_tlast(is_as_tlast),		//o
+		.is_as_tid(is_as_tid),			//o
+		.is_as_tvalid(is_as_tvalid),	//o
+		.is_as_tuser(is_as_tuser),		//o
+		.as_is_tready(as_is_tready),
+
+		.as_is_tdata(as_is_tdata),
+		.as_is_tstrb(as_is_tstrb),
+		.as_is_tkeep(as_is_tkeep),
+		.as_is_tlast(as_is_tlast),
+		.as_is_tid(as_is_tid),
+		.as_is_tvalid(as_is_tvalid),
+		.as_is_tuser(as_is_tuser),
+		.is_as_tready(is_as_tready),	//o
+
+		.ioclk(is_ioclk),
+		.serial_rxd(is_serial_rxd),
+		.serial_rclk(is_serial_rclk),
+		.serial_txd(is_serial_txd),		//o
+		.serial_tclk(is_serialtclk),	//o
+		.axi_clk(axi_clk),
+		.axi_reset_n(axi_reset_n),
+		.axis_clk(axis_clk),
+		.axis_rst_n(axis_rst_n)
+	);
     
 endmodule
