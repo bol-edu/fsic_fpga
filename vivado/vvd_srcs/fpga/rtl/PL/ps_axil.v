@@ -58,7 +58,7 @@ module ps_axil(
 	input  wire          axi_clk,
 	input  wire          axi_reset_n,
 	input  wire          axis_clk,
-	input  wire          axi_rst_n
+	input  wire          axis_rst_n
     );
 
 	////////////////////////////////
@@ -576,7 +576,7 @@ IO_SERDES #(.pSERIALIO_WIDTH( 12 ),
 		.serial_rxd(is_serial_rxd),
 		.serial_rclk(is_serial_rclk),
 		.serial_txd(is_serial_txd),		//o
-		.serial_tclk(is_serialtclk),	//o
+		.serial_tclk(is_serial_tclk),	//o
 		.axi_clk(axi_clk),
 		.axi_reset_n(axi_reset_n),
 		.axis_clk(axis_clk),

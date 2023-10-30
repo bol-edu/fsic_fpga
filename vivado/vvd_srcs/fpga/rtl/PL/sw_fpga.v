@@ -18,7 +18,7 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-module AXIS_SWz #( parameter pADDR_WIDTH   = 10,
+(* DONT_TOUCH = "yes" *) module AXIS_SWz #( parameter pADDR_WIDTH   = 10,
                   parameter pDATA_WIDTH   = 32
                 )
 (
