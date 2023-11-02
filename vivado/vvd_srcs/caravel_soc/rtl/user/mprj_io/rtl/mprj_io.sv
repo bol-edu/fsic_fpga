@@ -48,24 +48,19 @@ assign io_out        = 38'b0;
 assign io_oeb        = 38'b0;
 */
 
-assign io_clk = io_in[37];
-
 assign io_oeb[ 7: 0]   =  8'h00;
 
 assign io_oeb[19: 8]   = 12'hFFF;  // RXD
-assign io_oeb[   20]   =  1'b1;    // RX_CLK
+assign io_oeb[31:20]   = 12'h000;  // TXD
 
-assign io_oeb[32:21]   = 12'h000;  // TXD
+assign io_oeb[   32]   =  1'b1;    // RX_CLK
 assign io_oeb[   33]   =  1'b0;    // TX_CLK
-
-assign io_oeb[   37]   =  1'b0;    // IO_CLK (from FPGA)
-
+assign io_oeb[   34]   =  1'b1;    // IO_CLK (from FPGA)
 
 assign serial_rxd  = io_in[19:8];
-assign serial_rclk = io_in[  20];
-
-assign io_out[32:21] = serial_txd;
+assign io_out[31:20] = serial_txd;
+assign serial_rclk = io_in[  32];
 assign io_out[   33] = serial_tclk;
-
+assign io_clk = io_in[34];
 
 endmodule // MPRJ_IO

@@ -30,8 +30,8 @@ module ps_is_wrapper(
     input [37:0] caravel_mprj_out
     );
     
-    assign caravel_mprj_in = {3'b0, ps_ioclk, 13'b0, ps_is_tclk, ps_is_txd, 8'b0};
+    assign caravel_mprj_in = {3'b0, ps_ioclk, 1'b0, ps_is_tclk, 12'b0, ps_is_txd, 8'b0};
     assign ps_is_rclk = caravel_mprj_out[33];
-    assign ps_is_rxd = caravel_mprj_out[32:21];
+    assign ps_is_rxd = caravel_mprj_out[31:20];
     
 endmodule

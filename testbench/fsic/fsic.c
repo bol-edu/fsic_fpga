@@ -19,7 +19,6 @@
 #include <defs.h>
 #include <stub.c>
 
-#define FSIC_FW
 
 // --------------------------------------------------------
 
@@ -33,11 +32,9 @@
 
 void main()
 {
-	int j;
+	int j = 0;
 	int value;
-#ifdef FSIC_FW
-	int flag = 0;
-#endif
+
 	/* Set up the housekeeping SPI to be connected internally so	*/
 	/* that external pin changes don't affect it.			*/
 
@@ -63,126 +60,69 @@ void main()
 	// logic analyzer probes.
 	// I/O 6 is configured for the UART Tx line
 
-#ifndef FSIC_FW
-        reg_mprj_io_31 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_30 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_29 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_28 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_27 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_26 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_25 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_24 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_23 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_22 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_21 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_20 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_19 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_18 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_17 = GPIO_MODE_MGMT_STD_OUTPUT;
-        reg_mprj_io_16 = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_37 = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_36 = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_35 = GPIO_MODE_MGMT_STD_OUTPUT;	
+	reg_mprj_io_34 = GPIO_MODE_USER_STD_INPUT_NOPULL;	//IO_CLK (from FPGA)
+	reg_mprj_io_33 = GPIO_MODE_USER_STD_OUTPUT;			//TXC
+	reg_mprj_io_32 = GPIO_MODE_USER_STD_INPUT_NOPULL;	//RXC
 
-        reg_mprj_io_15 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_14 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_13 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_12 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_11 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_10 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_9  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_8  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_7  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_5  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_4  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_3  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_2  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_1  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_0  = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_31 = GPIO_MODE_USER_STD_OUTPUT;		//TXD[11:0]
+	reg_mprj_io_30 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_29 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_28 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_27 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_26 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_25 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_24 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_23 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_22 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_21 = GPIO_MODE_USER_STD_OUTPUT;
+	reg_mprj_io_20 = GPIO_MODE_USER_STD_OUTPUT;	
 
-        reg_mprj_io_6  = GPIO_MODE_MGMT_STD_OUTPUT;
-#else
-        reg_mprj_io_34 = GPIO_MODE_USER_STD_INPUT_NOPULL;	//IO_CLK (from FPGA)
+	reg_mprj_io_19 = GPIO_MODE_USER_STD_INPUT_NOPULL;	//RXD[11:0]
+	reg_mprj_io_18 = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_17 = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_16 = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_15 = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_14 = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_13 = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_12 = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_11 = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_10 = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_9  = GPIO_MODE_USER_STD_INPUT_NOPULL;
+	reg_mprj_io_8  = GPIO_MODE_USER_STD_INPUT_NOPULL;
 
-        reg_mprj_io_33 = GPIO_MODE_USER_STD_OUTPUT;		//TXC
+	reg_mprj_io_7  = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_6  = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_5  = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_4  = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_3  = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_2  = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_1  = GPIO_MODE_MGMT_STD_OUTPUT;
+	reg_mprj_io_0  = GPIO_MODE_MGMT_STD_OUTPUT;
 
-        reg_mprj_io_32 = GPIO_MODE_USER_STD_OUTPUT;	//TXD[11:0]
-        reg_mprj_io_31 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_30 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_29 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_28 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_27 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_26 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_25 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_24 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_23 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_22 = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_21 = GPIO_MODE_USER_STD_OUTPUT;
-
-        reg_mprj_io_20 = GPIO_MODE_USER_STD_INPUT_NOPULL;	//RXC
-
-        reg_mprj_io_19 = GPIO_MODE_USER_STD_INPUT_NOPULL;	//RXD[11:0]
-        reg_mprj_io_18 = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_17 = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_16 = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_15 = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_14 = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_13 = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_12 = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_11 = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_10 = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_9  = GPIO_MODE_USER_STD_INPUT_NOPULL;
-        reg_mprj_io_8  = GPIO_MODE_USER_STD_INPUT_NOPULL;
-
-        reg_mprj_io_7  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_5  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_4  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_3  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_2  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_1  = GPIO_MODE_USER_STD_OUTPUT;
-        reg_mprj_io_0  = GPIO_MODE_USER_STD_OUTPUT;
-
-        reg_mprj_io_6  = GPIO_MODE_MGMT_STD_OUTPUT;
-#endif
-
-	// Set UART clock to 64 kbaud (enable before I/O configuration)
-	// reg_uart_clkdiv = 625;
-	reg_uart_enable = 1;
-	
 	// Now, apply the configuration
 	reg_mprj_xfer = 1;
 	while (reg_mprj_xfer == 1);
 
-        // Configure LA probes [31:0], [127:64] as inputs to the cpu 
-	// Configure LA probes [63:32] as outputs from the cpu
-	reg_la0_oenb = reg_la0_iena = 0x00000000;    // [31:0]
-	reg_la1_oenb = reg_la1_iena = 0x00000000;    // [63:32]
-	reg_la2_oenb = reg_la2_iena = 0x00000000;    // [95:64]
-	reg_la3_oenb = reg_la3_iena = 0x00000000;    // [127:96]
-
-	// Flag start of the test 
-	reg_mprj_datal = 0xAB400000;
-
-	// Checking FSIC CC Configuration Path
+       	// Checking FSIC CC Configuration Path
 	value = reg_fsic_as;	
 	if (value == 0x00000006) {
 		reg_fsic_as = 0x0000000F;		
 		value = reg_fsic_as;			
 		if(value == 0x0000000F) {
-			reg_mprj_datal = 0xAB4C0000;
-#ifdef FSIC_FW		
-			flag += 0x11110000;
-#endif
+			j += 0x01;
 		}
 	}	
 
 	// Checking FSIC CC Configuration Path
 	value = reg_fsic_is;	
 	if (value == 0x00000000) {
-		reg_fsic_is = 0x00000003;		
+		reg_fsic_is = 0x00000001;
 		value = reg_fsic_is;			
-		if(value == 0x00000003) {
-			reg_mprj_datal = 0xAB4D0000;
-#ifdef FSIC_FW
-			flag += 0x22220000;
-#endif			
+		if(value == 0x00000001) {
+			j += 0x02;
 		}
 	}		
 
@@ -192,29 +132,22 @@ void main()
 		reg_fsic_cc = 0x0000001F;		
 		value = reg_fsic_cc;			
 		if(value == 0x0000001F) {
-			reg_mprj_datal = 0xAB4E0000;
-#ifdef FSIC_FW			
-			flag += 0x44440000;
-#endif
+			j += 0x04;
 		}
 	}	
 
 	// Checking FSIC LA Configuration Path
 	value = reg_fsic_la;	
 	if (value == 0x00000000) {
-		reg_fsic_la = 0x00123456;		
+		reg_fsic_la = 0x00000000;
 		value = reg_fsic_la;			
-		if(value == 0x00123456) {
-			reg_mprj_datal = 0xAB4F0000;
-#ifdef FSIC_FW			
-			flag += 0x88880000;
-#endif			
+		if(value == 0x00000000) {
+			j += 0x08;
 		}
 	}
-
-	reg_mprj_datal = 0xAB510000;
-#ifdef FSIC_FW	
-	reg_mprj_datal = flag;
-#endif
+	
+	while(1) {
+		reg_mprj_datal = j;
+	}
 }
 
