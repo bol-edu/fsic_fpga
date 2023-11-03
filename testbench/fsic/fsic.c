@@ -106,6 +106,8 @@ void main()
 	reg_mprj_xfer = 1;
 	while (reg_mprj_xfer == 1);
 
+	reg_mprj_datah = 0x20;
+
        	// Checking FSIC CC Configuration Path
 	value = reg_fsic_as;	
 	if (value == 0x00000006) {
@@ -147,7 +149,8 @@ void main()
 	}
 	
 	while(1) {
-		reg_mprj_datal = j;
+		if (j==0xF)
+			reg_mprj_datah = 0x30;
 	}
 }
 

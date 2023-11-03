@@ -27,9 +27,9 @@ module fsic_tb;
 	wire gpio;
 	wire uart_tx;
 	wire [37:0] mprj_io;
-	wire [15:0] checkbits;
+	wire [1:0] checkbits;
 
-	assign checkbits  = mprj_io[31:16];
+	assign checkbits  = mprj_io[37:36];
 	assign uart_tx = mprj_io[6];
 
 	always #12.5 clock <= (clock === 1'b0);
@@ -155,26 +155,10 @@ module fsic_tb;
 	end
 
 	initial begin
-		wait(checkbits == 16'hAB40);
+		wait(checkbits == 2'b10);
 		$display("FSIC Test started");
 
-		$display("FSIC AS CFG Test...");
-		wait(checkbits == 16'hAB4C);
-		$display("FSIC AS CFG Test passed");			
-
-		$display("FSIC IS CFG Test...");
-		wait(checkbits == 16'hAB4D);
-		$display("FSIC IS CFG Test passed");		
-
-		$display("FSIC CC CFG Test...");
-		wait(checkbits == 16'hAB4E);
-		$display("FSIC CC CFG Test passed");
-
-		$display("FSIC LA CFG Test...");
-		wait(checkbits == 16'hAB4F);
-		$display("FSIC LA CFG Test passed");
-
-		wait(checkbits == 16'hAB51);
+		wait(checkbits == 2'b11);
 		$display("FSIC Test passed");
 		#10000;
 		$finish;
