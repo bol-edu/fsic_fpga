@@ -47,10 +47,8 @@ module ps_axil(
 	//////////////////
 	output wire aa_mb_irq,
 	input wire  is_ioclk,
-	input wire [11:0] is_serial_rxd,
-	input wire  is_serial_rclk,
-	output wire [11:0] is_serial_txd,
-	output wire  is_serial_tclk,
+    output wire [37:0] caravel_mprj_out,
+    input wire [37:0] caravel_mprj_in,	
 
 	/////////////////////////////
 	// Global AXI-Lite Signals //
@@ -179,6 +177,15 @@ module ps_axil(
     reg axi_arvalid_o;
     reg [14: 0] axi_araddr_o;
     reg axi_rready_o;
+
+    wire [11:0] is_serial_rxd;
+    wire is_serial_rclk;
+    wire [11:0] is_serial_txd;
+    wire is_serial_tclk;
+       
+    assign caravel_mprj_out = {3'bz, is_ioclk, 1'bz, is_serial_tclk, 12'bz, is_serial_txd, 8'bz};
+    assign is_serial_rclk = caravel_mprj_in[33];
+    assign is_serial_rxd = caravel_mprj_in[31:20];     
 	
 	///////////////////////////////////
 	// Assignment for Internal begin //

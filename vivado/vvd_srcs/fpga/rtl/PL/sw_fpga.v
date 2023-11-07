@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module AXIS_SWz #(
+(* DONT_TOUCH = "yes" *) module AXIS_SWz #(
 	`ifdef USER_PROJECT_SIDEBAND_SUPPORT	 
 				parameter pUSER_PROJECT_SIDEBAND_WIDTH   = 5,
 	`endif				
