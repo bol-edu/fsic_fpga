@@ -135,23 +135,23 @@ module LOGIC_ANLZ #( parameter pADDR_WIDTH   = 15,
 					case ( axi_addr_reg[11:2] )
                         10'h000:
                         begin
-                            axi_rdata_o = {8'b0, la_enable};
+                            axi_rdata_o <= {8'b0, la_enable};
                         end
                         10'h001:
                         begin
-                            axi_rdata_o = {24'b0, h_thresh};                        
+                            axi_rdata_o <= {24'b0, h_thresh};                        
                         end
                         10'h002:
                         begin
-                            axi_rdata_o = {24'b0, l_thresh};                        
+                            axi_rdata_o <= {24'b0, l_thresh};                        
                         end
                         10'h003:
                         begin
-                            axi_rdata_o = {24'b0, pop_cond};                        
+                            axi_rdata_o <= {24'b0, pop_cond};                        
                         end                        
                         default:                        
                         begin
-                            axi_rdata_o = 32'hFFFFFFFF;
+                            axi_rdata_o <= 32'hFFFFFFFF;
                         end
                     endcase                       
 					axi_rvalid_o <= 1'b1;	
