@@ -1,0 +1,689 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="fsic_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="\$unit_user_defines_v_2639569220 " />
+            <top_module name="axi_vip_pkg" />
+            <top_module name="design_1_axi_vip_0_0_pkg" />
+            <top_module name="fsic_tb" />
+            <top_module name="glbl" />
+            <top_module name="std" />
+            <top_module name="xil_common_vip_pkg" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="9,627,491.912 ns"></ZoomStartTime>
+      <ZoomEndTime time="9,629,013.913 ns"></ZoomEndTime>
+      <Cursor1Time time="9,628,177.912 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="250"></NameColumnWidth>
+      <ValueColumnWidth column_width="104"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="10" />
+   <wvobject fp_name="/fsic_tb/DUT/sys_clock" type="logic">
+      <obj_property name="ElementShortName">sys_clock</obj_property>
+      <obj_property name="ObjectShortName">sys_clock</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fsic_tb/DUT/sys_reset" type="logic">
+      <obj_property name="ElementShortName">sys_reset</obj_property>
+      <obj_property name="ObjectShortName">sys_reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="group32" type="group">
+      <obj_property name="label">rst_clk_wiz_0_5M</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/rst_clk_wiz_0_5M/slowest_sync_clk" type="logic">
+         <obj_property name="ElementShortName">slowest_sync_clk</obj_property>
+         <obj_property name="ObjectShortName">slowest_sync_clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/rst_clk_wiz_0_5M/ext_reset_in" type="logic">
+         <obj_property name="ElementShortName">ext_reset_in</obj_property>
+         <obj_property name="ObjectShortName">ext_reset_in</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/rst_clk_wiz_0_5M/peripheral_reset" type="array">
+         <obj_property name="ElementShortName">peripheral_reset[0:0]</obj_property>
+         <obj_property name="ObjectShortName">peripheral_reset[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/rst_clk_wiz_0_5M/peripheral_aresetn" type="array">
+         <obj_property name="ElementShortName">peripheral_aresetn[0:0]</obj_property>
+         <obj_property name="ObjectShortName">peripheral_aresetn[0:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group64" type="group">
+      <obj_property name="label">clk_wiz</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/clk_wiz_0/inst/clk_out1" type="logic">
+         <obj_property name="ElementShortName">clk_out1</obj_property>
+         <obj_property name="ObjectShortName">clk_out1</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/clk_wiz_0/inst/clk_out2" type="logic">
+         <obj_property name="ElementShortName">clk_out2</obj_property>
+         <obj_property name="ObjectShortName">clk_out2</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group44" type="group">
+      <obj_property name="label">Caravel</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/mprj_i" type="array">
+         <obj_property name="ElementShortName">mprj_i[37:0]</obj_property>
+         <obj_property name="ObjectShortName">mprj_i[37:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/mprj_o" type="array">
+         <obj_property name="ElementShortName">mprj_o[37:0]</obj_property>
+         <obj_property name="ObjectShortName">mprj_o[37:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/mprj_en" type="array">
+         <obj_property name="ElementShortName">mprj_en[37:0]</obj_property>
+         <obj_property name="ObjectShortName">mprj_en[37:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/clock" type="logic">
+         <obj_property name="ElementShortName">clock</obj_property>
+         <obj_property name="ObjectShortName">clock</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/resetb" type="logic">
+         <obj_property name="ElementShortName">resetb</obj_property>
+         <obj_property name="ObjectShortName">resetb</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/flash_csb" type="logic">
+         <obj_property name="ElementShortName">flash_csb</obj_property>
+         <obj_property name="ObjectShortName">flash_csb</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/flash_clk" type="logic">
+         <obj_property name="ElementShortName">flash_clk</obj_property>
+         <obj_property name="ObjectShortName">flash_clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/flash_io0" type="logic">
+         <obj_property name="ElementShortName">flash_io0</obj_property>
+         <obj_property name="ObjectShortName">flash_io0</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/flash_io1" type="logic">
+         <obj_property name="ElementShortName">flash_io1</obj_property>
+         <obj_property name="ObjectShortName">flash_io1</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group66" type="group">
+      <obj_property name="label">VexRiscV</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/soc/core/VexRiscv/execute_PC" type="array">
+         <obj_property name="ElementShortName">execute_PC[31:0]</obj_property>
+         <obj_property name="ObjectShortName">execute_PC[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/soc/core/VexRiscv/iBusWishbone_DAT_MISO" type="array">
+         <obj_property name="ElementShortName">iBusWishbone_DAT_MISO[31:0]</obj_property>
+         <obj_property name="ObjectShortName">iBusWishbone_DAT_MISO[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group161" type="group">
+      <obj_property name="label">blk_mem</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/blk_mem_gen_0/clka" type="logic">
+         <obj_property name="ElementShortName">clka</obj_property>
+         <obj_property name="ObjectShortName">clka</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/blk_mem_gen_0/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/blk_mem_gen_0/rsta" type="logic">
+         <obj_property name="ElementShortName">rsta</obj_property>
+         <obj_property name="ObjectShortName">rsta</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/blk_mem_gen_0/wea" type="array">
+         <obj_property name="ElementShortName">wea[3:0]</obj_property>
+         <obj_property name="ObjectShortName">wea[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/blk_mem_gen_0/addra" type="array">
+         <obj_property name="ElementShortName">addra[31:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/blk_mem_gen_0/dina" type="array">
+         <obj_property name="ElementShortName">dina[31:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/blk_mem_gen_0/douta" type="array">
+         <obj_property name="ElementShortName">douta[31:0]</obj_property>
+         <obj_property name="ObjectShortName">douta[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/blk_mem_gen_0/inst/\native_mem_mapped_module.blk_mem_gen_v8_4_5_inst /memory" type="array">
+         <obj_property name="ElementShortName">memory[0:2047][31:0]</obj_property>
+         <obj_property name="ObjectShortName">memory[0:2047][31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group175" type="group">
+      <obj_property name="label">spiflash</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/ap_clk" type="logic">
+         <obj_property name="ElementShortName">ap_clk</obj_property>
+         <obj_property name="ObjectShortName">ap_clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/ap_rst" type="logic">
+         <obj_property name="ElementShortName">ap_rst</obj_property>
+         <obj_property name="ObjectShortName">ap_rst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/spiclk" type="logic">
+         <obj_property name="ElementShortName">spiclk</obj_property>
+         <obj_property name="ObjectShortName">spiclk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/bitcount" type="array">
+         <obj_property name="ElementShortName">bitcount[3:0]</obj_property>
+         <obj_property name="ObjectShortName">bitcount[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/bytecount" type="array">
+         <obj_property name="ElementShortName">bytecount[12:0]</obj_property>
+         <obj_property name="ObjectShortName">bytecount[12:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/csb" type="logic">
+         <obj_property name="ElementShortName">csb</obj_property>
+         <obj_property name="ObjectShortName">csb</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/io0" type="array">
+         <obj_property name="ElementShortName">io0[0:0]</obj_property>
+         <obj_property name="ObjectShortName">io0[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/io1" type="logic">
+         <obj_property name="ElementShortName">io1</obj_property>
+         <obj_property name="ObjectShortName">io1</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/memory" type="array">
+         <obj_property name="ElementShortName">memory[7:0]</obj_property>
+         <obj_property name="ObjectShortName">memory[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/outbuf" type="array">
+         <obj_property name="ElementShortName">outbuf[7:0]</obj_property>
+         <obj_property name="ObjectShortName">outbuf[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/romcode_Addr_A" type="array">
+         <obj_property name="ElementShortName">romcode_Addr_A[31:0]</obj_property>
+         <obj_property name="ObjectShortName">romcode_Addr_A[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/romcode_Clk_A" type="logic">
+         <obj_property name="ElementShortName">romcode_Clk_A</obj_property>
+         <obj_property name="ObjectShortName">romcode_Clk_A</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/romcode_Din_A" type="array">
+         <obj_property name="ElementShortName">romcode_Din_A[31:0]</obj_property>
+         <obj_property name="ObjectShortName">romcode_Din_A[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/romcode_Dout_A" type="array">
+         <obj_property name="ElementShortName">romcode_Dout_A[31:0]</obj_property>
+         <obj_property name="ObjectShortName">romcode_Dout_A[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/romcode_EN_A" type="logic">
+         <obj_property name="ElementShortName">romcode_EN_A</obj_property>
+         <obj_property name="ObjectShortName">romcode_EN_A</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/romcode_Rst_A" type="logic">
+         <obj_property name="ElementShortName">romcode_Rst_A</obj_property>
+         <obj_property name="ObjectShortName">romcode_Rst_A</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/romcode_WEN_A" type="array">
+         <obj_property name="ElementShortName">romcode_WEN_A[3:0]</obj_property>
+         <obj_property name="ObjectShortName">romcode_WEN_A[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/spi_addr" type="array">
+         <obj_property name="ElementShortName">spi_addr[23:0]</obj_property>
+         <obj_property name="ObjectShortName">spi_addr[23:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/spi_cmd" type="array">
+         <obj_property name="ElementShortName">spi_cmd[7:0]</obj_property>
+         <obj_property name="ObjectShortName">spi_cmd[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/buffer" type="array">
+         <obj_property name="ElementShortName">buffer[7:0]</obj_property>
+         <obj_property name="ObjectShortName">buffer[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/spiflash_0/inst/buffer_next" type="array">
+         <obj_property name="ElementShortName">buffer_next[7:0]</obj_property>
+         <obj_property name="ObjectShortName">buffer_next[7:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group164" type="group">
+      <obj_property name="label">ps_axil_0</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_clk" type="logic">
+         <obj_property name="ElementShortName">axi_clk</obj_property>
+         <obj_property name="ObjectShortName">axi_clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_reset_n" type="logic">
+         <obj_property name="ElementShortName">axi_reset_n</obj_property>
+         <obj_property name="ObjectShortName">axi_reset_n</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axis_rst_n" type="logic">
+         <obj_property name="ElementShortName">axis_rst_n</obj_property>
+         <obj_property name="ObjectShortName">axis_rst_n</obj_property>
+      </wvobject>
+      <wvobject fp_name="group264" type="group">
+         <obj_property name="label">s_axi</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_araddr" type="array">
+            <obj_property name="ElementShortName">s_axi_araddr[31:0]</obj_property>
+            <obj_property name="ObjectShortName">s_axi_araddr[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_arready" type="logic">
+            <obj_property name="ElementShortName">s_axi_arready</obj_property>
+            <obj_property name="ObjectShortName">s_axi_arready</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_arvalid" type="logic">
+            <obj_property name="ElementShortName">s_axi_arvalid</obj_property>
+            <obj_property name="ObjectShortName">s_axi_arvalid</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_awaddr" type="array">
+            <obj_property name="ElementShortName">s_axi_awaddr[31:0]</obj_property>
+            <obj_property name="ObjectShortName">s_axi_awaddr[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_awready" type="logic">
+            <obj_property name="ElementShortName">s_axi_awready</obj_property>
+            <obj_property name="ObjectShortName">s_axi_awready</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_awvalid" type="logic">
+            <obj_property name="ElementShortName">s_axi_awvalid</obj_property>
+            <obj_property name="ObjectShortName">s_axi_awvalid</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_bready" type="logic">
+            <obj_property name="ElementShortName">s_axi_bready</obj_property>
+            <obj_property name="ObjectShortName">s_axi_bready</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_bresp" type="array">
+            <obj_property name="ElementShortName">s_axi_bresp[1:0]</obj_property>
+            <obj_property name="ObjectShortName">s_axi_bresp[1:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_bvalid" type="logic">
+            <obj_property name="ElementShortName">s_axi_bvalid</obj_property>
+            <obj_property name="ObjectShortName">s_axi_bvalid</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_rdata" type="array">
+            <obj_property name="ElementShortName">s_axi_rdata[31:0]</obj_property>
+            <obj_property name="ObjectShortName">s_axi_rdata[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_rready" type="logic">
+            <obj_property name="ElementShortName">s_axi_rready</obj_property>
+            <obj_property name="ObjectShortName">s_axi_rready</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_rresp" type="array">
+            <obj_property name="ElementShortName">s_axi_rresp[1:0]</obj_property>
+            <obj_property name="ObjectShortName">s_axi_rresp[1:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_rvalid" type="logic">
+            <obj_property name="ElementShortName">s_axi_rvalid</obj_property>
+            <obj_property name="ObjectShortName">s_axi_rvalid</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_wdata" type="array">
+            <obj_property name="ElementShortName">s_axi_wdata[31:0]</obj_property>
+            <obj_property name="ObjectShortName">s_axi_wdata[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_wready" type="logic">
+            <obj_property name="ElementShortName">s_axi_wready</obj_property>
+            <obj_property name="ObjectShortName">s_axi_wready</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_wstrb" type="array">
+            <obj_property name="ElementShortName">s_axi_wstrb[3:0]</obj_property>
+            <obj_property name="ObjectShortName">s_axi_wstrb[3:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/s_axi_wvalid" type="logic">
+            <obj_property name="ElementShortName">s_axi_wvalid</obj_property>
+            <obj_property name="ObjectShortName">s_axi_wvalid</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/aa_enable_o" type="logic">
+         <obj_property name="ElementShortName">aa_enable_o</obj_property>
+         <obj_property name="ObjectShortName">aa_enable_o</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/as_enable_o" type="logic">
+         <obj_property name="ElementShortName">as_enable_o</obj_property>
+         <obj_property name="ObjectShortName">as_enable_o</obj_property>
+      </wvobject>
+      <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/is_enable_o" type="logic">
+         <obj_property name="ElementShortName">is_enable_o</obj_property>
+         <obj_property name="ObjectShortName">is_enable_o</obj_property>
+      </wvobject>
+      <wvobject fp_name="group265" type="group">
+         <obj_property name="label">m_axi</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_awready0" type="logic">
+            <obj_property name="ElementShortName">axi_awready0</obj_property>
+            <obj_property name="ObjectShortName">axi_awready0</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_wready0" type="logic">
+            <obj_property name="ElementShortName">axi_wready0</obj_property>
+            <obj_property name="ObjectShortName">axi_wready0</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_arready0" type="logic">
+            <obj_property name="ElementShortName">axi_arready0</obj_property>
+            <obj_property name="ObjectShortName">axi_arready0</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_rdata0" type="array">
+            <obj_property name="ElementShortName">axi_rdata0[31:0]</obj_property>
+            <obj_property name="ObjectShortName">axi_rdata0[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_rvalid0" type="logic">
+            <obj_property name="ElementShortName">axi_rvalid0</obj_property>
+            <obj_property name="ObjectShortName">axi_rvalid0</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_wready1" type="logic">
+            <obj_property name="ElementShortName">axi_wready1</obj_property>
+            <obj_property name="ObjectShortName">axi_wready1</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_awready1" type="logic">
+            <obj_property name="ElementShortName">axi_awready1</obj_property>
+            <obj_property name="ObjectShortName">axi_awready1</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_arready1" type="logic">
+            <obj_property name="ElementShortName">axi_arready1</obj_property>
+            <obj_property name="ObjectShortName">axi_arready1</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_rdata1" type="array">
+            <obj_property name="ElementShortName">axi_rdata1[31:0]</obj_property>
+            <obj_property name="ObjectShortName">axi_rdata1[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_rvalid1" type="logic">
+            <obj_property name="ElementShortName">axi_rvalid1</obj_property>
+            <obj_property name="ObjectShortName">axi_rvalid1</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_awready2" type="logic">
+            <obj_property name="ElementShortName">axi_awready2</obj_property>
+            <obj_property name="ObjectShortName">axi_awready2</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_wready2" type="logic">
+            <obj_property name="ElementShortName">axi_wready2</obj_property>
+            <obj_property name="ObjectShortName">axi_wready2</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_arready2" type="logic">
+            <obj_property name="ElementShortName">axi_arready2</obj_property>
+            <obj_property name="ObjectShortName">axi_arready2</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_rdata2" type="array">
+            <obj_property name="ElementShortName">axi_rdata2[31:0]</obj_property>
+            <obj_property name="ObjectShortName">axi_rdata2[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_rvalid2" type="logic">
+            <obj_property name="ElementShortName">axi_rvalid2</obj_property>
+            <obj_property name="ObjectShortName">axi_rvalid2</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_awvalid" type="logic">
+            <obj_property name="ElementShortName">axi_awvalid</obj_property>
+            <obj_property name="ObjectShortName">axi_awvalid</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_awaddr" type="array">
+            <obj_property name="ElementShortName">axi_awaddr[14:0]</obj_property>
+            <obj_property name="ObjectShortName">axi_awaddr[14:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_wvalid" type="logic">
+            <obj_property name="ElementShortName">axi_wvalid</obj_property>
+            <obj_property name="ObjectShortName">axi_wvalid</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_wdata" type="array">
+            <obj_property name="ElementShortName">axi_wdata[31:0]</obj_property>
+            <obj_property name="ObjectShortName">axi_wdata[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_wstrb" type="array">
+            <obj_property name="ElementShortName">axi_wstrb[3:0]</obj_property>
+            <obj_property name="ObjectShortName">axi_wstrb[3:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_arvalid" type="logic">
+            <obj_property name="ElementShortName">axi_arvalid</obj_property>
+            <obj_property name="ObjectShortName">axi_arvalid</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_araddr" type="array">
+            <obj_property name="ElementShortName">axi_araddr[14:0]</obj_property>
+            <obj_property name="ObjectShortName">axi_araddr[14:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axi_rready" type="logic">
+            <obj_property name="ElementShortName">axi_rready</obj_property>
+            <obj_property name="ObjectShortName">axi_rready</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="group280" type="group">
+         <obj_property name="label">PL_AS</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axis_clk" type="logic">
+            <obj_property name="ElementShortName">axis_clk</obj_property>
+            <obj_property name="ObjectShortName">axis_clk</obj_property>
+         </wvobject>
+         <wvobject fp_name="group281" type="group">
+            <obj_property name="label">DS</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/aa_as_tdata" type="array">
+               <obj_property name="ElementShortName">aa_as_tdata[31:0]</obj_property>
+               <obj_property name="ObjectShortName">aa_as_tdata[31:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/aa_as_tstrb" type="array">
+               <obj_property name="ElementShortName">aa_as_tstrb[3:0]</obj_property>
+               <obj_property name="ObjectShortName">aa_as_tstrb[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/aa_as_tkeep" type="array">
+               <obj_property name="ElementShortName">aa_as_tkeep[3:0]</obj_property>
+               <obj_property name="ObjectShortName">aa_as_tkeep[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/aa_as_tlast" type="logic">
+               <obj_property name="ElementShortName">aa_as_tlast</obj_property>
+               <obj_property name="ObjectShortName">aa_as_tlast</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/aa_as_tvalid" type="logic">
+               <obj_property name="ElementShortName">aa_as_tvalid</obj_property>
+               <obj_property name="ObjectShortName">aa_as_tvalid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/aa_as_tuser" type="array">
+               <obj_property name="ElementShortName">aa_as_tuser[1:0]</obj_property>
+               <obj_property name="ObjectShortName">aa_as_tuser[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/as_aa_tready" type="logic">
+               <obj_property name="ElementShortName">as_aa_tready</obj_property>
+               <obj_property name="ObjectShortName">as_aa_tready</obj_property>
+            </wvobject>
+         </wvobject>
+         <wvobject fp_name="group282" type="group">
+            <obj_property name="label">US</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/as_aa_tready" type="logic">
+               <obj_property name="ElementShortName">as_aa_tready</obj_property>
+               <obj_property name="ObjectShortName">as_aa_tready</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/as_aa_tdata" type="array">
+               <obj_property name="ElementShortName">as_aa_tdata[31:0]</obj_property>
+               <obj_property name="ObjectShortName">as_aa_tdata[31:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/as_aa_tstrb" type="array">
+               <obj_property name="ElementShortName">as_aa_tstrb[3:0]</obj_property>
+               <obj_property name="ObjectShortName">as_aa_tstrb[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/as_aa_tkeep" type="array">
+               <obj_property name="ElementShortName">as_aa_tkeep[3:0]</obj_property>
+               <obj_property name="ObjectShortName">as_aa_tkeep[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/as_aa_tlast" type="logic">
+               <obj_property name="ElementShortName">as_aa_tlast</obj_property>
+               <obj_property name="ObjectShortName">as_aa_tlast</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/as_aa_tvalid" type="logic">
+               <obj_property name="ElementShortName">as_aa_tvalid</obj_property>
+               <obj_property name="ObjectShortName">as_aa_tvalid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/as_aa_tuser" type="array">
+               <obj_property name="ElementShortName">as_aa_tuser[1:0]</obj_property>
+               <obj_property name="ObjectShortName">as_aa_tuser[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_AS/aa_as_tready" type="logic">
+               <obj_property name="ElementShortName">aa_as_tready</obj_property>
+               <obj_property name="ObjectShortName">aa_as_tready</obj_property>
+            </wvobject>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="group299" type="group">
+         <obj_property name="label">PL_IS</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/axis_clk" type="logic">
+            <obj_property name="ElementShortName">axis_clk</obj_property>
+            <obj_property name="ObjectShortName">axis_clk</obj_property>
+         </wvobject>
+         <wvobject fp_name="group300" type="group">
+            <obj_property name="label">DS</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/as_is_tdata" type="array">
+               <obj_property name="ElementShortName">as_is_tdata[31:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tdata[31:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/as_is_tstrb" type="array">
+               <obj_property name="ElementShortName">as_is_tstrb[3:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tstrb[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/as_is_tkeep" type="array">
+               <obj_property name="ElementShortName">as_is_tkeep[3:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tkeep[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/as_is_tlast" type="logic">
+               <obj_property name="ElementShortName">as_is_tlast</obj_property>
+               <obj_property name="ObjectShortName">as_is_tlast</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/as_is_tid" type="array">
+               <obj_property name="ElementShortName">as_is_tid[1:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tid[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/as_is_tvalid" type="logic">
+               <obj_property name="ElementShortName">as_is_tvalid</obj_property>
+               <obj_property name="ObjectShortName">as_is_tvalid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/as_is_tuser" type="array">
+               <obj_property name="ElementShortName">as_is_tuser[1:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tuser[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/is_as_tready" type="logic">
+               <obj_property name="ElementShortName">is_as_tready</obj_property>
+               <obj_property name="ObjectShortName">is_as_tready</obj_property>
+            </wvobject>
+         </wvobject>
+         <wvobject fp_name="group301" type="group">
+            <obj_property name="label">US</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/is_as_tdata" type="array">
+               <obj_property name="ElementShortName">is_as_tdata[31:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tdata[31:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/is_as_tstrb" type="array">
+               <obj_property name="ElementShortName">is_as_tstrb[3:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tstrb[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/is_as_tkeep" type="array">
+               <obj_property name="ElementShortName">is_as_tkeep[3:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tkeep[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/is_as_tlast" type="logic">
+               <obj_property name="ElementShortName">is_as_tlast</obj_property>
+               <obj_property name="ObjectShortName">is_as_tlast</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/is_as_tid" type="array">
+               <obj_property name="ElementShortName">is_as_tid[1:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tid[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/is_as_tvalid" type="logic">
+               <obj_property name="ElementShortName">is_as_tvalid</obj_property>
+               <obj_property name="ObjectShortName">is_as_tvalid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/is_as_tuser" type="array">
+               <obj_property name="ElementShortName">is_as_tuser[1:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tuser[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/ps_axil_0/inst/PL_IS/as_is_tready" type="logic">
+               <obj_property name="ElementShortName">as_is_tready</obj_property>
+               <obj_property name="ObjectShortName">as_is_tready</obj_property>
+            </wvobject>
+         </wvobject>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group444" type="group">
+      <obj_property name="label">soc_fsic</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="group461" type="group">
+         <obj_property name="label">IS</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/axi_clk" type="logic">
+            <obj_property name="ElementShortName">axi_clk</obj_property>
+            <obj_property name="ObjectShortName">axi_clk</obj_property>
+         </wvobject>
+         <wvobject fp_name="group463" type="group">
+            <obj_property name="label">DS</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/is_as_tdata" type="array">
+               <obj_property name="ElementShortName">is_as_tdata[31:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tdata[31:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/is_as_tstrb" type="array">
+               <obj_property name="ElementShortName">is_as_tstrb[3:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tstrb[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/is_as_tkeep" type="array">
+               <obj_property name="ElementShortName">is_as_tkeep[3:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tkeep[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/is_as_tlast" type="logic">
+               <obj_property name="ElementShortName">is_as_tlast</obj_property>
+               <obj_property name="ObjectShortName">is_as_tlast</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/is_as_tid" type="array">
+               <obj_property name="ElementShortName">is_as_tid[1:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tid[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/is_as_tvalid" type="logic">
+               <obj_property name="ElementShortName">is_as_tvalid</obj_property>
+               <obj_property name="ObjectShortName">is_as_tvalid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/is_as_tuser" type="array">
+               <obj_property name="ElementShortName">is_as_tuser[1:0]</obj_property>
+               <obj_property name="ObjectShortName">is_as_tuser[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/as_is_tready" type="logic">
+               <obj_property name="ElementShortName">as_is_tready</obj_property>
+               <obj_property name="ObjectShortName">as_is_tready</obj_property>
+            </wvobject>
+         </wvobject>
+         <wvobject fp_name="group462" type="group">
+            <obj_property name="label">US</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/as_is_tdata" type="array">
+               <obj_property name="ElementShortName">as_is_tdata[31:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tdata[31:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/as_is_tstrb" type="array">
+               <obj_property name="ElementShortName">as_is_tstrb[3:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tstrb[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/as_is_tkeep" type="array">
+               <obj_property name="ElementShortName">as_is_tkeep[3:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tkeep[3:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/as_is_tlast" type="logic">
+               <obj_property name="ElementShortName">as_is_tlast</obj_property>
+               <obj_property name="ObjectShortName">as_is_tlast</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/as_is_tid" type="array">
+               <obj_property name="ElementShortName">as_is_tid[1:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tid[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/as_is_tvalid" type="logic">
+               <obj_property name="ElementShortName">as_is_tvalid</obj_property>
+               <obj_property name="ObjectShortName">as_is_tvalid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/as_is_tuser" type="array">
+               <obj_property name="ElementShortName">as_is_tuser[1:0]</obj_property>
+               <obj_property name="ObjectShortName">as_is_tuser[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/fsic_tb/DUT/design_1_i/caravel_0/inst/mprj/u_fsic/U_IO_SERDES0/is_as_tready" type="logic">
+               <obj_property name="ElementShortName">is_as_tready</obj_property>
+               <obj_property name="ObjectShortName">is_as_tready</obj_property>
+            </wvobject>
+         </wvobject>
+      </wvobject>
+   </wvobject>
+</wave_config>
