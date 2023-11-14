@@ -92,7 +92,17 @@ module fsic_tb();
         addr = 16'h5000;
         master_agent.AXI4LITE_READ_BURST(base_addr + addr, 0, data, resp);
         $display($time, "=> AXI4LITE_READ_BURST %04h, value: %04h, resp: %02b", base_addr + addr, data, resp);
-                
+        
+        #100us
+        addr = 16'h5000;
+        data = 32'h0000_0011;
+        master_agent.AXI4LITE_WRITE_BURST(base_addr + addr, 0, data, resp);
+        $display($time, "=> AXI4LITE_WRITE_BURST %04h, value: %04h, resp: %02b", base_addr + addr, data, resp);
+
+        #100us
+        addr = 16'h5000;
+        master_agent.AXI4LITE_READ_BURST(base_addr + addr, 0, data, resp);
+        $display($time, "=> AXI4LITE_READ_BURST %04h, value: %04h, resp: %02b", base_addr + addr, data, resp);
                 
         #500us               
         $finish;
