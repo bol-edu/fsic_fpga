@@ -435,6 +435,8 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
 end
 // Read logic
 wire empty = (wr_ptr_reg == rd_ptr_reg);    
+wire as_up_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) && !empty; 
+wire as_aa_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) && !empty;
 wire as_up_data_transfer = (as_up_tvalid_out && up_as_tready);    
 wire as_aa_data_transfer = (as_aa_tvalid_out && aa_as_tready);
 always @(posedge axis_clk or negedge axi_reset_n) begin
@@ -456,8 +458,6 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
 	    end       
     end
 end
-wire as_up_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) && !empty; 
-wire as_aa_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) && !empty;
 assign as_up_tvalid = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? as_up_tvalid_out: 0;  
 assign as_up_tdata = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[pDATA_WIDTH - 1:0]: 0;
 `ifdef USER_PROJECT_SIDEBAND_SUPPORT
