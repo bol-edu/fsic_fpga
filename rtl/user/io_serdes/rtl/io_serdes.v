@@ -446,8 +446,8 @@ module IO_SERDES #(
 	reg is_as_tready_out;
 	assign is_as_tready = is_as_tready_out;
 
-	always @(posedge coreclk or negedge axis_rst_n)  begin
-		if ( !axis_rst_n || !txen ) begin
+	always @(posedge coreclk or negedge txen_rst_n )  begin
+		if ( !txen_rst_n ) begin
 			is_as_tready_out <= 0;				//set is_as_tready_out=0 when txen == 0
 		end
 		else begin
@@ -458,5 +458,6 @@ module IO_SERDES #(
 
 
 endmodule
+
 
 
