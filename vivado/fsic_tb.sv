@@ -44,6 +44,7 @@ module fsic_tb();
     localparam  SOC_CC = 16'h5000;
     localparam  PL_AS = 16'h6000;
     localparam  PL_IS = 16'h7000;
+    localparam  PL_DMA = 16'h8000;
 
     design_1_wrapper DUT
     (
@@ -79,9 +80,10 @@ module fsic_tb();
         
         @(is_txen_event);      
         $display($time, "=> Starting test...");
-        
+
         Fpga2Soc_CfgRead();
         Fpga2Soc_CfgWrite();
+        FpgaLocal_CfgRead();
 
         #500us    
         $display($time, "=> End of the test...");                         
@@ -153,6 +155,9 @@ module fsic_tb();
     
     task Fpga2Soc_CfgRead;
         begin
+            $display($time, "=> Starting Fpga2Soc_CfgRead() test...");
+            $display($time, "=> =======================================================================");
+
             $display($time, "=> Fpga2Soc_Read testing: SOC_CC"); 
             offset = 0;            
             axil_cycles_gen(ReadCyc, SOC_CC, offset, data);
@@ -196,12 +201,18 @@ module fsic_tb();
                 $display($time, "=> Fpga2Soc_Read SOC_LA = %h, FAIL", data);            
                 ->> error_event;            
             end
-                       
+
+            $display($time, "=> End Fpga2Soc_CfgRead() test...");
+            $display($time, "=> =======================================================================");
+
         end
     endtask    
     
     task Fpga2Soc_CfgWrite;
         begin
+            $display($time, "=> Starting Fpga2Soc_CfgWrite() test...");
+            $display($time, "=> =======================================================================");
+
             $display($time, "=> Fpga2Soc_Write testing: SOC_CC"); 
             offset = 0;
             
@@ -218,10 +229,67 @@ module fsic_tb();
                     ->> error_event;
                 end
             end
-                                                           
+
+            $display($time, "=> End Fpga2Soc_CfgWrite() test...");
+            $display($time, "=> =======================================================================");
+
         end
-    endtask      
+    endtask
         
+    task FpgaLocal_CfgRead;
+        begin
+            $display($time, "=> Starting FpgaLocal_CfgRead() test...");
+            $display($time, "=> =======================================================================");
+
+            $display($time, "=> FpgaLocal_CfgRead testing: PL_AS");
+            offset = 0;
+            axil_cycles_gen(ReadCyc, PL_AS, offset, data);
+            #10us
+            if(data == 32'h0000_0006) begin
+                $display($time, "=> FpgaLocal_CfgRead PL_AS offset %h = %h, PASS", offset, data);
+            end else begin
+                $display($time, "=> FpgaLocal_CfgRead PL_AS offset %h = %h, PASS", offset, data);
+                ->> error_event;
+            end
+
+            $display($time, "=> FpgaLocal_CfgRead testing: PL_IS");
+            offset = 0;
+            axil_cycles_gen(ReadCyc, PL_IS, offset, data);
+            #10us
+            if(data == 32'h0000_0003) begin
+                $display($time, "=> FpgaLocal_CfgRead PL_IS = %h, PASS", data);
+            end else begin
+                $display($time, "=> FpgaLocal_CfgRead PL_IS = %h, FAIL", data);
+                ->> error_event;
+            end
+
+            $display($time, "=> FpgaLocal_CfgRead testing: PL_DMA");
+            offset = 0;
+            axil_cycles_gen(ReadCyc, PL_DMA, offset, data);
+            #10us
+            if(data == 32'h0000_0004) begin
+                $display($time, "=> FpgaLocal_CfgRead PL_DMA = %h, PASS", data);
+            end else begin
+                $display($time, "=> FpgaLocal_CfgRead PL_DMA = %h, FAIL", data);
+                ->> error_event;
+            end
+
+            $display($time, "=> FpgaLocal_CfgRead testing: PL_AA");
+            offset = 0;
+            axil_cycles_gen(ReadCyc, PL_AA, offset, data);
+            #10us
+            if(data == 32'h0000_0000) begin
+                $display($time, "=> FpgaLocal_CfgRead PL_AA = %h, PASS", data);
+            end else begin
+                $display($time, "=> FpgaLocal_CfgRead PL_AA = %h, FAIL", data);
+                ->> error_event;
+            end
+
+            $display($time, "=> End FpgaLocal_CfgRead() test...");
+            $display($time, "=> =======================================================================");
+        end
+    endtask
+
     task axil_cycles_gen;
         input types;
         input [15:0] target;
