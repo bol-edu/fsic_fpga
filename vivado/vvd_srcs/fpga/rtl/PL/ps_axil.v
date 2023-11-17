@@ -50,13 +50,96 @@ module ps_axil(
     output wire [37:0] caravel_mprj_out,
     input wire [37:0] caravel_mprj_in,	
 
+	//////////////////////
+	//  LADMA AXI MM IF //
+	//////////////////////	
+	output wire [63:0] ladma_mm_araddr,
+	output wire [1:0] ladma_mm_arburst,
+	output wire [3:0] ladma_mm_arcache,
+	output wire [0:0] ladma_mm_arid,
+	output wire [7:0] ladma_mm_arlen,
+	output wire [1:0] ladma_mm_arlock,
+	output wire [2:0] ladma_mm_arprot,
+	output wire [3:0] ladma_mm_arqos,
+	input wire ladma_mm_arready,
+	output wire [3:0] ladma_mm_arregion,
+	output wire [2:0] ladma_mm_arsize,
+	output wire [0:0] ladma_mm_aruser,
+	output wire ladma_mm_arvalid,
+	output wire [63:0] ladma_mm_awaddr,
+	output wire [1:0] ladma_mm_awburst,
+	output wire [3:0] ladma_mm_awcache,
+	output wire [0:0] ladma_mm_awid,
+	output wire [7:0] ladma_mm_awlen,
+	output wire [1:0] ladma_mm_awlock,
+	output wire [2:0] ladma_mm_awprot,
+	output wire [3:0] ladma_mm_awqos,
+	input wire ladma_mm_awready,
+	output wire [3:0] ladma_mm_awregion,
+	output wire [2:0] ladma_mm_awsize,
+	output wire [0:0] ladma_mm_awuser,
+	output wire ladma_mm_awvalid,
+	input wire [0:0] ladma_mm_bid,
+	output wire ladma_mm_bready,
+	input wire [1:0] ladma_mm_bresp,
+	input wire [0:0] ladma_mm_buser,
+	input wire ladma_mm_bvalid,
+	input wire [31:0] ladma_mm_rdata,
+	input wire [0:0] ladma_mm_rid,
+	input wire ladma_mm_rlast,
+	output wire ladma_mm_rready,
+	input wire [1:0] ladma_mm_rresp,
+	input wire [0:0] ladma_mm_ruser,
+	input wire ladma_mm_rvalid,
+	output wire [31:0] ladma_mm_wdata,
+	output wire ladma_mm_wlast,
+	input wire ladma_mm_wready,
+	output wire [3:0] ladma_mm_wstrb,
+	output wire [0:0] ladma_mm_wuser,
+	output wire ladma_mm_wvalid,
+
+	////////////////
+	// LADMA AXIL //
+	////////////////
+	input wire [31:0] ladma_s_araddr,
+	output wire ladma_s_arready,
+	input wire ladma_s_arvalid,
+	input wire [31:0] ladma_s_awaddr,
+	output wire ladma_s_awready,
+	input wire ladma_s_awvalid,
+	input wire ladma_s_bready,
+	output wire [1:0] ladma_s_bresp,
+	output wire ladma_s_bvalid,
+	output wire [31:0] ladma_s_rdata,
+	input wire ladma_s_rready,
+	output wire [1:0] ladma_s_rresp,
+	output wire ladma_s_rvalid,
+	input wire [31:0] ladma_s_wdata,
+	output wire ladma_s_wready,
+	input wire [3:0] ladma_s_wstrb,
+	input wire ladma_s_wvalid,
+
+	/////////////////////
+	// LADMA Interrupt //
+	/////////////////////
+	output wire ladma_interrupt,
+
 	/////////////////////////////
 	// Global AXI-Lite Signals //
 	/////////////////////////////
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axi_clk CLK" *)	
+(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET axi_reset_n, FREQ_HZ 5000000" *)
 	input  wire          axi_clk,
 	input  wire          axi_reset_n,
-	input  wire          axis_clk,
-	input  wire          axis_rst_n
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axi_clk_m CLK" *)	
+(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF ladma_mm, ASSOCIATED_RESET axi_reset_m_n, FREQ_HZ 5000000" *)		
+	input  wire          axi_clk_m,
+	input  wire          axi_reset_m_n,
+	
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axis_clk CLK" *)	
+(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF ladma_s, ASSOCIATED_RESET axis_rst_n, FREQ_HZ 5000000" *)	
+	input  wire          axis_clk,	
+    input  wire          axis_rst_n
     );
 
 	////////////////////////////////
@@ -132,7 +215,15 @@ module ps_axil(
 	wire aa_as_tvalid;
 	wire [1:0] aa_as_tuser;
 	wire as_aa_tready;
-    
+
+	wire [31:0] outStream_tdata;
+	wire [3:0] outStream_tstrb;   
+	wire [3:0] outStream_tkeep;
+	wire outStream_tlast;
+	wire outStream_tvalid;
+	wire [1:0] outStream_tuser; 
+	wire outStream_tready;
+
 	////////////////////////////
 	// Internal Signals begin //
 	////////////////////////////	
@@ -185,8 +276,8 @@ module ps_axil(
        
     assign caravel_mprj_out = {3'bz, is_ioclk, 1'bz, is_serial_tclk, 12'bz, is_serial_txd, 8'bz};
     assign is_serial_rclk = caravel_mprj_in[33];
-    assign is_serial_rxd = caravel_mprj_in[31:20];     
-	
+    assign is_serial_rxd = caravel_mprj_in[31:20];  
+    	
 	///////////////////////////////////
 	// Assignment for Internal begin //
 	///////////////////////////////////	
@@ -495,7 +586,15 @@ AXIS_SWz #(.pADDR_WIDTH( 15 ),
 		.as_aa_tlast(as_aa_tlast),    
 		.as_aa_tvalid(as_aa_tvalid),
 		.as_aa_tuser(as_aa_tuser), 
-		.aa_as_tready(aa_as_tready)	//i
+		.aa_as_tready(aa_as_tready),	//i
+        //AXI Output Stream for AxiDMA
+        .as_ad_tdata(outStream_tdata),
+        .as_ad_tstrb(outStream_tstrb),    
+        .as_ad_tkeep(outStream_tkeep),
+        .as_ad_tlast(outStream_tlast),    
+        .as_ad_tvalid(outStream_tvalid),
+        .as_ad_tuser(outStream_tuser), 
+        .ad_as_tready(outStream_tready)     //i  		
 	);
 
 AXIL_AXIS #(.pADDR_WIDTH( 15 ),
@@ -532,7 +631,7 @@ AXIL_AXIS #(.pADDR_WIDTH( 15 ),
 		.aa_as_tvalid(aa_as_tvalid),	//o
 		.aa_as_tuser(aa_as_tuser),		//o
 		.as_aa_tready(as_aa_tready),		
-		//Otheraxi_rready
+		//Other
  		.mb_irq(aa_mb_irq),	//o
 		.axi_clk(axi_clk),
 		.axi_reset_n(axi_reset_n),
@@ -589,5 +688,81 @@ IO_SERDES #(.pSERIALIO_WIDTH( 12 ),
 		.axis_clk(axis_clk),
 		.axis_rst_n(axis_rst_n)
 	);
+
+ ladmatr LA_DMA
+    (
+		.ap_clk(axi_clk_m),
+        .ap_rst_n(axi_reset_m_n),
+        .inStreamTop_TDATA(outStream_tdata),
+        .inStreamTop_TKEEP(outStream_tkeep),
+        .inStreamTop_TLAST(outStream_tlast),
+        .inStreamTop_TREADY(outStream_tready),
+        .inStreamTop_TSTRB(outStream_tstrb),
+        .inStreamTop_TUSER(outStream_tuser),
+        .inStreamTop_TVALID(outStream_tvalid),
+        .interrupt(ladma_interrupt),
+        .m_axi_gmem0_ARADDR(ladma_mm_araddr),
+        .m_axi_gmem0_ARBURST(ladma_mm_arburst),
+        .m_axi_gmem0_ARCACHE(ladma_mm_arcache),
+        .m_axi_gmem0_ARID(ladma_mm_arid),
+        .m_axi_gmem0_ARLEN(ladma_mm_arlen),
+        .m_axi_gmem0_ARLOCK(ladma_mm_arlock),
+        .m_axi_gmem0_ARPROT(ladma_mm_arprot),
+        .m_axi_gmem0_ARQOS(ladma_mm_arqos),
+        .m_axi_gmem0_ARREADY(ladma_mm_arready),
+        .m_axi_gmem0_ARREGION(ladma_mm_arregion),
+        .m_axi_gmem0_ARSIZE(ladma_mm_arsize),
+        .m_axi_gmem0_ARUSER(ladma_mm_aruser),
+        .m_axi_gmem0_ARVALID(ladma_mm_arvalid),
+        .m_axi_gmem0_AWADDR(ladma_mm_awaddr),
+        .m_axi_gmem0_AWBURST(ladma_mm_awburst),
+        .m_axi_gmem0_AWCACHE(ladma_mm_awcache),
+        .m_axi_gmem0_AWID(ladma_mm_awid),
+        .m_axi_gmem0_AWLEN(ladma_mm_awlen),
+        .m_axi_gmem0_AWLOCK(ladma_mm_awlock),
+        .m_axi_gmem0_AWPROT(ladma_mm_awprot),
+        .m_axi_gmem0_AWQOS(ladma_mm_awqos),
+        .m_axi_gmem0_AWREADY(ladma_mm_awready),
+        .m_axi_gmem0_AWREGION(ladma_mm_awregion),
+        .m_axi_gmem0_AWSIZE(ladma_mm_awsize),
+        .m_axi_gmem0_AWUSER(ladma_mm_awuser),
+        .m_axi_gmem0_AWVALID(ladma_mm_awvalid),
+        .m_axi_gmem0_BID(ladma_mm_bid),
+        .m_axi_gmem0_BREADY(ladma_mm_bready),
+        .m_axi_gmem0_BRESP(ladma_mm_bresp),
+        .m_axi_gmem0_BUSER(ladma_mm_buser),
+        .m_axi_gmem0_BVALID(ladma_mm_bvalid),
+        .m_axi_gmem0_RDATA(ladma_mm_rdata),
+        .m_axi_gmem0_RID(ladma_mm_rid),
+        .m_axi_gmem0_RLAST(ladma_mm_rlast),
+        .m_axi_gmem0_RREADY(ladma_mm_rready),
+        .m_axi_gmem0_RRESP(ladma_mm_rresp),
+        .m_axi_gmem0_RUSER(ladma_mm_ruser),
+        .m_axi_gmem0_RVALID(ladma_mm_rvalid),
+        .m_axi_gmem0_WDATA(ladma_mm_wdata),
+        .m_axi_gmem0_WLAST(ladma_mm_wlast),
+        .m_axi_gmem0_WREADY(ladma_mm_wready),
+        .m_axi_gmem0_WSTRB(ladma_mm_wstrb),
+        .m_axi_gmem0_WUSER(ladma_mm_wuser),
+        .m_axi_gmem0_WVALID(ladma_mm_wvalid),
+        .s_axi_control_ARADDR(ladma_s_araddr[6:0]),
+        .s_axi_control_ARREADY(ladma_s_arready),
+        .s_axi_control_ARVALID(ladma_s_arvalid),
+        .s_axi_control_AWADDR(ladma_s_awaddr[6:0]),
+        .s_axi_control_AWREADY(ladma_s_awready),
+        .s_axi_control_AWVALID(ladma_s_awvalid),
+        .s_axi_control_BREADY(ladma_s_bready),
+        .s_axi_control_BRESP(ladma_s_bresp),
+        .s_axi_control_BVALID(ladma_s_bvalid),
+        .s_axi_control_RDATA(ladma_s_rdata),
+        .s_axi_control_RREADY(ladma_s_rready),
+        .s_axi_control_RRESP(ladma_s_rresp),
+        .s_axi_control_RVALID(ladma_s_rvalid),
+        .s_axi_control_WDATA(ladma_s_wdata),
+        .s_axi_control_WREADY(ladma_s_wready),
+        .s_axi_control_WSTRB(ladma_s_wstrb),
+        .s_axi_control_WVALID(ladma_s_wvalid)
+	);
+
     
 endmodule
