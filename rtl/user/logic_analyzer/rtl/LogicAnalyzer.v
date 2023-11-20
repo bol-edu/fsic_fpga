@@ -113,17 +113,17 @@ module LOGIC_ANLZ #( parameter pADDR_WIDTH   = 15,
 			case ( axi_fsm_reg )
 				axi_fsm_idle:
 				begin
-					if ( axi_arvalid ) begin
+					if ( axi_arvalid && cc_la_enable ) begin
 						axi_arready_o <= 1'b1;
 						axi_addr_reg <= axi_araddr;
 						axi_fsm_reg <= axi_fsm_read_data;						
-					end else if ( axi_awvalid && axi_wvalid ) begin
+					end else if ( axi_awvalid && axi_wvalid && cc_la_enable ) begin
 						axi_wready_o <= 1'b1;							
 						axi_awready_o <= 1'b1;
 						axi_addr_reg <= axi_awaddr;	
 						axi_wdata_reg <= axi_wdata;	
 						axi_fsm_reg <= axi_fsm_write_complete;
-					end else if ( axi_awvalid ) begin
+					end else if ( axi_awvalid && cc_la_enable ) begin
 						axi_awready_o <= 1'b1;
 						axi_addr_reg <= axi_awaddr;
 						axi_fsm_reg <= axi_fsm_write_data;						
@@ -168,7 +168,7 @@ module LOGIC_ANLZ #( parameter pADDR_WIDTH   = 15,
 				axi_fsm_write_data:
 				begin
 					axi_awready_o <= 1'b0;						
-					if ( axi_wvalid ) begin
+					if ( axi_wvalid && cc_la_enable ) begin
 						axi_wdata_reg <= axi_wdata;
 						axi_wready_o <= 1'b1;
 						axi_fsm_reg <= axi_fsm_write_complete;
