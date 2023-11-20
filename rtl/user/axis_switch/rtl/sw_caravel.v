@@ -21,9 +21,7 @@
 
 
 module AXIS_SW #(
-	`ifdef USER_PROJECT_SIDEBAND_SUPPORT	 
 				parameter pUSER_PROJECT_SIDEBAND_WIDTH   = 5,
-	`endif				
 				parameter pADDR_WIDTH   = 10,
                 parameter pDATA_WIDTH   = 32
                 )
