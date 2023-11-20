@@ -1,8 +1,11 @@
-../axil_slav/rtl/axil_slav.dummy_io.vd
-../axis_mstr/rtl/axis_mstr.dummy_io.vd
-../axis_slav/rtl/axis_slav.dummy_io.vd
-../irq_mux/rtl/irq_mux.dummy_io.vd
-../la_mux/rtl/la_mux.dummy_io.vd
-../user_prj/rtl/user_prj.dummy_io.vd
+../axil_slav/rtl/axil_slav.v
+../axis_mstr/rtl/axis_mstr.v
+../axis_slav/rtl/axis_slav.v
+../irq_mux/rtl/irq_mux.v
+../la_mux/rtl/la_mux.v
+-f ../user_prj/user_prj0/rtl/rtl.f
+-f ../user_prj/user_prj1/rtl/rtl.f
+-f ../user_prj/user_prj2/rtl/rtl.f
+-f ../user_prj/user_prj3/rtl/rtl.f
 
-../rtl/user_subsys.vo
+../rtl/user_subsys.v

@@ -1,1 +1,1 @@
-../rtl/mprj_io.sv
+../rtl/fsic_mprj_io.v
