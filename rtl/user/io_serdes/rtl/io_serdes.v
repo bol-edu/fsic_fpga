@@ -32,11 +32,12 @@
 `define USE_FOR_LOOP_Serial_Data_Out_tdata 1
 
 module IO_SERDES #(
-    parameter pSERIALIO_WIDTH   = 12,
+    parameter pUSER_PROJECT_SIDEBAND_WIDTH   = 5,
+    parameter pSERIALIO_WIDTH   = 13,
     parameter pADDR_WIDTH   = 15,
     parameter pDATA_WIDTH   = 32,
     parameter pRxFIFO_DEPTH = 5,
-    parameter pCLK_RATIO =4
+    parameter pCLK_RATIO =4      //[TODO]: use pCLK_RATIO for register define
   ) (
 
 
@@ -75,6 +76,9 @@ module IO_SERDES #(
 
     //TX path
     input wire   [pDATA_WIDTH-1:0] as_is_tdata,
+    `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+      input wire   [pUSER_PROJECT_SIDEBAND_WIDTH-1:0] as_is_tupsb,
+    `endif
     input wire   [(pDATA_WIDTH/8)-1:0] as_is_tstrb,
     input wire   [(pDATA_WIDTH/8)-1:0] as_is_tkeep,
     input wire   as_is_tlast,
@@ -91,6 +95,9 @@ module IO_SERDES #(
     input  wire  [pSERIALIO_WIDTH-1: 0] serial_rxd,
 
     output wire   [pDATA_WIDTH-1:0] is_as_tdata,
+    `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+      output wire   [pUSER_PROJECT_SIDEBAND_WIDTH-1:0] is_as_tupsb,
+    `endif
     output wire   [(pDATA_WIDTH/8)-1:0] is_as_tstrb,
     output wire   [(pDATA_WIDTH/8)-1:0] is_as_tkeep,
     output wire   is_as_tlast,
@@ -115,21 +122,40 @@ module IO_SERDES #(
   assign serial_tclk = txclk;
   assign rxclk = serial_rclk;
 
-  wire Serial_Data_Out_tlast_tvalid_tready;
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    wire Serial_Data_Out_tupsb_4_1;
+    wire Serial_Data_Out_tupsb_tlast_tvalid_tready;
+  `else
+    wire Serial_Data_Out_tlast_tvalid_tready;
+  `endif
   wire Serial_Data_Out_tid_tuser;
   wire Serial_Data_Out_tkeep;
   wire Serial_Data_Out_tstrb;
   wire [pSERIALIO_TDATA_WIDTH-1:0] Serial_Data_Out_tdata;
 
-  assign   serial_txd[pSERIALIO_WIDTH-1:0] = {Serial_Data_Out_tlast_tvalid_tready, Serial_Data_Out_tid_tuser, Serial_Data_Out_tkeep, Serial_Data_Out_tstrb, Serial_Data_Out_tdata[pSERIALIO_TDATA_WIDTH-1:0]};
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    assign   serial_txd[pSERIALIO_WIDTH-1:0] = {Serial_Data_Out_tupsb_4_1, Serial_Data_Out_tupsb_tlast_tvalid_tready, Serial_Data_Out_tid_tuser, Serial_Data_Out_tkeep, Serial_Data_Out_tstrb, Serial_Data_Out_tdata[pSERIALIO_TDATA_WIDTH-1:0]};
+  `else
+    assign   serial_txd[pSERIALIO_WIDTH-1:0] = {Serial_Data_Out_tlast_tvalid_tready, Serial_Data_Out_tid_tuser, Serial_Data_Out_tkeep, Serial_Data_Out_tstrb, Serial_Data_Out_tdata[pSERIALIO_TDATA_WIDTH-1:0]};
+  `endif
 
-  wire Serial_Data_In_tlast_tvalid_tready;
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    wire Serial_Data_In_tupsb_4_1;
+    wire Serial_Data_In_tupsb_tlast_tvalid_tready;
+  `else
+    wire Serial_Data_In_tlast_tvalid_tready;
+  `endif
   wire Serial_Data_In_tid_tuser;
   wire Serial_Data_In_tkeep;
   wire Serial_Data_In_tstrb;
   wire [pSERIALIO_TDATA_WIDTH-1:0] Serial_Data_In_tdata;
 
-  assign {Serial_Data_In_tlast_tvalid_tready, Serial_Data_In_tid_tuser, Serial_Data_In_tkeep, Serial_Data_In_tstrb, Serial_Data_In_tdata[pSERIALIO_TDATA_WIDTH-1:0] } = serial_rxd[pSERIALIO_WIDTH-1:0];
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    assign {Serial_Data_In_tupsb_4_1, Serial_Data_In_tupsb_tlast_tvalid_tready, Serial_Data_In_tid_tuser, Serial_Data_In_tkeep, Serial_Data_In_tstrb, Serial_Data_In_tdata[pSERIALIO_TDATA_WIDTH-1:0] } = serial_rxd[pSERIALIO_WIDTH-1:0];
+  `else
+    assign {Serial_Data_In_tlast_tvalid_tready, Serial_Data_In_tid_tuser, Serial_Data_In_tkeep, Serial_Data_In_tstrb, Serial_Data_In_tdata[pSERIALIO_TDATA_WIDTH-1:0] } = serial_rxd[pSERIALIO_WIDTH-1:0];
+  `endif
+
 
   reg  txen;
 
@@ -236,7 +262,13 @@ module IO_SERDES #(
   reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tstrb_buf;
   reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tkeep_buf;
   reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tid_tuser_buf;
-  reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tlast_tvalid_tready_buf;
+
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    reg [3:0] pre_as_is_tupsb_4_1_buf;
+    reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tupsb_tlast_tvalid_tready_buf;
+  `else
+    reg [(pDATA_WIDTH/8)-1:0] pre_as_is_tlast_tvalid_tready_buf;
+  `endif
 
   wire txen_rst_n = axis_rst_n & txen;
 
@@ -246,23 +278,46 @@ module IO_SERDES #(
     pre_as_is_tkeep_buf <= as_is_tkeep;
     pre_as_is_tid_tuser_buf[3:2] <= as_is_tid;
     pre_as_is_tid_tuser_buf[1:0] <= as_is_tuser;
-    pre_as_is_tlast_tvalid_tready_buf[2] <= as_is_tlast;
-    pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
-    pre_as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
+    `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+      pre_as_is_tupsb_4_1_buf <= as_is_tupsb[pUSER_PROJECT_SIDEBAND_WIDTH-1:1];
+      pre_as_is_tupsb_tlast_tvalid_tready_buf[3] <= as_is_tupsb[0];
+      pre_as_is_tupsb_tlast_tvalid_tready_buf[2] <= as_is_tlast;
+      pre_as_is_tupsb_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
+      pre_as_is_tupsb_tlast_tvalid_tready_buf[0] <= as_is_tready;
+    `else
+      pre_as_is_tlast_tvalid_tready_buf[2] <= as_is_tlast;
+      pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
+      pre_as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
+    `endif
 
     if ( !txen_rst_n ) begin
       pre_as_is_tdata_buf <= 0;
       pre_as_is_tstrb_buf <= 0;
       pre_as_is_tkeep_buf <= 0;
       pre_as_is_tid_tuser_buf <= 0;
-      pre_as_is_tlast_tvalid_tready_buf <= 0;
+      `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        pre_as_is_tupsb_4_1_buf <= 0;
+        pre_as_is_tupsb_tlast_tvalid_tready_buf <= 0;
+      `else
+        pre_as_is_tlast_tvalid_tready_buf <= 0;
+      `endif
     end 
     else begin
       if (is_as_tready && as_is_tvalid) begin      //data transfer from Axis siwtch to io serdes when is_as_tready=1 and as_is_tvalid=1
-        pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
+        
+        `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+          pre_as_is_tupsb_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
+        `else
+          pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
+        `endif
       end
       else begin
-        pre_as_is_tlast_tvalid_tready_buf[1] <= 0;      // set as_is_tvalid =0 to remote side
+        `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+          pre_as_is_tupsb_tlast_tvalid_tready_buf[1] <= 0;      // set as_is_tvalid =0 to remote side
+        `else
+          pre_as_is_tlast_tvalid_tready_buf[1] <= 0;      // set as_is_tvalid =0 to remote side
+        `endif
+
       end
     end
   end
@@ -271,7 +326,12 @@ module IO_SERDES #(
   reg [(pDATA_WIDTH/8)-1:0] as_is_tstrb_buf;
   reg [(pDATA_WIDTH/8)-1:0] as_is_tkeep_buf;
   reg [(pDATA_WIDTH/8)-1:0] as_is_tid_tuser_buf;
-  reg [(pDATA_WIDTH/8)-1:0] as_is_tlast_tvalid_tready_buf;
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    reg [pCLK_RATIO-1:0] as_is_tupsb_4_1_buf;
+    reg [pCLK_RATIO-1:0] as_is_tupsb_tlast_tvalid_tready_buf;    
+  `else
+    reg [pCLK_RATIO-1:0] as_is_tlast_tvalid_tready_buf;    
+  `endif
 
   always @(posedge ioclk or negedge axis_rst_n)  begin
     if ( !axis_rst_n ) begin
@@ -279,7 +339,12 @@ module IO_SERDES #(
       as_is_tstrb_buf <= 0;
       as_is_tkeep_buf <= 0;
       as_is_tid_tuser_buf <= 0;
-      as_is_tlast_tvalid_tready_buf <= 0;
+      `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        as_is_tupsb_4_1_buf <= 0;
+        as_is_tupsb_tlast_tvalid_tready_buf <= 0;
+      `else
+        as_is_tlast_tvalid_tready_buf <= 0;
+      `endif
     end
     else begin
       if (phase_cnt == 3) begin      //update as_is_*_buf when phase_cnt == 3
@@ -287,7 +352,12 @@ module IO_SERDES #(
         as_is_tstrb_buf <= pre_as_is_tstrb_buf;
         as_is_tkeep_buf <= pre_as_is_tkeep_buf;
         as_is_tid_tuser_buf <= pre_as_is_tid_tuser_buf;
-        as_is_tlast_tvalid_tready_buf <= pre_as_is_tlast_tvalid_tready_buf;
+        `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+          as_is_tupsb_4_1_buf <= pre_as_is_tupsb_4_1_buf;
+          as_is_tupsb_tlast_tvalid_tready_buf <= pre_as_is_tupsb_tlast_tvalid_tready_buf;
+        `else
+          as_is_tlast_tvalid_tready_buf <= pre_as_is_tlast_tvalid_tready_buf;
+        `endif
       end
     end
   end
@@ -335,12 +405,21 @@ module IO_SERDES #(
   assign Serial_Data_Out_tstrb = as_is_tstrb_buf[tx_shift_phase_cnt] & txen ;
   assign Serial_Data_Out_tkeep = as_is_tkeep_buf[tx_shift_phase_cnt] & txen ;
   assign Serial_Data_Out_tid_tuser = as_is_tid_tuser_buf[tx_shift_phase_cnt] & txen ;
-  assign Serial_Data_Out_tlast_tvalid_tready = as_is_tlast_tvalid_tready_buf[tx_shift_phase_cnt] & txen ;
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    assign Serial_Data_Out_tupsb_4_1 = as_is_tupsb_4_1_buf[tx_shift_phase_cnt] & txen ;
+    assign Serial_Data_Out_tupsb_tlast_tvalid_tready = as_is_tupsb_tlast_tvalid_tready_buf[tx_shift_phase_cnt] & txen ;
+  `else
+    assign Serial_Data_Out_tlast_tvalid_tready = as_is_tlast_tvalid_tready_buf[tx_shift_phase_cnt] & txen ;
+  `endif
 
 
 
 // For Rx Path
-  wire rxdata_out_valid[pSERIALIO_TDATA_WIDTH+2:0];    //add dummy connection to avoid WARNING message by xelab
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    wire rxdata_out_valid[pSERIALIO_TDATA_WIDTH+3:0];    //add dummy connection to avoid WARNING message by xelab
+  `else
+    wire rxdata_out_valid[pSERIALIO_TDATA_WIDTH+2:0];    //add dummy connection to avoid WARNING message by xelab
+  `endif
 
   reg  rxen;
 
@@ -426,22 +505,56 @@ module IO_SERDES #(
     .rxdata_out_valid(rxdata_out_valid[pSERIALIO_TDATA_WIDTH+2])
   );
 
+
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    fsic_io_serdes_rx  #(
+      .pRxFIFO_DEPTH(pRxFIFO_DEPTH),
+      .pCLK_RATIO(pCLK_RATIO)
+    )
+    fsic_io_serdes_rx_upsb(
+      .axis_rst_n(axis_rst_n),
+      .rxclk(rxclk),
+      .rxen(rxen),
+      .ioclk(ioclk),
+      .coreclk(coreclk),
+      .Serial_Data_in(Serial_Data_In_tupsb_4_1),
+      .rxdata_out( is_as_tupsb[4:1]),    
+      .rxdata_out_valid(rxdata_out_valid[pSERIALIO_TDATA_WIDTH+3])
+    );
+  
+    fsic_io_serdes_rx  #(
+      .pRxFIFO_DEPTH(pRxFIFO_DEPTH),
+      .pCLK_RATIO(pCLK_RATIO)
+    )
+    fsic_io_serdes_rx_fc(
+      .axis_rst_n(axis_rst_n),
+      .rxclk(rxclk),
+      .rxen(rxen),
+      .ioclk(ioclk),
+      .coreclk(coreclk),
+      .Serial_Data_in(Serial_Data_In_tupsb_tlast_tvalid_tready),
+      .rxdata_out( {is_as_tupsb[0], is_as_tlast, is_as_tvalid, is_as_tready_remote}),    
+      .rxdata_out_valid(rx_received_data)
+    );
+
+  `else
     wire is_as_dummy;
 
-  fsic_io_serdes_rx  #(
-    .pRxFIFO_DEPTH(pRxFIFO_DEPTH),
-    .pCLK_RATIO(pCLK_RATIO)
-  )
-  fsic_io_serdes_rx_fc(
-    .axis_rst_n(axis_rst_n),
-    .rxclk(rxclk),
-    .rxen(rxen),
-    .ioclk(ioclk),
-    .coreclk(coreclk),
-    .Serial_Data_in(Serial_Data_In_tlast_tvalid_tready),
-    .rxdata_out( {is_as_dummy, is_as_tlast, is_as_tvalid, is_as_tready_remote}),    // only connect [2:0]
-    .rxdata_out_valid(rx_received_data)
-  );
+    fsic_io_serdes_rx  #(
+      .pRxFIFO_DEPTH(pRxFIFO_DEPTH),
+      .pCLK_RATIO(pCLK_RATIO)
+    )
+    fsic_io_serdes_rx_fc(
+      .axis_rst_n(axis_rst_n),
+      .rxclk(rxclk),
+      .rxen(rxen),
+      .ioclk(ioclk),
+      .coreclk(coreclk),
+      .Serial_Data_in(Serial_Data_In_tlast_tvalid_tready),
+      .rxdata_out( {is_as_dummy, is_as_tlast, is_as_tvalid, is_as_tready_remote}),    // only connect [2:0]
+      .rxdata_out_valid(rx_received_data)
+    );
+  `endif
 
   reg is_as_tready_out;
   assign is_as_tready = is_as_tready_out;

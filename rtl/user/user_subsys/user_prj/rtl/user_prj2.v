@@ -4,7 +4,8 @@
 
 
 
-module USER_PRJ2 #( parameter pADDR_WIDTH   = 12,
+module USER_PRJ2 #( parameter pUSER_PROJECT_SIDEBAND_WIDTH   = 5,
+          parameter pADDR_WIDTH   = 12,
                    parameter pDATA_WIDTH   = 32
                  )
 (
@@ -24,6 +25,9 @@ module USER_PRJ2 #( parameter pADDR_WIDTH   = 12,
   input  wire                        ss_tvalid,
   input  wire  [(pDATA_WIDTH-1) : 0] ss_tdata,
   input  wire                 [1: 0] ss_tuser,
+    `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+  input  wire                 [pUSER_PROJECT_SIDEBAND_WIDTH-1: 0] ss_tupsb,
+  `endif
   input  wire                 [3: 0] ss_tstrb,
   input  wire                 [3: 0] ss_tkeep,
   input  wire                        ss_tlast,
@@ -32,8 +36,11 @@ module USER_PRJ2 #( parameter pADDR_WIDTH   = 12,
   output wire                        sm_tvalid,
   output wire  [(pDATA_WIDTH-1) : 0] sm_tdata,
   output wire                 [2: 0] sm_tid,
+  `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+  output  wire                 [pUSER_PROJECT_SIDEBAND_WIDTH-1: 0] sm_tupsb,
+  `endif
   output wire                 [3: 0] sm_tstrb,
-  output wire                        sm_tkeep,
+  output wire                 [3: 0] sm_tkeep,
   output wire                        sm_tlast,
   output wire                        low__pri_irq,
   output wire                        High_pri_req,
@@ -56,6 +63,9 @@ assign ss_tready     = 1'b0;
 assign sm_tvalid     = 1'b0;
 assign sm_tdata      = {pDATA_WIDTH{1'b0}};
 assign sm_tid        = 3'b0;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+  assign sm_tupsb      = 5'b0;
+`endif
 assign sm_tstrb      = 4'b0;
 assign sm_tkeep      = 1'b0;
 assign sm_tlast      = 1'b0;
