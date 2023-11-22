@@ -61,7 +61,23 @@ assign sm_tkeep      = 1'b0;
 assign sm_tlast      = 1'b0;
 assign low__pri_irq  = 1'b0;
 assign High_pri_req  = 1'b0;
-assign la_data_o     = 24'b0;
 
+reg [23:0] la_data_o_reg;
+reg [7:0] la_data_o_count;
+
+assign la_data_o = la_data_o_reg;
+always @(posedge axis_clk or negedge axi_reset_n) begin
+    if (!axi_reset_n) begin
+      la_data_o_reg <= 24'b0;
+      la_data_o_count <= 8'b0;
+    end else begin
+      if(la_data_o_count > 8'hC8) begin
+        la_data_o_reg <= la_data_o_reg + 1;
+        la_data_o_count <= 8'h0;
+      end else begin
+        la_data_o_count <= la_data_o_count + 1;
+      end
+    end
+end
 
 endmodule // USER_PRJ3
