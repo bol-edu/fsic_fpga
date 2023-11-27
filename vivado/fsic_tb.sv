@@ -89,7 +89,7 @@ module fsic_tb();
         Fpga2Soc_CfgRead();
         Fpga2Soc_CfgWrite();
         SocLa2DmaPath();
-        //FpgaLocal_CfgRead();
+        FpgaLocal_CfgRead();
 
         #500us    
         $display($time, "=> End of the test...");                         
@@ -494,7 +494,7 @@ module fsic_tb();
             offset = 0;
             axil_cycles_gen(ReadCyc, PL_DMA, offset, data, 1);
             #10us
-            if(data == 32'h0000_0004) begin
+            if(data == 32'h0000_0001) begin
                 $display($time, "=> FpgaLocal_CfgRead PL_DMA = %h, PASS", data);
             end else begin
                 $display($time, "=> FpgaLocal_CfgRead PL_DMA = %h, FAIL", data);

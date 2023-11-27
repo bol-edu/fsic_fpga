@@ -124,9 +124,14 @@ module axi_ctrl_logic(
         end
         
         //Willy debug - s
-        else if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_LS) && trans_typ == AXI_RD)begin
-            bk_ls_ready = 1'b0;
-            wait_rd_data_back = 1;
+        else if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_LS) && (trans_typ == AXI_RD)) begin
+            if (sync_trig_sm_rd == 1) begin
+                bk_ls_ready = 1'b0;
+                wait_rd_data_back = 1;
+            end
+            else begin
+                bk_ls_ready = 1'b1;
+            end
         end
         //Willy debug - e
         
