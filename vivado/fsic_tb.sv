@@ -248,7 +248,7 @@ module fsic_tb();
             $display($time, "=> Starting SocLa2DmaPath() test...");
             $display($time, "=> =======================================================================");
             //Setup ladma
-            $display($time, "=> FpgaLocal_Write: PL_DMA"); 
+            $display($time, "=> FpgaLocal_Write: PL_DMA, exit clear...");
             offset = 32'h0000_0020;
             data = 32'h0000_0000;
             axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
@@ -262,7 +262,7 @@ module fsic_tb();
                 ->> error_event;
             end
 
-            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            $display($time, "=> FpgaLocal_Write: PL_DMA, set buffer length...");
             offset = 32'h0000_0028;
             data = 32'h0000_0400;
             axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
@@ -276,7 +276,7 @@ module fsic_tb();
                 ->> error_event;
             end
 
-            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            $display($time, "=> FpgaLocal_Write: PL_DMA, set trigger condition...");
             offset = 32'h0000_0030;
             data = 32'h0000_0200;
             axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
@@ -290,7 +290,7 @@ module fsic_tb();
                 ->> error_event;
             end
 
-            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            $display($time, "=> FpgaLocal_Write: PL_DMA, set buffer low...");
             offset = 32'h0000_0038;
             data = 32'h44A0_0000;
             axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
@@ -304,7 +304,7 @@ module fsic_tb();
                 ->> error_event;
             end
 
-            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            $display($time, "=> FpgaLocal_Write: PL_DMA, set buffer high...");
             offset = 32'h0000_003C;
             data = 32'h0000_0000;
             axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
@@ -318,19 +318,10 @@ module fsic_tb();
                 ->> error_event;
             end
 
-            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            $display($time, "=> FpgaLocal_Write: PL_DMA, set ap_start...");
             offset = 32'h0000_0000;
             data = 32'h0000_0001;
             axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
-            //#20us
-            axil_cycles_gen(ReadCyc, PL_DMA, offset, data, 1);
-            //#20us
-            if(data == 32'h0000_0001) begin
-                $display($time, "=> Fpga2Soc_Write PL_DMA offset %h = %h, PASS", offset, data);
-            end else begin
-                $display($time, "=> Fpga2Soc_Write PL_DMA offset %h = %h, FAIL", offset, data);
-                ->> error_event;
-            end
 
             $display($time, "=> Fpga2Soc_Write: SOC_LA");
             offset = 0;
@@ -367,9 +358,26 @@ module fsic_tb();
 
             @(ladma_done);
 
+            offset = 0;
+            axil_cycles_gen(ReadCyc, SOC_LA, offset, data, 1);
+            if(data == 32'h0000_0000) begin
+                $display($time, "=> Fpga2Soc_Write SOC_LA offset %h = %h, PASS", offset, data);
+            end else begin
+                $display($time, "=> Fpga2Soc_Write SOC_LA offset %h = %h, FAIL", offset, data);
+                ->> error_event;
+            end
+
+            offset = 0;
+            axil_cycles_gen(ReadCyc, SOC_CC, offset, data, 1);
+            if(data == 32'h0000_001F) begin
+                $display($time, "=> Fpga2Soc_Write SOC_CC offset %h = %h, PASS", offset, data);
+            end else begin
+                $display($time, "=> Fpga2Soc_Write SOC_CC offset %h = %h, FAIL", offset, data);
+                ->> error_event;
+            end
+
             $display($time, "=> End SocLa2DmaPath() test...");
             $display($time, "=> =======================================================================");
-
         end
     endtask
 
@@ -403,60 +411,60 @@ module fsic_tb();
                     //log ladma_capatured
                     fd = $fopen ("../../../../../ladma_captured.log", "w");
                     for (index = 0; index < 16'h1000; index +=4) begin
-                         $fdisplay(fd, "0x%08h", slave_agent.mem_model.backdoor_memory_read_4byte(addrm+index));
+                         $fdisplay(fd, "%08h", slave_agent.mem_model.backdoor_memory_read_4byte(addrm+index));
                     end
                     $fclose(fd);
-
-                    //ladma - workaround
-                    //clear transfer done
-                    $display($time, "=> FpgaLocal_Write: PL_DMA");
-                    offset = 32'h0000_0020;
-                    data = 32'h0000_0001;
-                    axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
-                    //start
-                    $display($time, "=> FpgaLocal_Write: PL_DMA");
-                    offset = 32'h0000_0000;
-                    data = 32'h0000_0001;
-                    axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
-                    offset = 32'h0000_0010;
-                    keepChk = 1'b1;
-                    $display($time, "=> Wating buffer transfer done to be clear...");
-                    while (keepChk) begin
-                        #1us
-                        axil_cycles_gen(ReadCyc, PL_DMA, offset, data, 1);
-                        if(data == 32'h0000_0000) begin
-                            $display($time, "=> Buffer transfer done cleared. offset %h = %h, PASS", offset, data);
-                            keepChk = 0;
-                        end
-                    end
-                    //exit clear
-                    $display($time, "=> FpgaLocal_Write: PL_DMA");
-                    offset = 32'h0000_0020;
-                    data = 32'h0000_0000;
-                    axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
-                    //start
-                    $display($time, "=> FpgaLocal_Write: PL_DMA");
-                    offset = 32'h0000_0000;
-                    data = 32'h0000_0001;
-                    axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
-                    //stop
-                    $display($time, "=> FpgaLocal_Write: PL_DMA");
-                    offset = 32'h0000_0000;
-                    data = 32'h0000_0000;
-                    axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
-                    axil_cycles_gen(ReadCyc, PL_DMA, offset, data, 1);
-                    if(data == 32'h0000_000b) begin     //32'h0000_000b for all tasks execution temporary
-                        $display($time, "=> Fpga2Soc_Write PL_DMA offset %h = %h, PASS", offset, data);
-                    end else begin
-                        $display($time, "=> Fpga2Soc_Write PL_DMA offset %h = %h, FAIL", offset, data);
-                        ->> error_event;
-                    end
-                    //ladma - workaround
-
-                    ->> ladma_done;
                 end
             end
 
+            //ladma - workaround
+            //clear transfer done
+            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            offset = 32'h0000_0020;
+            data = 32'h0000_0001;
+            axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
+            //start
+            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            offset = 32'h0000_0000;
+            data = 32'h0000_0001;
+            axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
+            //Wait buffer transfer don to be cleared
+            offset = 32'h0000_0010;
+            keepChk = 1'b1;
+            $display($time, "=> Wating buffer transfer done to be clear...");
+            while (keepChk) begin
+                #1us
+                axil_cycles_gen(ReadCyc, PL_DMA, offset, data, 1);
+                if(data == 32'h0000_0000) begin
+                    $display($time, "=> Buffer transfer done cleared. offset %h = %h, PASS", offset, data);
+                    keepChk = 0;
+                end
+            end
+            //exit clear
+            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            offset = 32'h0000_0020;
+            data = 32'h0000_0000;
+            axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
+            //start
+            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            offset = 32'h0000_0000;
+            data = 32'h0000_0001;
+            axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
+            //stop
+            $display($time, "=> FpgaLocal_Write: PL_DMA");
+            offset = 32'h0000_0000;
+            data = 32'h0000_0000;
+            axil_cycles_gen(WriteCyc, PL_DMA, offset, data, 1);
+            axil_cycles_gen(ReadCyc, PL_DMA, offset, data, 1);
+            if(data == 32'h0000_000b) begin     //32'h0000_000b for all tasks execution temporary
+                $display($time, "=> Fpga2Soc_Write PL_DMA offset %h = %h, PASS", offset, data);
+            end else begin
+                $display($time, "=> Fpga2Soc_Write PL_DMA offset %h = %h, FAIL", offset, data);
+                ->> error_event;
+            end
+            //ladma - workaround
+
+            ->> ladma_done;
             $display($time, "=> End CheckLaDMADone()...");
             $display($time, "=> =======================================================================");
 
