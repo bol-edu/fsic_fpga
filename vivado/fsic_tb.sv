@@ -88,8 +88,8 @@ module fsic_tb();
 
         Fpga2Soc_CfgRead();
         Fpga2Soc_CfgWrite();
-        SocLa2DmaPath();
         FpgaLocal_CfgRead();
+        SocLa2DmaPath();
 
         #500us    
         $display($time, "=> End of the test...");                         
@@ -126,8 +126,8 @@ module fsic_tb();
 
     task fw_worked_t;
         begin
-            wait(DUT.design_1_i.caravel_0_mprj_o[37:36] == 2'b11);
-            $display($time, "=> FW working, caravel_0_mprj_o[37:36] = %02b", DUT.design_1_i.caravel_0_mprj_o[37:36]);                             
+            wait(DUT.design_1_i.caravel_0_mprj_o[37] == 1'b1);
+            $display($time, "=> FW working, caravel_0_mprj_o[37] = %0b", DUT.design_1_i.caravel_0_mprj_o[37]);
             ->> fw_worked_event;        
         end
     endtask
@@ -172,7 +172,7 @@ module fsic_tb();
             if(data == 32'h0000_001F) begin
                 $display($time, "=> Fpga2Soc_Read SOC_CC offset %h = %h, PASS", offset, data);            
             end else begin
-                $display($time, "=> Fpga2Soc_Read SOC_CC offset %h = %h, PASS", offset, data);            
+                $display($time, "=> Fpga2Soc_Read SOC_CC offset %h = %h, FAIL", offset, data);
                 ->> error_event;            
             end
 
@@ -234,6 +234,66 @@ module fsic_tb();
                 end else begin
                     $display($time, "=> #%h, Fpga2Soc_Write SOC_CC offset %h = %h, FAIL", index, offset, data);            
                     ->> error_event;
+                end
+                if (index==0) begin
+                    `ifdef USE_EDGEDETECT_IP
+                        $display($time, "=> Fpga2Soc_Read testing: SOC_UP");
+                        offset = 0;
+                        axil_cycles_gen(ReadCyc, SOC_UP, offset, data, 1);
+                        #10us
+                        if(data == 32'h0000_0000) begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, PASS", offset, data);
+                        end else begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, FAIL", offset, data);
+                            ->> error_event;
+                        end
+
+                        $display($time, "=> Fpga2Soc_Read testing: SOC_UP");
+                        offset = 4;
+                        axil_cycles_gen(ReadCyc, SOC_UP, offset, data, 1);
+                        #10us
+                        if(data == 32'h0000_0280) begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, PASS", offset, data);
+                        end else begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, FAIL", offset, data);
+                            ->> error_event;
+                        end
+
+                        $display($time, "=> Fpga2Soc_Read testing: SOC_UP");
+                        offset = 8;
+                        axil_cycles_gen(ReadCyc, SOC_UP, offset, data, 1);
+                        #10us
+                        if(data == 32'h0000_01E0) begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, PASS", offset, data);
+                        end else begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, FAIL", offset, data);
+                            ->> error_event;
+                        end
+
+                        $display($time, "=> Fpga2Soc_Read testing: SOC_UP");
+                        offset = 12;
+                        axil_cycles_gen(ReadCyc, SOC_UP, offset, data, 1);
+                        #10us
+                        if(data == 32'h0000_0001) begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, PASS", offset, data);
+                        end else begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, FAIL", offset, data);
+                            ->> error_event;
+                        end
+                    `else   //USE_EDGEDETECT_IP
+                        $display($time, "=> Fpga2Soc_Read testing: SOC_UP");
+                        offset = 0;
+                        axil_cycles_gen(ReadCyc, SOC_UP, offset, data, 1);
+                        #10us
+                        if(data == 32'haa55_aa55) begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, PASS", offset, data);
+                        end else begin
+                            $display($time, "=> Fpga2Soc_Read SOC_UP offset %h = %h, FAIL", offset, data);
+                            ->> error_event;
+                        end
+
+                    `endif
+                    offset = 0;
                 end
             end
 
@@ -369,7 +429,7 @@ module fsic_tb();
 
             offset = 0;
             axil_cycles_gen(ReadCyc, SOC_CC, offset, data, 1);
-            if(data == 32'h0000_001F) begin
+            if(data == 32'h0000_0001) begin
                 $display($time, "=> Fpga2Soc_Write SOC_CC offset %h = %h, PASS", offset, data);
             end else begin
                 $display($time, "=> Fpga2Soc_Write SOC_CC offset %h = %h, FAIL", offset, data);
@@ -405,7 +465,7 @@ module fsic_tb();
                     //Select a empty user project
                     $display($time, "=> Fpga2Soc_Write: SOC_CC");
                     offset = 0;
-                    data = 32'h0000_001F;
+                    data = 32'h0000_0001;
                     axil_cycles_gen(WriteCyc, SOC_CC, offset, data, 1);
 
                     //log ladma_capatured
@@ -433,8 +493,8 @@ module fsic_tb();
             keepChk = 1'b1;
             $display($time, "=> Wating buffer transfer done to be clear...");
             while (keepChk) begin
-                #1us
-                axil_cycles_gen(ReadCyc, PL_DMA, offset, data, 1);
+                #10us
+                axil_cycles_gen(ReadCyc, PL_DMA, offset, data, 0);
                 if(data == 32'h0000_0000) begin
                     $display($time, "=> Buffer transfer done cleared. offset %h = %h, PASS", offset, data);
                     keepChk = 0;
@@ -502,7 +562,7 @@ module fsic_tb();
             offset = 0;
             axil_cycles_gen(ReadCyc, PL_DMA, offset, data, 1);
             #10us
-            if(data == 32'h0000_0001) begin
+            if(data == 32'h0000_0004) begin
                 $display($time, "=> FpgaLocal_CfgRead PL_DMA = %h, PASS", data);
             end else begin
                 $display($time, "=> FpgaLocal_CfgRead PL_DMA = %h, FAIL", data);

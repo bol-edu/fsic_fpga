@@ -115,6 +115,9 @@ module axi_ctrl_logic(
         else trans_typ = AXI_RD;
     end
 
+    logic [31:0] first_ss_tdata;
+    logic [1:0] first_ss_tuser;
+
     // get data from LS
     always_comb begin
    
@@ -142,9 +145,6 @@ module axi_ctrl_logic(
         else
             bk_ls_ready = 1'b0;
     end
-
-    logic [31:0] first_ss_tdata;
-    logic [1:0] first_ss_tuser;
 
     // get first data from SS
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin

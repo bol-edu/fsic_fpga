@@ -1,21 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Wed Oct 11 08:04:39 2023
+[*] Tue Dec  5 07:05:20 2023
 [*]
-[dumpfile] "/home/josh/asic/clone/fsic_fpga/testbench/fsic/fsic.vcd"
-[dumpfile_mtime] "Wed Oct 11 08:01:03 2023"
-[dumpfile_size] 24218014
-[savefile] "/home/josh/asic/clone/fsic_fpga/testbench/fsic/waveform.gtkw"
-[timestart] 882292000
+[dumpfile] "/home/josh/my/sim/fsic_fpga/testbench/fsic/fsic.vcd"
+[dumpfile_mtime] "Tue Dec  5 06:57:29 2023"
+[dumpfile_size] 24078495
+[savefile] "/home/josh/my/sim/fsic_fpga/testbench/fsic/waveform.gtkw"
+[timestart] 730892000
 [size] 1208 960
 [pos] -1 -1
-*-18.000000 882637500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-18.000000 731237500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] fsic_tb.
 [treeopen] fsic_tb.uut.
-[treeopen] fsic_tb.uut.mprj.
-[treeopen] fsic_tb.uut.mprj.u_fsic.
-[treeopen] fsic_tb.uut.mprj.u_fsic.U_AXIL_AXIS0.
-[treeopen] fsic_tb.uut.padframe.
+[treeopen] fsic_tb.uut.housekeeping.
+[treeopen] fsic_tb.uut.padframe.mprj_pads.
 [treeopen] fsic_tb.uut.soc.
 [treeopen] fsic_tb.uut.soc.core.
 [treeopen] fsic_tb.uut.soc.core.VexRiscv.
@@ -49,7 +47,22 @@ fsic_tb.uut.mprj.u_fsic.U_CFG_CTRL0.cc_la_enable
 fsic_tb.uut.mprj.u_fsic.U_CFG_CTRL0.cc_aa_enable
 fsic_tb.uut.mprj.u_fsic.U_CFG_CTRL0.cc_is_enable
 fsic_tb.uut.mprj.u_fsic.U_CFG_CTRL0.cc_as_enable
-@29
 fsic_tb.uut.mprj.u_fsic.U_CFG_CTRL0.cc_enable
+@200
+-
+@22
+fsic_tb.uut.mprj_io_in[37:0]
+fsic_tb.uut.mprj_io_out[37:0]
+fsic_tb.uut.mprj_io_oeb[37:0]
+@200
+-
+@28
+fsic_tb.checkbits
+@200
+-37
+@28
+fsic_tb.uut.padframe.mprj_pads.io_pad[37].io
+fsic_tb.uut.padframe.mprj_pads.io_pad[37].io_in
+fsic_tb.uut.padframe.mprj_pads.io_pad[37].io_out
 [pattern_trace] 1
 [pattern_trace] 0

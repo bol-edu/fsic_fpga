@@ -124,6 +124,26 @@ module ps_axil(
 	/////////////////////
 	output wire ladma_interrupt,
 
+	///////////////////////
+	//  User DMA AXIS IF //
+	///////////////////////
+(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF updma_so, ASSOCIATED_RESET axis_rst_n, FREQ_HZ 5000000" *)
+    input wire [31:0] updma_si_tdata,
+    input wire [3:0] updma_si_tstrb,
+    input wire [3:0] updma_si_tkeep,
+    input wire updma_si_tlast,
+    input wire updma_si_tvalid,
+    input wire [6:0] updma_si_tuser,
+    output wire updma_si_tready,
+(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF updma_so, ASSOCIATED_RESET axis_rst_n, FREQ_HZ 5000000" *)
+    output wire [31:0] updma_so_tdata,
+    output wire [3:0] updma_so_tstrb,
+    output wire [3:0] updma_so_tkeep,
+    output wire updma_so_tlast,
+    output wire updma_so_tvalid,
+    output wire [6:0] updma_so_tuser,
+    input wire updma_so_tready,
+
 	/////////////////////////////
 	// Global AXI-Lite Signals //
 	/////////////////////////////
@@ -183,6 +203,9 @@ module ps_axil(
 	// Stream Connection //
 	///////////////////////
 	wire [31:0] is_as_tdata;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    wire [4:0] is_as_tupsb;
+`endif
 	wire [3:0] is_as_tstrb;
 	wire [3:0] is_as_tkeep;
 	wire is_as_tlast;
@@ -192,6 +215,9 @@ module ps_axil(
 	wire as_is_tready;
 
 	wire [31:0] as_is_tdata;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    wire [4:0] as_is_tupsb;
+`endif
 	wire [3:0] as_is_tstrb;
 	wire [3:0] as_is_tkeep;
 	wire as_is_tlast;
@@ -269,14 +295,14 @@ module ps_axil(
     reg [14: 0] axi_araddr_o;
     reg axi_rready_o;
 
-    wire [11:0] is_serial_rxd;
+    wire [12:0] is_serial_rxd;
     wire is_serial_rclk;
-    wire [11:0] is_serial_txd;
+    wire [12:0] is_serial_txd;
     wire is_serial_tclk;
        
-    assign caravel_mprj_out = {3'bz, is_ioclk, 1'bz, is_serial_tclk, 12'bz, is_serial_txd, 8'bz};
-    assign is_serial_rclk = caravel_mprj_in[33];
-    assign is_serial_rxd = caravel_mprj_in[31:20];  
+    assign caravel_mprj_out = {1'bz, is_ioclk, 1'bz, 13'bz, is_serial_tclk, is_serial_txd, 8'bz};
+    assign is_serial_rclk = caravel_mprj_in[35];
+    assign is_serial_rxd = caravel_mprj_in[34:22];  
     	
 	///////////////////////////////////
 	// Assignment for Internal begin //
@@ -553,6 +579,22 @@ AXIS_SWz #(.pADDR_WIDTH( 15 ),
 		.axi_rdata(axi_rdata0),		//o
 		.axi_rready(axi_rready),
 		.cc_as_enable(as_enable),
+        //AXI Stream inputs for User Project grant 0
+        .up_as_tdata(updma_si_tdata),
+        .up_as_tstrb(updma_si_tstrb),
+        .up_as_tkeep(updma_si_tkeep),
+        .up_as_tlast(updma_si_tlast),
+        .up_as_tvalid(updma_si_tvalid),
+        .up_as_tuser(updma_si_tuser[1:0]),
+        .as_up_tready(updma_si_tready),    //o
+        //AXI Output Stream for User Project
+        .as_up_tdata(updma_so_tdata),
+        .as_up_tstrb(updma_so_tstrb),
+        .as_up_tkeep(updma_so_tkeep),
+        .as_up_tlast(updma_so_tlast),
+        .as_up_tvalid(updma_so_tvalid),
+        .as_up_tuser(updma_so_tuser[1:0]),
+        .up_as_tready(updma_so_tready),
 		//AXI Stream inputs for Axis Axilite grant 1
 		.aa_as_tdata(aa_as_tdata),
 		.aa_as_tstrb(aa_as_tstrb),
@@ -563,6 +605,9 @@ AXIS_SWz #(.pADDR_WIDTH( 15 ),
 		.as_aa_tready(as_aa_tready),	//o
 		//AXI Stream outputs for IO Serdes
 		.as_is_tdata(as_is_tdata),
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        .as_is_tupsb(as_is_tupsb),
+`endif
 		.as_is_tstrb(as_is_tstrb),
 		.as_is_tkeep(as_is_tkeep), 
 		.as_is_tlast(as_is_tlast),        
@@ -572,6 +617,9 @@ AXIS_SWz #(.pADDR_WIDTH( 15 ),
 		.is_as_tready(is_as_tready),	//i
 		//AXI Input Stream for IO_Serdes
 		.is_as_tdata(is_as_tdata),
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        .is_as_tupsb(is_as_tupsb),
+`endif
 		.is_as_tstrb(is_as_tstrb),    
 		.is_as_tkeep(is_as_tkeep),
 		.is_as_tlast(is_as_tlast),
@@ -639,7 +687,8 @@ AXIL_AXIS #(.pADDR_WIDTH( 15 ),
 		.axis_rst_n(axis_rst_n)
 	);	
 
-IO_SERDES #(.pSERIALIO_WIDTH( 12 ),
+IO_SERDES #(.pUSER_PROJECT_SIDEBAND_WIDTH( 5 ),
+             .pSERIALIO_WIDTH( 13 ),
              .pADDR_WIDTH( 15 ),
              .pDATA_WIDTH( 32 ),
              .pRxFIFO_DEPTH( 5 ),
@@ -661,6 +710,9 @@ IO_SERDES #(.pSERIALIO_WIDTH( 12 ),
 		.cc_is_enable(is_enable),
 
 		.is_as_tdata(is_as_tdata),		//o
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        .is_as_tupsb(is_as_tupsb),
+`endif
 		.is_as_tstrb(is_as_tstrb),		//o
 		.is_as_tkeep(is_as_tkeep),		//o
 		.is_as_tlast(is_as_tlast),		//o
@@ -670,6 +722,9 @@ IO_SERDES #(.pSERIALIO_WIDTH( 12 ),
 		.as_is_tready(as_is_tready),
 
 		.as_is_tdata(as_is_tdata),
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        .as_is_tupsb(as_is_tupsb),
+`endif
 		.as_is_tstrb(as_is_tstrb),
 		.as_is_tkeep(as_is_tkeep),
 		.as_is_tlast(as_is_tlast),

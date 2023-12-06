@@ -3,6 +3,8 @@
 ../../rtl/header/user_defines.v
 
 ## User project
+../../rtl/user/rtl/fsic.v
+../../rtl/user/rtl/user_project_wrapper.v
 ../../rtl/user/axilite_axis/rtl/axi_ctrl_logic.sv
 ../../rtl/user/axilite_axis/rtl/axil_axis.sv
 ../../rtl/user/axilite_axis/rtl/axilite_master.sv
@@ -17,14 +19,20 @@
 ../../rtl/user/io_serdes/rtl/io_serdes.v
 ../../rtl/user/logic_analyzer/rtl/LogicAnalyzer.v
 ../../rtl/user/logic_analyzer/rtl/Sram.v
-../../rtl/user/mprj_io/rtl/mprj_io.sv
-../../rtl/user/user_subsys/user_prj/rtl/user_prj0.v
-../../rtl/user/user_subsys/user_prj/rtl/user_prj1.v
-../../rtl/user/user_subsys/user_prj/rtl/user_prj2.v
-../../rtl/user/user_subsys/user_prj/rtl/user_prj3.v
-../../rtl/user/user_subsys/rtl/user_subsys.all.v
-../../rtl/user/rtl/fsic.v
-../../rtl/user/rtl/user_project_wrapper.v
+../../rtl/user/mprj_io/rtl/fsic_mprj_io.v
+../../rtl/user/user_subsys/rtl/user_subsys.v
+../../rtl/user/user_subsys/axil_slav/rtl/axil_slav.v
+../../rtl/user/user_subsys/axis_mstr/rtl/axis_mstr.v
+../../rtl/user/user_subsys/axis_slav/rtl/axis_slav.v
+../../rtl/user/user_subsys/irq_mux/rtl/irq_mux.v
+../../rtl/user/user_subsys/la_mux/rtl/la_mux.v
+../../rtl/user/user_subsys/user_prj/user_prj0/rtl/user_prj0.v
+../../rtl/user/user_subsys/user_prj/user_prj0/rtl/concat_EdgeDetect_Top_fsic.v
+../../rtl/user/user_subsys/user_prj/user_prj0/rtl/spram.v
+../../rtl/user/user_subsys/user_prj/user_prj1/rtl/user_prj1.v
+../../rtl/user/user_subsys/user_prj/user_prj2/rtl/user_prj2.v
+../../rtl/user/user_subsys/user_prj/user_prj3/rtl/user_prj3.v
+
 
 ## VIP
 ../../vip/tbuart.v
