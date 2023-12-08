@@ -147,10 +147,67 @@ void main()
 			j += 0x08;
 		}
 	}
-	
+
 	while(1) {
 		if (j==0xF) {
 			reg_mprj_datah = 0x20;
+			break;
+		}
+	}
+
+	while(1) {
+		value = reg_fsic_cc;
+		switch (value)
+		{
+		case 5:
+			reg_mprj_datah = 0x00;	//set mprj_io[37] to 1'b0 to indicate FW going to waiting fpga MB test
+			reg_fsic_aa_mb0 = 0x5a5a5a5a;
+			reg_fsic_cc = 0x00000004;
+			reg_mprj_datah = 0x20;	//set mprj_io[37] to 1'b0 to indicate FW going to waiting fpga MB test
+			break;
+		case 6:
+			reg_mprj_datah = 0x20;	//set mprj_io[37] to 1'b1 first
+			reg_fsic_aa_irq_en = 1;
+			value = reg_fsic_aa_irq_en;
+			if (value==1) {
+				reg_mprj_datah = 0x00;	//set mprj_io[37] to 1'b0 to indicate correct data
+				reg_fsic_cc = 0x00000004;
+			} else {
+				reg_mprj_datah = 0x20;	//set mprj_io[37] to 1'b1 to indicate incorrect data
+				reg_fsic_cc = 0x00000004;
+			}		
+			break;
+		case 7:
+			reg_mprj_datah = 0x20;	//set mprj_io[37] to 1'b1 first
+			value = reg_fsic_aa_mb0;
+			if (value==0x5555aaaa) {
+				reg_mprj_datah = 0x00;	//set mprj_io[37] to 1'b0 to indicate correct data
+				reg_fsic_cc = 0x00000004;
+			} else {
+				reg_mprj_datah = 0x20;	//set mprj_io[37] to 1'b1 to indicate incorrect data
+				reg_fsic_cc = 0x00000004;
+			}
+			break;
+		case 8:
+			reg_mprj_datah = 0x20;	//set mprj_io[37] to 1'b1 first
+			value = reg_fsic_aa_irq_sts;
+			if (value==1) {
+				reg_fsic_aa_irq_sts = 1;
+				value = reg_fsic_aa_irq_sts;
+				if (value==0) {
+					reg_mprj_datah = 0x00;	//set mprj_io[37] to 1'b0 to indicate correct data
+					reg_fsic_cc = 0x00000004;
+				} else {
+					reg_mprj_datah = 0x20;	//set mprj_io[37] to 1'b1 to indicate incorrect data
+					reg_fsic_cc = 0x00000004;
+				}
+			} else {
+				reg_mprj_datah = 0x20;	//set mprj_io[37] to 1'b1 to indicate incorrect data
+				reg_fsic_cc = 0x00000004;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 

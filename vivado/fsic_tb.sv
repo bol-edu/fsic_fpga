@@ -31,6 +31,7 @@ xil_axi_ulong addrm = 32'h44A0_0000;
 integer index, fd;
  
 event system_reset_event, peripheral_reset_event, caravel_reset_event, fw_worked_event, is_txen_event, ladma_done, error_event;
+event fw_mb_st_event, fw_mb_wd_event;
 
 module fsic_tb();
 
@@ -38,8 +39,8 @@ module fsic_tb();
     localparam  WriteCyc = 1'b1;
     localparam  SOC_UP = 16'h0000;
     localparam  SOC_LA = 16'h1000;
-    localparam  PL_AA = 16'h2000;
-    localparam  PL_AA_MB = 16'h2100;
+    localparam  PL_AA_MB = 16'h2000;
+    localparam  PL_AA = 16'h2100;
     localparam  SOC_IS = 16'h3000;
     localparam  SOC_AS = 16'h4000;
     localparam  SOC_CC = 16'h5000;
@@ -89,6 +90,8 @@ module fsic_tb();
         Fpga2Soc_CfgRead();
         Fpga2Soc_CfgWrite();
         FpgaLocal_CfgRead();
+        SocLocal_MbWrite();
+        FpgaLocal_MbWrite();
         SocLa2DmaPath();
 
         #500us    
@@ -223,7 +226,7 @@ module fsic_tb();
             $display($time, "=> Fpga2Soc_Write testing: SOC_CC"); 
             offset = 0;
             
-            for (index = 0; index < 8'h20 ; index=index+1) begin
+            for (index = 0; index < 8'h5 ; index=index+1) begin
                 data = index;
                 axil_cycles_gen(WriteCyc, SOC_CC, offset, data, 1);
                 //#20us            
@@ -447,6 +450,7 @@ module fsic_tb();
             $display($time, "=> =======================================================================");
             $display($time, "=> FpgaLocal_Read: PL_DMA");
 
+            keepChk = 1;
             offset = 32'h0000_0010;
             $display($time, "=> Wating buffer transfer done...");
             while (keepChk) begin
@@ -585,6 +589,195 @@ module fsic_tb();
         end
     endtask
 
+    task fw_mb_st_t;
+        begin
+            wait(DUT.design_1_i.caravel_0_mprj_o[37] == 1'b0);
+            $display($time, "=> FW starts MB writing, caravel_0_mprj_o[37] = %0b", DUT.design_1_i.caravel_0_mprj_o[37]);
+            ->> fw_mb_st_event;
+        end
+    endtask
+
+    task fw_mb_wd_t;
+        begin
+            wait(DUT.design_1_i.caravel_0_mprj_o[37] == 1'b1);
+            $display($time, "=> FW finishs MB writing, caravel_0_mprj_o[37] = %0b", DUT.design_1_i.caravel_0_mprj_o[37]);
+            ->> fw_mb_wd_event;
+        end
+    endtask
+
+    task SocLocal_MbWrite;
+        begin
+            $display($time, "=> Starting SocLocal_MbWrite() test...");
+            $display($time, "=> =======================================================================");
+
+            $display($time, "=> FpgaLocal_Write : PL_AA");
+            offset = 0;
+            data = 32'h0000_0001;
+            axil_cycles_gen(WriteCyc, PL_AA, offset, data, 1);
+            axil_cycles_gen(ReadCyc, PL_AA, offset, data, 1);
+            //#20us
+            if(data == 32'h0000_00001) begin
+                $display($time, "=> FpgaLocal_Write PL_AA offset %h = %h, PASS", offset, data);
+            end else begin
+                $display($time, "=> FpgaLocal_Write PL_AA offset %h = %h, FAIL", offset, data);
+                ->> error_event;
+            end
+
+            $display($time, "=> Fpga2Soc_Write : SOC_CC");
+            offset = 0;
+            data = 32'h0000_0005;
+            axil_cycles_gen(WriteCyc, SOC_CC, offset, data, 1);
+
+            fork
+                fw_mb_st_t();
+            join_none
+
+            @(fw_mb_st_event);
+
+            fork
+                fw_mb_wd_t();
+            join_none
+
+            @(fw_mb_wd_event);
+
+            $display($time, "=> Fpga2Soc_Read: SOC_CC");
+            offset = 0;
+            axil_cycles_gen(ReadCyc, SOC_CC, offset, data, 1);
+            if(data == 32'h0000_0004) begin
+                $display($time, "=> Fpga2Soc_Read SOC_CC = %h, PASS", data);
+            end else begin
+                $display($time, "=> Fpga2Soc_Read SOC_CC = %h, FAIL", data);
+                ->> error_event;
+            end
+
+            $display($time, "=> FpgaLocal_Read: PL_AA_MB");
+            offset = 0;
+            axil_cycles_gen(ReadCyc, PL_AA_MB, offset, data, 1);
+            if(data == 32'h5a5a_5a5a) begin
+                $display($time, "=> FpgaLocal_Read PL_AA_MB = %h, PASS", data);
+            end else begin
+                $display($time, "=> FpgaLocal_Read PL_AA_MB = %h, FAIL", data);
+                ->> error_event;
+            end
+
+            $display($time, "=> aa_mb_irq status = %0b", DUT.design_1_i.ps_axil_0.aa_mb_irq);
+            $display($time, "=> FpgaLocal_Read: PL_AA");
+            offset = 4;
+            axil_cycles_gen(ReadCyc, PL_AA, offset, data, 1);
+            if(data == 32'h0000_0001) begin
+                $display($time, "=> FpgaLocal_Read PL_AA = %h, PASS", data);
+            end else begin
+                $display($time, "=> FpgaLocal_Read PL_AA = %h, FAIL", data);
+                ->> error_event;
+            end
+
+            $display($time, "=> FpgaLocal_Write : PL_AA");
+            offset = 4;
+            data = 32'h0000_0001;
+            axil_cycles_gen(WriteCyc, PL_AA, offset, data, 1);
+            axil_cycles_gen(ReadCyc, PL_AA, offset, data, 1);
+            //#20us
+            if(data == 32'h0000_00000) begin
+                $display($time, "=> FpgaLocal_Write PL_AA offset %h = %h, PASS", offset, data);
+            end else begin
+                $display($time, "=> FpgaLocal_Write PL_AA offset %h = %h, FAIL", offset, data);
+                ->> error_event;
+            end
+
+            $display($time, "=> End SocLocal_MbWrite() test...");
+            $display($time, "=> =======================================================================");
+        end
+    endtask
+
+    task FpgaLocal_MbWrite;
+        begin
+            $display($time, "=> Starting FpgaLocal_MbWrite() test...");
+            $display($time, "=> =======================================================================");
+
+            $display($time, "=> Fpga2Soc_Write: SOC_CC");
+            offset = 0;
+            data = 32'h0000_0006;
+            axil_cycles_gen(WriteCyc, SOC_CC, offset, data, 1);
+            $display($time, "=> Wating FW complete the request enabling aa irq...");
+            keepChk = 1;
+            offset = 32'h0000_0000;
+            while (keepChk) begin
+                #10us
+                axil_cycles_gen(ReadCyc, SOC_CC, offset, data, 0);
+                if(data == 32'h0000_0004) begin
+                    $display($time, "=> FW complete the request. offset %h = %h, PASS", offset, data);
+                    keepChk = 0;
+                end
+            end
+            if (DUT.design_1_i.caravel_0_mprj_o[37] == 0) begin
+                $display($time, "=> caravel_0_mprj_o[37] = %0b, PASS", DUT.design_1_i.caravel_0_mprj_o[37]);
+            end else begin
+                $display($time, "=> caravel_0_mprj_o[37] = %0b, FAIL", DUT.design_1_i.caravel_0_mprj_o[37]);
+                ->> error_event;
+            end
+
+            $display($time, "=> FpgaLocal_Write : PL_AA_MB");
+            offset = 0;
+            data = 32'h5555_aaaa;
+            axil_cycles_gen(WriteCyc, PL_AA_MB, offset, data, 1);
+            data = 32'h0000_0000;
+            axil_cycles_gen(ReadCyc, PL_AA_MB, offset, data, 1);
+            if (data == 32'h5555_aaaa) begin
+                $display($time, "=> FpgaLocal_Read PL_AA_MB = %h, PASS", data);
+            end else begin
+                $display($time, "=> FpgaLocal_Read PL_AA_MB = %h, FAIL", data);
+                ->> error_event;
+            end
+
+            $display($time, "=> Fpga2Soc_Write: SOC_CC");
+            offset = 0;
+            data = 32'h0000_0007;
+            axil_cycles_gen(WriteCyc, SOC_CC, offset, data, 1);
+            $display($time, "=> Wating FW complete the request SocLocal MB data checking ...");
+            keepChk = 1;
+            offset = 32'h0000_0000;
+            while (keepChk) begin
+                #10us
+                axil_cycles_gen(ReadCyc, SOC_CC, offset, data, 0);
+                if(data == 32'h0000_0004) begin
+                    $display($time, "=> FW complete the request. offset %h = %h, PASS", offset, data);
+                    keepChk = 0;
+                end
+            end
+            if (DUT.design_1_i.caravel_0_mprj_o[37] == 0) begin
+                $display($time, "=> caravel_0_mprj_o[37] = %0b, PASS", DUT.design_1_i.caravel_0_mprj_o[37]);
+            end else begin
+                $display($time, "=> caravel_0_mprj_o[37] = %0b, FAIL", DUT.design_1_i.caravel_0_mprj_o[37]);
+                ->> error_event;
+            end
+
+            $display($time, "=> Fpga2Soc_Write: SOC_CC");
+            offset = 0;
+            data = 32'h0000_0008;
+            axil_cycles_gen(WriteCyc, SOC_CC, offset, data, 1);
+            $display($time, "=> Wating FW complete the request clear SocLocal aa irq...");
+            keepChk = 1;
+            offset = 32'h0000_0000;
+            while (keepChk) begin
+                #10us
+                axil_cycles_gen(ReadCyc, SOC_CC, offset, data, 0);
+                if(data == 32'h0000_0004) begin
+                    $display($time, "=> FW complete the request. offset %h = %h, PASS", offset, data);
+                    keepChk = 0;
+                end
+            end
+            if (DUT.design_1_i.caravel_0_mprj_o[37] == 0) begin
+                $display($time, "=> caravel_0_mprj_o[37] = %0b, PASS", DUT.design_1_i.caravel_0_mprj_o[37]);
+            end else begin
+                $display($time, "=> caravel_0_mprj_o[37] = %0b, FAIL", DUT.design_1_i.caravel_0_mprj_o[37]);
+                ->> error_event;
+            end
+
+            $display($time, "=> End FpgaLocal_MbWrite() test...");
+            $display($time, "=> =======================================================================");
+        end
+    endtask
+
     task axil_cycles_gen;
         input types;
         input [15:0] target;
@@ -603,7 +796,6 @@ module fsic_tb();
                     $display($time, "=> AXI4LITE_READ_BURST %04h, value: %04h, resp: %02b", base_addr + target + offset, data, resp);
             end     
         end
-        
     endtask
         
 endmodule
