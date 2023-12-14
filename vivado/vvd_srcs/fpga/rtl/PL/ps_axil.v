@@ -127,7 +127,6 @@ module ps_axil(
 	///////////////////////
 	//  User DMA AXIS IF //
 	///////////////////////
-(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF updma_so, ASSOCIATED_RESET axis_rst_n, FREQ_HZ 5000000" *)
     input wire [31:0] updma_si_tdata,
     input wire [3:0] updma_si_tstrb,
     input wire [3:0] updma_si_tkeep,
@@ -135,7 +134,7 @@ module ps_axil(
     input wire updma_si_tvalid,
     input wire [6:0] updma_si_tuser,
     output wire updma_si_tready,
-(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF updma_so, ASSOCIATED_RESET axis_rst_n, FREQ_HZ 5000000" *)
+
     output wire [31:0] updma_so_tdata,
     output wire [3:0] updma_so_tstrb,
     output wire [3:0] updma_so_tkeep,
@@ -147,18 +146,25 @@ module ps_axil(
 	/////////////////////////////
 	// Global AXI-Lite Signals //
 	/////////////////////////////
-(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axi_clk CLK" *)	
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axi_clk CLK" *)
 (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axi, ASSOCIATED_RESET axi_reset_n, FREQ_HZ 5000000" *)
 	input  wire          axi_clk,
 	input  wire          axi_reset_n,
-(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axi_clk_m CLK" *)	
-(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF ladma_mm, ASSOCIATED_RESET axi_reset_m_n, FREQ_HZ 5000000" *)		
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axi_clk_m CLK" *)
+(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF ladma_mm, ASSOCIATED_RESET axi_reset_m_n, FREQ_HZ 5000000" *)
 	input  wire          axi_clk_m,
 	input  wire          axi_reset_m_n,
-	
-(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axis_clk CLK" *)	
-(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF ladma_s, ASSOCIATED_RESET axis_rst_n, FREQ_HZ 5000000" *)	
-	input  wire          axis_clk,	
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axi_clk_udsi CLK" *)
+(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF updma_si, ASSOCIATED_RESET axis_rst_n, FREQ_HZ 5000000" *)
+	input  wire          axi_clk_usdi,
+	input  wire          axi_reset_usdi_n,
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axi_clk_udso CLK" *)
+(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF updma_so, ASSOCIATED_RESET axis_rst_n, FREQ_HZ 5000000" *)
+	input  wire          axi_clk_udso,
+	input  wire          axi_reset_udso_n,
+(* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 axis_clk CLK" *)
+(* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF ladma_s, ASSOCIATED_RESET axis_rst_n, FREQ_HZ 5000000" *)
+	input  wire          axis_clk,
     input  wire          axis_rst_n
     );
 
