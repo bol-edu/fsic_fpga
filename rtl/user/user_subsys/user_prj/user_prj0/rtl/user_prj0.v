@@ -221,7 +221,8 @@ assign sm_tdata  = dat_out_rsc_dat[31: 0];
 assign sm_tupsb = dat_out_rsc_dat[33:32];
 `endif
 
-assign {sm_tstrb, sm_tkeep, sm_tlast} = 0;
+assign sm_tlast = dat_out_rsc_dat[33];
+assign {sm_tstrb, sm_tkeep} = 0;
 
 wire dat_in_rsc_rdy;
 
