@@ -65,10 +65,13 @@ module axi_ctrl_logic(
     logic next_ls, next_ss, wr_mb, rd_mb, wr_aa, rd_aa, rd_unsupp, trig_sm_wr, trig_sm_rd, do_nothing, decide_done, trig_int, sync_trig_int, axi_interrupt_done, sync_trig_sm_wr, sync_trig_sm_rd, trig_lm_rd, send_bk_done, trig_lm_wr, sync_trig_lm_rd, rd_ss_complete;
     logic ls_rd_data_bk, ls_wr_data_done, get_next_data_ss, ss_wr_data_done;
 
+    //Willy debug - s
+    logic wait_rd_data_back;
+    //Willy debug - e
+
     // FSM state, combinational logic
     always_comb begin
         axi_next_state = axi_state;
-
         case(axi_state)
             AXI_WAIT_DATA:
                 if(bk_ls_valid || bk_ss_valid)begin
@@ -110,17 +113,36 @@ module axi_ctrl_logic(
         else trans_typ = AXI_RD;
     end
 
+    logic [31:0] first_ss_tdata;
+    logic [1:0] first_ss_tuser;
+
     // get data from LS
     always_comb begin
-        if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_LS))begin // can send next data
+   
+        //Willy debug if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_LS))begin // can send next data
+        if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_LS) && trans_typ == AXI_WR)begin // can send next data
             bk_ls_ready = 1'b1;
         end
+        
+        //Willy debug - s
+        else if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_LS) && (trans_typ == AXI_RD)) begin
+            if (sync_trig_sm_rd == 1) begin
+                bk_ls_ready = 1'b0;
+                wait_rd_data_back = 1;
+            end
+            else begin
+                bk_ls_ready = 1'b1;
+            end
+        end
+        //Willy debug - e
+        
+        else if((axi_state != AXI_WAIT_DATA) && (axi_next_state == AXI_WAIT_DATA) && (next_trans == TRANS_SS) && first_ss_tuser == 2'b11)begin
+            wait_rd_data_back = 0;
+            bk_ls_ready = 1'b1;
+        end            
         else
             bk_ls_ready = 1'b0;
     end
-
-    logic [31:0] first_ss_tdata;
-    logic [1:0] first_ss_tuser;
 
     // get first data from SS
     always_ff@(posedge axi_aclk or negedge axi_aresetn)begin
@@ -702,13 +724,24 @@ module axi_ctrl_logic(
                 end
             end
             else if(axi_next_state == AXI_SEND_BKEND)begin
+
                 if(sync_trig_sm_rd && ~have_sent_sm)begin
-                    sm_send_data <= 1'b1;
-                    bk_sm_data <= {17'b0, bk_ls_addr};
-                    bk_sm_user <= 2'b10;
+                    //Willy debug - s
+                    if(wait_rd_data_back) begin
+                        //Do nothing due to wait read data back, no need to trigger dummy sm cycle
+                        send_bk_done = 1;
+                    end
+                    //Willy debug - e
+                    else begin
+                        sm_send_data <= 1'b1;
+                        bk_sm_data <= {17'b0, bk_ls_addr};
+                        bk_sm_user <= 2'b10;                    
+                    end
+                
                     //send_bk_done <= 1'b1;
                     have_sent_sm <= 1'b1;
                 end
+                
                 else if(ls_rd_data_bk)begin
                     bk_ls_rdata <= data_return;
                     //bk_ls_rdone <= 1'b1;
