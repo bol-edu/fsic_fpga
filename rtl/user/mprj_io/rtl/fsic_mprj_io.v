@@ -16,10 +16,12 @@ module MPRJ_IO #(   parameter pUSER_PROJECT_SIDEBAND_WIDTH   = 5,
   input  wire  [pSERIALIO_WIDTH-1: 0] serial_txd,
   input  wire          serial_tclk,
   input  wire  [37: 0] io_in,
+`ifdef USE_POWER_PINS
   input  wire          vccd1,
   input  wire          vccd2,
   input  wire          vssd1,
   input  wire          vssd2,
+`endif //USE_POWER_PINS  
   output wire  [37: 0] io_out,
   output wire  [37: 0] io_oeb,
   output wire          io_clk,

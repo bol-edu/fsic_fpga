@@ -100,10 +100,12 @@ module tb_fsic #( parameter BITS=32,
   reg  [127: 0] la_data_in;
   reg  [127: 0] la_oenb;
   wire   [37: 0] io_in;
+  `ifdef USE_POWER_PINS
   reg           vccd1;
   reg           vccd2;
   reg           vssd1;
   reg           vssd2;
+  `endif //USE_POWER_PINS
   reg           user_clock2;
   reg           ioclk_source;
 	
@@ -292,10 +294,12 @@ FSIC #(
 		//.la_data_in(la_data_in),
 		//.la_oenb(la_oenb),
 		.io_in(io_in),
-		.vccd1(vccd1),
-		.vccd2(vccd2),
-		.vssd1(vssd1),
-		.vssd2(vssd2),
+        `ifdef USE_POWER_PINS        
+		    .vccd1(vccd1),
+		    .vccd2(vccd2),
+		    .vssd1(vssd1),
+		    .vssd2(vssd2),
+        `endif //USE_POWER_PINS        
 		.wbs_ack(wbs_ack),
 		.wbs_rdata(wbs_rdata),		
 		//.la_data_out(la_data_out),
@@ -403,10 +407,12 @@ FSIC #(
 		wbs_we = 0;
 		la_data_in = 0;
 		la_oenb = 0;
-		vccd1 = 1;
-		vccd2 = 1;
-		vssd1 = 1;
-		vssd2 = 1;
+        `ifdef USE_POWER_PINS
+    		vccd1 = 1;
+	    	vccd2 = 1;
+    		vssd1 = 1;
+	    	vssd2 = 1;
+        `endif //USE_POWER_PINS    
 		user_clock2 = 0;
 		error_cnt = 0;
 		check_cnt = 0;
@@ -1589,7 +1595,7 @@ FSIC #(
 				tkeep = 4'b0000;
 				//tstrb = 4'b1111;
 				//tkeep = 4'b1111;
-				tlast = 1'b0;
+                tlast = upsb[1];   //set tlast = eol
                                 exp_data = {tst_img_out_buf[idx3+3], tst_img_out_buf[idx3+2], tst_img_out_buf[idx3+1], tst_img_out_buf[idx3+0]};
 			end
 			`ifdef USER_PROJECT_SIDEBAND_SUPPORT

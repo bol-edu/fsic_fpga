@@ -40,10 +40,12 @@ module FSIC #(
   input  wire          wbs_stb,
   input  wire          wbs_we,
   input  wire  [37: 0] io_in,
+`ifdef USE_POWER_PINS
   input  wire          vccd1,
   input  wire          vccd2,
   input  wire          vssd1,
   input  wire          vssd2,
+`endif //USE_POWER_PINS  
   output wire          wbs_ack,
   output wire  [31: 0] wbs_rdata,
   output wire   [2: 0] user_irq,
@@ -621,10 +623,12 @@ MPRJ_IO #(
                                           .serial_txd   (serial_txd),              // I  12
                                           .serial_tclk  (serial_tclk),             // I  
                                           .io_in        (io_in),                   // I  38
+`ifdef USE_POWER_PINS
                                           .vccd1        (vccd1),                   // I  
                                           .vccd2        (vccd2),                   // I  
                                           .vssd1        (vssd1),                   // I  
                                           .vssd2        (vssd2),                   // I  
+`endif //USE_POWER_PINS  
                                           .io_out       (io_out),                  // O  38
                                           .io_oeb       (io_oeb),                  // O  38
                                           .user_clock2  (user_clock2),             // I  
