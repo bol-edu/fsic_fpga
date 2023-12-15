@@ -111,9 +111,9 @@ void main()
        	// Checking FSIC AS Configuration Path
 	value = reg_fsic_as;	
 	if (value == 0x00000006) {
-		reg_fsic_as = 0x0000000F;		
+		reg_fsic_as = 0x00000006;		
 		value = reg_fsic_as;			
-		if(value == 0x0000000F) {
+		if(value == 0x00000006) {
 			j += 0x01;
 		}
 	}	
