@@ -132,7 +132,11 @@ module ps_axil(
     input wire [3:0] updma_si_tkeep,
     input wire updma_si_tlast,
     input wire updma_si_tvalid,
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
     input wire [6:0] updma_si_tuser,
+`else
+    input wire [1:0] updma_si_tuser,
+`endif
     output wire updma_si_tready,
 
     output wire [31:0] updma_so_tdata,
@@ -140,7 +144,11 @@ module ps_axil(
     output wire [3:0] updma_so_tkeep,
     output wire updma_so_tlast,
     output wire updma_so_tvalid,
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
     output wire [6:0] updma_so_tuser,
+`else
+    output wire [1:0] updma_so_tuser,
+`endif
     input wire updma_so_tready,
 
 	/////////////////////////////
@@ -587,6 +595,9 @@ AXIS_SWz #(.pADDR_WIDTH( 15 ),
 		.cc_as_enable(as_enable),
         //AXI Stream inputs for User Project grant 0
         .up_as_tdata(updma_si_tdata),
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        .up_as_tupsb(updma_si_tuser[6:2]),
+`endif
         .up_as_tstrb(updma_si_tstrb),
         .up_as_tkeep(updma_si_tkeep),
         .up_as_tlast(updma_si_tlast),
@@ -595,6 +606,9 @@ AXIS_SWz #(.pADDR_WIDTH( 15 ),
         .as_up_tready(updma_si_tready),    //o
         //AXI Output Stream for User Project
         .as_up_tdata(updma_so_tdata),
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        .as_up_tupsb(updma_so_tuser[6:2]),
+`endif
         .as_up_tstrb(updma_so_tstrb),
         .as_up_tkeep(updma_so_tkeep),
         .as_up_tlast(updma_so_tlast),
