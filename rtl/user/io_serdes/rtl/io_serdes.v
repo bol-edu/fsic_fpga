@@ -273,22 +273,6 @@ module IO_SERDES #(
   wire txen_rst_n = axis_rst_n & txen;
 
   always @(negedge coreclk or negedge txen_rst_n)  begin
-    pre_as_is_tdata_buf <= as_is_tdata;
-    pre_as_is_tstrb_buf <= as_is_tstrb;
-    pre_as_is_tkeep_buf <= as_is_tkeep;
-    pre_as_is_tid_tuser_buf[3:2] <= as_is_tid;
-    pre_as_is_tid_tuser_buf[1:0] <= as_is_tuser;
-    `ifdef USER_PROJECT_SIDEBAND_SUPPORT
-      pre_as_is_tupsb_4_1_buf <= as_is_tupsb[pUSER_PROJECT_SIDEBAND_WIDTH-1:1];
-      pre_as_is_tupsb_tlast_tvalid_tready_buf[3] <= as_is_tupsb[0];
-      pre_as_is_tupsb_tlast_tvalid_tready_buf[2] <= as_is_tlast;
-      pre_as_is_tupsb_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
-      pre_as_is_tupsb_tlast_tvalid_tready_buf[0] <= as_is_tready;
-    `else //USER_PROJECT_SIDEBAND_SUPPORT
-      pre_as_is_tlast_tvalid_tready_buf[2] <= as_is_tlast;
-      pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
-      pre_as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
-    `endif //USER_PROJECT_SIDEBAND_SUPPORT
 
     if ( !txen_rst_n ) begin
       pre_as_is_tdata_buf <= 0;
@@ -303,6 +287,23 @@ module IO_SERDES #(
       `endif //USER_PROJECT_SIDEBAND_SUPPORT
     end 
     else begin
+      pre_as_is_tdata_buf <= as_is_tdata;
+      pre_as_is_tstrb_buf <= as_is_tstrb;
+      pre_as_is_tkeep_buf <= as_is_tkeep;
+      pre_as_is_tid_tuser_buf[3:2] <= as_is_tid;
+      pre_as_is_tid_tuser_buf[1:0] <= as_is_tuser;
+      `ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        pre_as_is_tupsb_4_1_buf <= as_is_tupsb[pUSER_PROJECT_SIDEBAND_WIDTH-1:1];
+        pre_as_is_tupsb_tlast_tvalid_tready_buf[3] <= as_is_tupsb[0];
+        pre_as_is_tupsb_tlast_tvalid_tready_buf[2] <= as_is_tlast;
+        pre_as_is_tupsb_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
+        pre_as_is_tupsb_tlast_tvalid_tready_buf[0] <= as_is_tready;
+      `else //USER_PROJECT_SIDEBAND_SUPPORT
+        pre_as_is_tlast_tvalid_tready_buf[2] <= as_is_tlast;
+        pre_as_is_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
+        pre_as_is_tlast_tvalid_tready_buf[0] <= as_is_tready;
+      `endif //USER_PROJECT_SIDEBAND_SUPPORT
+      
       if (is_as_tready && as_is_tvalid) begin      //data transfer from Axis siwtch to io serdes when is_as_tready=1 and as_is_tvalid=1
         
         `ifdef USER_PROJECT_SIDEBAND_SUPPORT
