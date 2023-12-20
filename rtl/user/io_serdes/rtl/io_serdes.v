@@ -174,8 +174,8 @@ module IO_SERDES #(
   assign axi_wready = axi_wready_out;
 
   // if both axi_awvalid_in=1 and axi_wvalid_in=1 then output axi_awready_out = 1 and axi_wready_out = 1
-  assign axi_awready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;
-  assign axi_wready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;
+  assign axi_awready_out = (axi_awvalid_in && axi_wvalid_in) ? 1'b1 : 1'b0;
+  assign axi_wready_out = (axi_awvalid_in && axi_wvalid_in) ? 1'b1 : 1'b0;
 
 
   //write register
