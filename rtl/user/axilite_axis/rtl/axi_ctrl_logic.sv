@@ -729,7 +729,7 @@ module axi_ctrl_logic(
                     //Willy debug - s
                     if(wait_rd_data_back) begin
                         //Do nothing due to wait read data back, no need to trigger dummy sm cycle
-                        send_bk_done = 1;
+                        send_bk_done <= 1;
                     end
                     //Willy debug - e
                     else begin
