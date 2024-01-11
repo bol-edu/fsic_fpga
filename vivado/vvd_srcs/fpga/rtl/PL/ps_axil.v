@@ -151,6 +151,14 @@ module ps_axil(
 `endif
     input wire updma_so_tready,
 
+	//////////////////////
+	// AXI QSPI Signals //
+	//////////////////////
+	input wire qspi_io0_i,
+	output wire qspi_io1_o,
+	input wire qspi_sck_i,
+	input wire qspi_ss_i,
+
 	/////////////////////////////
 	// Global AXI-Lite Signals //
 	/////////////////////////////
@@ -314,9 +322,10 @@ module ps_axil(
     wire [12:0] is_serial_txd;
     wire is_serial_tclk;
        
-    assign caravel_mprj_out = {1'bz, is_ioclk, 1'bz, 13'bz, is_serial_tclk, is_serial_txd, 8'bz};
+    assign caravel_mprj_out = {1'bz, is_ioclk, 1'bz, 13'bz, is_serial_tclk, is_serial_txd, 3'bz, qspi_sck_i, qspi_ss_i, qspi_io0_i, 2'bz};
     assign is_serial_rclk = caravel_mprj_in[35];
-    assign is_serial_rxd = caravel_mprj_in[34:22];  
+    assign is_serial_rxd = caravel_mprj_in[34:22];
+    assign qspi_io1_o = caravel_mprj_in[1];
     	
 	///////////////////////////////////
 	// Assignment for Internal begin //
