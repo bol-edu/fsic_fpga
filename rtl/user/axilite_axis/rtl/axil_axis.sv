@@ -4,7 +4,7 @@
 
 
 
-(* DONT_TOUCH = "yes" *) module AXIL_AXIS #( parameter pADDR_WIDTH   = 12,
+module AXIL_AXIS #( parameter pADDR_WIDTH   = 12,
                     parameter pDATA_WIDTH   = 32
                   )
 (

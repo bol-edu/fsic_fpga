@@ -120,13 +120,7 @@ user_proj_example mprj (
 );
 */
 
-FSIC #(.BITS( BITS ),
-       .pUSER_PROJECT_SIDEBAND_WIDTH( 5 ),
-       .pSERIALIO_WIDTH( 13 ),
-       .pADDR_WIDTH( 15 ),
-       .pDATA_WIDTH( 32 ),
-       .pRxFIFO_DEPTH( 5 ),
-       .pCLK_RATIO( 4 )) u_fsic  (
+FSIC #(.BITS( BITS )) u_fsic  (
 
                       `ifdef USE_POWER_PINS
                       .vccd1       (vccd1),                   // I

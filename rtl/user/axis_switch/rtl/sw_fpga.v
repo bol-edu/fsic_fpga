@@ -214,11 +214,6 @@ reg [WIDTH-1:0] mem[(2**ADDR_WIDTH)-1:0];
 wire above_th = ((wr_ptr_reg - rd_ptr_reg) > TH_reg);
 reg as_is_tready_reg;   
 wire [WIDTH-1:0] s_axis;
-
-wire as_up_tvalid_out;
-wire as_aa_tvalid_out;
-wire as_ad_tvalid_out;
-
 generate
     assign s_axis[pDATA_WIDTH-1:0]                  = is_as_tdata;
 	`ifdef USER_PROJECT_SIDEBAND_SUPPORT
@@ -497,9 +492,9 @@ always @(posedge axis_clk or negedge axi_reset_n) begin
 	    end       
     end
 end
-assign as_up_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) && !empty; 
-assign as_aa_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) && !empty;
-assign as_ad_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b10) && !empty;
+wire as_up_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) && !empty; 
+wire as_aa_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) && !empty;
+wire as_ad_tvalid_out = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b10) && !empty;
 assign as_up_tvalid = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? as_up_tvalid_out: 0;  
 assign as_up_tdata = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00) ? m_axis[pDATA_WIDTH - 1:0]: 0;
 `ifdef USER_PROJECT_SIDEBAND_SUPPORT
