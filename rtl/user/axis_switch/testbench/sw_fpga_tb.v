@@ -1,3 +1,26 @@
+/*--------------------------------------------------------------------------------*/
+/* MIT License                                                                    */
+/*                                                                                */
+/* Copyright (c) 2023 VIA NEXT Technologies, Inc - <Hurry Lin>                    */
+/*                                                                                */
+/* Permission is hereby granted, free of charge, to any person obtaining a copy   */
+/* of this software and associated documentation files (the "Software"), to deal  */
+/* in the Software without restriction, including without limitation the rights   */
+/* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      */
+/* copies of the Software, and to permit persons to whom the Software is          */
+/* furnished to do so, subject to the following conditions:                       */
+/*                                                                                */
+/* The above copyright notice and this permission notice shall be included in all */
+/* copies or substantial portions of the Software.                                */
+/*                                                                                */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     */
+/* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       */
+/* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    */
+/* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         */
+/* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  */
+/* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  */
+/* SOFTWARE.                                                                      */
+/*--------------------------------------------------------------------------------*/
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
@@ -18,8 +41,13 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
+
+
 module axis_sw_tb();
 parameter   DATA_WIDTH = 32;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+parameter   pUSER_PROJECT_SIDEBAND_WIDTH = 5;
+`endif
 parameter   STRB_WIDTH = DATA_WIDTH/8;
 parameter   USER_WIDTH = 2;
 parameter   TID_WIDTH = 2;
@@ -49,6 +77,9 @@ reg 	soc_cc_as_enable;		//axi_lite enable
 */
 //Input stream 0
 reg [DATA_WIDTH-1:0] data_0;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+reg [pUSER_PROJECT_SIDEBAND_WIDTH-1:0] upsb_0;
+`endif
 reg [STRB_WIDTH-1:0] strb_0, keep_0;
 reg [USER_WIDTH-1:0] user_0; 
 reg valid_0, hpri_req0, tlast_0;
@@ -67,6 +98,9 @@ reg valid_2, hpri_req2, tlast_2;
 wire ready_2;
 //ouput stream
 wire [DATA_WIDTH-1:0] data_m;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+wire [pUSER_PROJECT_SIDEBAND_WIDTH-1:0] upsb_m;
+`endif
 wire [STRB_WIDTH-1:0] strb_m, keep_m;
 wire valid_m, tlast_m;
 wire [USER_WIDTH-1:0] user_m;
@@ -78,6 +112,9 @@ reg ready_m;
 //Input stream
 reg is_valid = 1'b0, is_tlast;
 reg [DATA_WIDTH-1:0] is_data;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+reg [pUSER_PROJECT_SIDEBAND_WIDTH-1:0] is_upsb;
+`endif
 reg [STRB_WIDTH-1:0] is_strb;
 reg [STRB_WIDTH-1:0] is_keep;
 reg [TID_WIDTH-1:0] is_tid;
@@ -85,6 +122,9 @@ reg [USER_WIDTH-1:0] is_user;
 wire is_ready;
 //ouput stream 0
 wire [DATA_WIDTH-1:0] up_data;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+wire [pUSER_PROJECT_SIDEBAND_WIDTH-1:0] up_upsb;
+`endif
 wire [STRB_WIDTH-1:0] up_keep;
 wire [STRB_WIDTH-1:0] up_strb;
 wire up_valid, up_tlast;
@@ -161,6 +201,9 @@ task axis_tx;
 			@ (posedge o_clk);			
 			for(idx=0; idx<10; idx=idx+1)begin
 				data_0 <=  idx + 32'h00001110;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+                upsb_0 <= idx;
+`endif				
 				strb_0 <=  4'hf;
 				keep_0 <=  4'hf;
 				user_0 <=  2'b00;
@@ -189,6 +232,9 @@ task axis_tx_hi_req;
 			@ (posedge o_clk);			
 			for(idxh=0; idxh<10; idxh=idxh+1)begin
 				data_0 <=  idxh + 32'h00002220;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+                upsb_0 <= idxh + 5'h10;
+`endif					
 				strb_0 <=  4'hf;
 				keep_0 <=  4'hf;
 				user_0 <=  2'b00;
@@ -299,6 +345,9 @@ task axis_rx;
         ready_m <= 1;
         if(ready_m && valid_m) begin
             $display("Upstream received stream data is %h", data_m);
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+            $display("Upstream received up sideband is %h", upsb_m);   
+`endif	            
             $display("TID is %h", tid_m);                
             $display("data strobe is %h", strb_m);
             $display("keep is %h", keep_m);
@@ -313,6 +362,9 @@ endtask
 //for Demux task
 task is_axis_tx;
     input [DATA_WIDTH-1:0] data_in;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+    input [pUSER_PROJECT_SIDEBAND_WIDTH-1:0] upsb_in;
+`endif    
     input [STRB_WIDTH-1:0] strb_in;    
     input [STRB_WIDTH-1:0] keep_in;
     input tlast_in;  
@@ -321,6 +373,9 @@ task is_axis_tx;
     input [VALID_WS_LEN-1:0] valid_wait_state;
     begin    
         is_data = #0 data_in;
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+        is_upsb = upsb_in;
+`endif         
         is_strb = strb_in;        
         is_keep = keep_in;
         is_tlast = tlast_in;
@@ -362,6 +417,9 @@ task up_axis_rx;
         up_ready <= 1;
         if(up_ready && up_valid) begin
             $display("User Project stream data is %h", up_data);
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+            $display("User Project sideband is %h", up_upsb);   
+`endif            
             $display("strb is %h", up_strb);            
             $display("keep is %h", up_keep);
             $display("user data is %h", up_user);
@@ -498,6 +556,57 @@ begin
 	o_rst_n = 1'b0;
 	#150 o_rst_n = 1;
 	#1000 
+	
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT	
+    //data, upsb, strb, keep, tlast, tid, user, wait 
+	is_axis_tx(16'h2221, 5'h0, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
+	is_axis_tx(16'h2222, 5'h1, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h2223, 5'h2, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);    
+	is_axis_tx(16'h2224, 5'h3, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h2225, 5'h4, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
+	is_axis_tx(16'h2226, 5'h5, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h2227, 5'h6, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);    
+	is_axis_tx(16'h2228, 5'h7, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h2229, 5'h8, 4'hF, 4'hF, 1'b1, 2'b00, 2'b00, 2'b00);    	 		   	
+	is_axis_tx(16'h1111, 5'h10, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);
+	is_axis_tx(16'h1112, 5'h11, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 	  	
+	is_axis_tx(16'h1113, 5'h12, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
+	is_axis_tx(16'h1114, 5'h13, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 
+	is_axis_tx(16'h1115, 5'h14, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
+	is_axis_tx(16'h1116, 5'h15, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 	  	
+	is_axis_tx(16'h1117, 5'h16, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
+	is_axis_tx(16'h1118, 5'h17, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 					
+	is_axis_tx(16'h1119, 5'h18, 4'hF, 4'hF, 1'b1, 2'b01, 2'b01, 2'b00);
+	#1000 
+    //data, upsb, strb, keep, tlast, tid, user, wait 
+	is_axis_tx(16'h3331, 5'h9, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
+	is_axis_tx(16'h3332, 5'h8, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h3333, 5'h7, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);    
+	is_axis_tx(16'h3334, 5'h6, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h3335, 5'h5, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);  
+	is_axis_tx(16'h3336, 5'h4, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h3337, 5'h3, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);    
+	is_axis_tx(16'h3338, 5'h2, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
+	is_axis_tx(16'h3339, 5'h1, 4'hF, 4'hF, 1'b1, 2'b00, 2'b00, 2'b00);  	
+    is_axis_tx(16'h5551, 5'h19, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);
+	is_axis_tx(16'h5552, 5'h18, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 	  	
+	is_axis_tx(16'h5553, 5'h17, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
+	is_axis_tx(16'h5554, 5'h16, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 
+	is_axis_tx(16'h5555, 5'h15, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
+	is_axis_tx(16'h5556, 5'h14, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00); 	  	
+	is_axis_tx(16'h5557, 5'h13, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);  
+	is_axis_tx(16'h5558, 5'h12, 4'hF, 4'hF, 1'b0, 2'b01, 2'b01, 2'b00);
+	is_axis_tx(16'h5559, 5'h11, 4'hF, 4'hF, 1'b1, 2'b01, 2'b01, 2'b00);
+	is_axis_tx(16'h6661, 5'h0, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00);
+	is_axis_tx(16'h6662, 5'h1, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 	  	
+	is_axis_tx(16'h6663, 5'h2, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00);  
+	is_axis_tx(16'h6664, 5'h3, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 
+	is_axis_tx(16'h6665, 5'h4, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00);  
+	is_axis_tx(16'h6666, 5'h5, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 	  	
+	is_axis_tx(16'h6667, 5'h6, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00);  
+	is_axis_tx(16'h6668, 5'h7, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 					
+	is_axis_tx(16'h6669, 5'h8, 4'hF, 4'hF, 1'b1, 2'b10, 2'b01, 2'b00);
+`else
     //data, strb, keep, tlast, tid, user, wait 
 	is_axis_tx(16'h2221, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);   
 	is_axis_tx(16'h2222, 4'hF, 4'hF, 1'b0, 2'b00, 2'b00, 2'b00);
@@ -545,8 +654,11 @@ begin
 	is_axis_tx(16'h6666, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 	  	
 	is_axis_tx(16'h6667, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00);  
 	is_axis_tx(16'h6668, 4'hF, 4'hF, 1'b0, 2'b10, 2'b01, 2'b00); 					
-	is_axis_tx(16'h6669, 4'hF, 4'hF, 1'b1, 2'b10, 2'b01, 2'b00);
+	is_axis_tx(16'h6669, 4'hF, 4'hF, 1'b1, 2'b10, 2'b01, 2'b00);	
+`endif    
+
 end
+
 AXIS_SW uut_AXIS_SW(
 .axi_reset_n(o_rst_n),
 .axis_clk(o_clk),
@@ -567,6 +679,9 @@ AXIS_SW uut_AXIS_SW(
 .cc_as_enable(soc_cc_as_enable),
 //Upstream for axis arbiter
 .up_as_tdata(data_0),
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+.up_as_tupsb(upsb_0),
+`endif 
 .up_as_tstrb(strb_0),
 .up_as_tkeep(keep_0),
 .up_as_tlast(tlast_0),
@@ -590,6 +705,9 @@ AXIS_SW uut_AXIS_SW(
 .la_hpri_req(hpri_req2),
 .as_la_tready(ready_2),
 .as_is_tdata(data_m),
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+.as_is_tupsb(upsb_m),
+`endif 
 .as_is_tstrb(strb_m),
 .as_is_tkeep(keep_m),
 .as_is_tlast(tlast_m),
@@ -599,6 +717,9 @@ AXIS_SW uut_AXIS_SW(
 .is_as_tready(ready_m),
 //Downstream for axis demux
 .is_as_tdata(is_data),
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+.is_as_tupsb(is_upsb),
+`endif 
 .is_as_tstrb(is_strb),
 .is_as_tkeep(is_keep),
 .is_as_tlast(is_tlast),
@@ -607,6 +728,9 @@ AXIS_SW uut_AXIS_SW(
 .is_as_tuser(is_user),
 .as_is_tready(is_ready),
 .as_up_tdata(up_data),
+`ifdef USER_PROJECT_SIDEBAND_SUPPORT
+.as_up_tupsb(up_upsb),
+`endif 
 .as_up_tstrb(up_strb),
 .as_up_tkeep(up_keep),
 .as_up_tlast(up_tlast),
