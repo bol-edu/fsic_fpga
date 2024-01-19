@@ -52,15 +52,32 @@ output   io1;
 	reg [7:0] spi_cmd;
 	reg [23:0] spi_addr;
 
+	reg [23:0] write_addr; //hurry	
+	reg [7:0] write_data; //hurry
+	reg 	wen, wstart; //hurry
+
 // io1 output
     // assign io1 = buffer[7];
     assign io1 = outbuf[7];
 
 // BRAM Interface
-   assign romcode_Addr_A = {8'b0, spi_addr};
-   assign romcode_Din_A = 32'b0;
+//hurry    assign romcode_Addr_A = {8'b0, spi_addr};
+   assign romcode_Addr_A = (wen == 1) ? {8'b0, write_addr} : {8'b0, spi_addr}; //huryr
+   //hurry assign romcode_Din_A = 32'b0; 
+//hurry_start
+   assign romcode_Din_A[7:0] = (write_addr[1:0] == 2'b00) ? write_data: 0; //hurry
+   assign romcode_Din_A[15:8] = (write_addr[1:0] == 2'b01) ? write_data: 0; //hurry
+   assign romcode_Din_A[23:16] = (write_addr[1:0] == 2'b10) ? write_data: 0; //hurry
+   assign romcode_Din_A[31:24] = (write_addr[1:0] == 2'b11) ? write_data: 0; //hurry
+//hurry_end  
    assign romcode_EN_A = (bytecount >= 4);
-   assign romcode_WEN_A = 4'b0;
+   //hurry assign romcode_WEN_A = 4'b0;
+//hurry_start
+   assign romcode_WEN_A[0] = (write_addr[1:0] == 2'b00) ? wen: 0;  //hurry
+   assign romcode_WEN_A[1] = (write_addr[1:0] == 2'b01) ? wen: 0;  //hurry
+   assign romcode_WEN_A[2] = (write_addr[1:0] == 2'b10) ? wen: 0;  //hurry         
+   assign romcode_WEN_A[3] = (write_addr[1:0] == 2'b11) ? wen: 0;  //hurry
+//hurry_end   
    assign romcode_Clk_A = ap_clk;
    assign romcode_Rst_A = ap_rst;
 
@@ -118,9 +135,19 @@ output   io1;
 			buffer <= 0;
 			bitcount <= 0;
 			bytecount <= 0;
+			wstart <= 0; //hurry
+			wen <= 0; //hurry
+			write_data <= 0; //hurry
+			write_addr <= 0; //hurry
         end else begin              // csb active -> count bit, byte
 			buffer <= buffer_next;
 			bitcount <= bitcount + 1;
+//hurry_start
+            if(wstart == 1) begin
+                wstart<=0;
+                wen<=0;
+            end
+//hurry_end			
 			if (bitcount == 7) begin
 				bitcount <= 0;
 				bytecount <= bytecount + 1;
@@ -134,6 +161,17 @@ output   io1;
                     // buffer <= memory;
                     spi_addr <= spi_addr + 1;
                 end
+//hurry_start
+                if(bytecount >= 4 && spi_cmd == 'h02)  begin
+                    write_addr <= spi_addr;
+                    write_data <= buffer_next;
+                    if(wstart == 0) begin
+                        wstart <= 1;
+                        wen <= 1;
+                    end                                            
+                    spi_addr <= spi_addr + 1;
+                end                
+//hurry_end                  
             end
 		end
 	end
