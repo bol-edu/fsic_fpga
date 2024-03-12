@@ -1,3 +1,4 @@
+`include "fsic_defines.v"
 ///////////////////////////////////////////////////////////////////////////////
 //
 //       MODULE: axis_master
@@ -92,15 +93,12 @@ module axis_master(
     assign axis_tkeep = 4'b0;
     assign axis_tlast = 1'b1;
 
-    // FSM state, latch logic, output control
-    always_latch begin
-        case(axis_state)
-            AXIS_WAIT_BACKEND:
-                bk_ready = 1'b0;
-            //AXIS_SEND_DATA: // do nothing
-            AXIS_SEND_BK_RDY:
-                bk_ready = 1'b1;
-        endcase
+    // FSM state, output control
+    always_comb begin
+        if (axis_state == AXIS_SEND_BK_RDY)
+            bk_ready = 1'b1;
+        else
+            bk_ready = 1'b0;
     end
 
 endmodule

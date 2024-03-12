@@ -210,22 +210,23 @@ module axi_ctrl_logic(
 
     logic set_bk_ss_ready;
     // FSM state, latch logic, output control
-    always_latch begin
-        case(ss_secnd_state)
-            SS_WAIT_GET_SECND:begin
-                secnd_data_ss_valid = 1'b0;
-                set_bk_ss_ready = 1'b0;
-            end
-            SS_SEND_BKRDY:
-                set_bk_ss_ready = 1'b1;
-            SS_WAIT_BKVLD:
-                set_bk_ss_ready = 1'b0;
-            SS_SECND_DATA: begin
-                secnd_data_ss = bk_ss_data;
-                secnd_data_ss_valid = 1'b1;
-            end
-            //default:
-        endcase
+    always_comb begin
+        if (ss_secnd_state == SS_SECND_DATA)
+            secnd_data_ss_valid = 1'b1;
+        else
+            secnd_data_ss_valid = 1'b0;
+    end
+
+    always_comb begin
+        if (ss_secnd_state == SS_SEND_BKRDY)
+            set_bk_ss_ready = 1'b1;
+        else
+            set_bk_ss_ready = 1'b0;
+    end
+
+    always_comb begin   //create a latch here
+        if (ss_secnd_state == SS_SECND_DATA)
+            secnd_data_ss = bk_ss_data;
     end
 
     always_comb begin
@@ -270,16 +271,12 @@ module axi_ctrl_logic(
     end
 
     // FSM state, latch logic, output control
-    always_latch begin
-        case(sm_state)
-            SM_WAIT_SEND_DATA:
-                bk_sm_valid = 1'b0;
-            SM_SEND_BK_DATA:
-                bk_sm_valid = 1'b1;
-            SM_SEND_DATA_DONE:
-                bk_sm_valid = 1'b0;
-            //default:
-        endcase
+    always_comb begin
+        if(sm_state == SM_SEND_BK_DATA)
+             bk_sm_valid = 1'b1;
+        else
+             bk_sm_valid = 1'b0;
+
     end
 
     logic [3:0] sm_data_cnt;

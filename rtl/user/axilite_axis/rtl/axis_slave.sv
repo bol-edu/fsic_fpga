@@ -1,3 +1,4 @@
+`include "fsic_defines.v"
 ///////////////////////////////////////////////////////////////////////////////
 //
 //       MODULE: axis_slave
@@ -90,16 +91,12 @@ module axis_slave(
     end
 
     // FSM state, latch logic, output control
-    always_latch begin // experiment, test if not assigned signal keep the value before
-        case(axis_state)
-            AXIS_WAIT_FRONTEND: 
-                axis_tready = 1'b0;
-            //AXIS_WAIT_BACKEND:  // do nothing
-            AXIS_SEND_TREADY:
-                axis_tready = 1'b1;
-            //default:
-            //    axis_tready = 1'b0;
-        endcase
+    always_comb begin
+        if (axis_state == AXIS_SEND_TREADY)
+            axis_tready = 1'b1;
+        else
+            axis_tready = 1'b0;
+
     end
 
 endmodule
