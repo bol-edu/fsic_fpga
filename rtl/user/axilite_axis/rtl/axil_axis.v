@@ -342,13 +342,14 @@ always @(posedge axis_clk or negedge axis_rst_n) begin
             intr_status <= 1'b0;    // write-one-to clear 
         else if( r_ss_t2  & ss_aa_mbox_latch & (|r_ss_wstrb) ) //Remote write any mbox register to set
             intr_status <= 1'b1;    // mbox write set status
+        else     
+            intr_status <= intr_status;
 
     end
 end 
 
 always @(posedge axis_clk or negedge axis_rst_n) begin
     if( !axis_rst_n ) begin
-        intr_status <= 0;
         intr_enable <= 0;
     end else begin
 
@@ -372,7 +373,9 @@ always @(posedge axis_clk or negedge axis_rst_n) begin
             else              mb_regs[s_awaddr[4:2]][31:24] <= mb_regs[s_awaddr[4:2]][31:24];
         end    
         else if( r_ss_t2  & ss_aa_mbox_latch ) begin
-            $display($time, "=> detect ss_aa_mbox_latch write %x, %x, %x", r_ss_rw_addr, r_ss_wstrb, r_ss_wdata);        
+            `ifdef SIMULATION
+              $display($time, "=> detect ss_aa_mbox_latch write %x, %x, %x", r_ss_rw_addr, r_ss_wstrb, r_ss_wdata);        
+            `endif //SIMULATION  
             if ( r_ss_wstrb[0] ) mb_regs[r_ss_rw_addr[4:2]][7:0] <= r_ss_wdata[7:0];
             else              mb_regs[r_ss_rw_addr[4:2]][7:0] <= mb_regs[r_ss_rw_addr[4:2]][7:0];
             if ( r_ss_wstrb[1] ) mb_regs[r_ss_rw_addr[4:2]][15:8] <= r_ss_wdata[15:8];
@@ -475,7 +478,7 @@ wire ls_ready  = ls_sm_wr ? ls_done : ls_done & s_rready;      // ls read need t
 // State Machine - ls_sm_fsm
 always @(posedge axis_clk or negedge axis_rst_n) begin   // asynchronous reset
     if( !axis_rst_n ) begin
-        ls_sm_fsm = `LS_IDLE;
+        ls_sm_fsm <= `LS_IDLE;
     end else begin
         case(ls_sm_fsm) 
             `LS_IDLE : 
