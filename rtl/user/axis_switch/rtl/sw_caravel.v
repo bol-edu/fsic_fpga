@@ -174,7 +174,7 @@ localparam USER_OFFSET  = TID_OFFSET  + TID_WIDTH;
 localparam WIDTH        = USER_OFFSET + USER_WIDTH;
 //axi_lite reg
 //FIFO threshold setting
-reg [3:0] TH_reg = 4'h6; //offset0, bit3:0
+reg [ADDR_WIDTH-1:0] TH_reg = 4'h6; //offset0, bit3:0
 wire axi_awvalid_in;
 wire axi_wvalid_in;
 wire axi_awready_out;
@@ -202,7 +202,7 @@ reg [ADDR_WIDTH:0] wr_ptr_reg = {ADDR_WIDTH+1{1'b0}};
 reg [ADDR_WIDTH:0] rd_ptr_reg = {ADDR_WIDTH+1{1'b0}};
 (* ramstyle = "no_rw_check" *)
 reg [WIDTH-1:0] mem[(2**ADDR_WIDTH)-1:0];
-wire above_th = ((wr_ptr_reg - rd_ptr_reg) > TH_reg);
+wire above_th = ((wr_ptr_reg - rd_ptr_reg) > {1'b0, TH_reg[ADDR_WIDTH-1:0]} );
 reg as_is_tready_reg;   
 wire [WIDTH-1:0] s_axis;
 generate
