@@ -42,6 +42,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
+//`define DEBUG_SYNTHESIS
 
 module AXIS_SW #(
 				parameter pUSER_PROJECT_SIDEBAND_WIDTH   = 5,
@@ -52,6 +53,22 @@ module AXIS_SW #(
     input  wire                             axi_reset_n,    
     input  wire                             axis_clk,
     input  wire                             axis_rst_n,
+
+`ifdef DEBUG_SYNTHESIS    
+    //tony_debug
+    output wire [3:0] TH_reg_debug,
+    output wire [4:0] wr_ptr_reg_debug,
+    output wire [4:0] rd_ptr_reg_debug,
+    output wire above_th_debug,
+    output wire [4:0] current_fifo_size_debug,
+    output wire as_aa_tvalid_out_debug,
+    output wire as_up_tvalid_out_debug,
+    output wire as_aa_tvalid_debug,
+    output wire [1:0]m_axis_tid_debug,
+    output wire m_axis_tid_00_debug,
+    output wire m_axis_tid_01_debug,
+`endif //DEBUG_SYNTHESIS    
+ 
     //axi_lite slave interface
     //write addr channel
     input wire 	axi_awvalid,
@@ -174,7 +191,7 @@ localparam USER_OFFSET  = TID_OFFSET  + TID_WIDTH;
 localparam WIDTH        = USER_OFFSET + USER_WIDTH;
 //axi_lite reg
 //FIFO threshold setting
-reg [ADDR_WIDTH-1:0] TH_reg = 4'h6; //offset0, bit3:0
+reg [ADDR_WIDTH-1:0] TH_reg; //offset0, bit3:0
 wire axi_awvalid_in;
 wire axi_wvalid_in;
 wire axi_awready_out;
@@ -183,8 +200,8 @@ wire axi_wready_out;
 wire [N-1:0]                req, hi_req;
 reg  [N-1:0]                shift_req, shift_hi_req;
 reg  [$clog2(N)-1:0]        base_ptr;   
-reg  [N-1:0]                grant_reg = 3'b000, grant_next, shift_grant = 3'b000, shift_hi_grant= 3'b000;
-reg                         frame_start_reg = 1'b0, frame_start_next;   
+reg  [N-1:0]                grant_reg, grant_next, shift_grant, shift_hi_grant;
+reg                         frame_start_reg, frame_start_next;   
 reg [N-1:0]                 hi_req_flag;
 reg [pDATA_WIDTH-1:0]       m_axis_tdata_reg;
 `ifdef USER_PROJECT_SIDEBAND_SUPPORT
@@ -193,16 +210,16 @@ reg [pDATA_WIDTH-1:0]       m_axis_tdata_reg;
 reg [pDATA_WIDTH/8-1:0]     m_axis_tstrb_reg;
 reg [pDATA_WIDTH/8-1:0]     m_axis_tkeep_reg; 
 reg                         m_axis_tlast_reg;        
-reg                         m_axis_tvalid_reg = 1'b0;
+reg                         m_axis_tvalid_reg;
 reg [USER_WIDTH-1:0]        m_axis_tuser_reg;     
 reg [TID_WIDTH-1:0]         m_axis_tid_reg;
 //for Demux
 //FIFO control pointer
-reg [ADDR_WIDTH:0] wr_ptr_reg = {ADDR_WIDTH+1{1'b0}};
-reg [ADDR_WIDTH:0] rd_ptr_reg = {ADDR_WIDTH+1{1'b0}};
+reg [ADDR_WIDTH:0] wr_ptr_reg;
+reg [ADDR_WIDTH:0] rd_ptr_reg;
 (* ramstyle = "no_rw_check" *)
 reg [WIDTH-1:0] mem[(2**ADDR_WIDTH)-1:0];
-wire above_th = ((wr_ptr_reg - rd_ptr_reg) > {1'b0, TH_reg[ADDR_WIDTH-1:0]} );
+wire above_th = ((wr_ptr_reg - rd_ptr_reg) > TH_reg );
 reg as_is_tready_reg;   
 wire [WIDTH-1:0] s_axis;
 generate
@@ -226,8 +243,8 @@ assign axi_awready = axi_awready_out;
 assign axi_wvalid_in = axi_wvalid && cc_as_enable;
 assign axi_wready = axi_wready_out;
 // if both axi_awvalid_in=1 and axi_wvalid_in=1 then output axi_awready_out = 1 and axi_wready_out = 1
-assign axi_awready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;
-assign axi_wready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;
+assign axi_awready_out = (axi_awvalid_in && axi_wvalid_in) ? 1'b1 : 1'b0;
+assign axi_wready_out = (axi_awvalid_in && axi_wvalid_in) ? 1'b1 : 1'b0;
 //write register
 always @(posedge axis_clk or negedge axi_reset_n)  begin
 	if ( !axi_reset_n ) begin
@@ -494,4 +511,21 @@ assign as_aa_tstrb = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[STRB_OFFS
 assign as_aa_tkeep = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[KEEP_OFFSET +: pDATA_WIDTH/8]: 0;
 assign as_aa_tlast = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[LAST_OFFSET]: 0;
 assign as_aa_tuser = (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01) ? m_axis[USER_OFFSET +: USER_WIDTH]: 0;
+
+
+`ifdef DEBUG_SYNTHESIS    
+assign TH_reg_debug = TH_reg;
+assign wr_ptr_reg_debug = wr_ptr_reg;
+assign rd_ptr_reg_debug = rd_ptr_reg;
+assign above_th_debug = above_th;
+reg [ADDR_WIDTH:0] current_fifo_size ;
+assign current_fifo_size = wr_ptr_reg - rd_ptr_reg;
+assign current_fifo_size_debug = current_fifo_size ;
+assign as_aa_tvalid_out_debug = as_aa_tvalid_out;
+assign as_up_tvalid_out_debug = as_up_tvalid_out;
+assign as_aa_tvalid_debug = as_aa_tvalid;
+assign m_axis_tid_debug = m_axis[TID_OFFSET +: TID_WIDTH];
+assign m_axis_tid_00_debug =  (m_axis[TID_OFFSET +: TID_WIDTH]==2'b00);
+assign m_axis_tid_01_debug =  (m_axis[TID_OFFSET +: TID_WIDTH]==2'b01);
+`endif //DEBUG_SYNTHESIS    
 endmodule
