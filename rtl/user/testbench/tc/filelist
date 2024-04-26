@@ -1,12 +1,7 @@
 ../fpga.v
 ../fsic_clock.v
 ../../rtl/fsic.v
-../../axilite_axis/rtl/axi_ctrl_logic.sv
-../../axilite_axis/rtl/axil_axis.sv
-../../axilite_axis/rtl/axilite_master.sv
-../../axilite_axis/rtl/axilite_slave.sv
-../../axilite_axis/rtl/axis_master.sv
-../../axilite_axis/rtl/axis_slave.sv
+../../axilite_axis/rtl/axil_axis.v
 ../../axis_switch/rtl/sw_caravel.v
 ../../config_ctrl/rtl/config_ctrl.v
 ../../fsic_clkrst/rtl/fsic_clkrst.v
