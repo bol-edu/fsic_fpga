@@ -605,7 +605,7 @@ proc cr_bd_design_1 { parentCell } {
   set blk_mem_gen_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 blk_mem_gen_0 ]
   set_property -dict [ list \
    CONFIG.Byte_Size {8} \
-CONFIG.Coe_File {/home/josh/my/sim/fsic_fpga/vivado/fsic.coe} \
+CONFIG.Coe_File {/ADATA2T/home/tonyho/workspace/test/fsic_fpga/vivado/fsic.coe} \
    CONFIG.EN_SAFETY_CKT {true} \
    CONFIG.Enable_32bit_Address {true} \
    CONFIG.Enable_A {Use_ENA_Pin} \
@@ -1069,6 +1069,7 @@ move_dashboard_gadget -name {methodology_1} -row 2 -col 1
 
 # ----- Launch Simulation -----# 
 set_property target_simulator "XSim" [current_project]  
+set_property -name {xsim.simulate.log_all_signals} -value {true} -objects [get_filesets sim_1]
 launch_simulation -mode behavioral
 run all
 
