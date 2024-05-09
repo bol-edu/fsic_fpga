@@ -177,6 +177,7 @@
   assign axi_awready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;
   assign axi_wready_out = (axi_awvalid_in && axi_wvalid_in) ? 1 : 0;
 
+  reg is_as_tready_out_1T;
 
   //write register
   always @(posedge axi_clk or negedge axi_reset_n)  begin
@@ -303,7 +304,8 @@
       `endif
     end 
     else begin
-      if (is_as_tready && as_is_tvalid) begin      //data transfer from Axis siwtch to io serdes when is_as_tready=1 and as_is_tvalid=1
+      if (is_as_tready_out_1T && as_is_tvalid) begin      //data transfer from Axis siwtch to io serdes when
+          //use is_as_tready_out_1T to sample the signal from AS to IS
         
         `ifdef USER_PROJECT_SIDEBAND_SUPPORT
           pre_as_is_tupsb_tlast_tvalid_tready_buf[1] <= as_is_tvalid;
@@ -562,10 +564,14 @@
   always @(posedge coreclk or negedge txen_rst_n )  begin
     if ( !txen_rst_n ) begin
       is_as_tready_out <= 0;        //set is_as_tready_out=0 when txen == 0
+      is_as_tready_out_1T <= 0;        
     end
     else begin
       if (rx_received_data == 0) is_as_tready_out <= 1;    // when txen==1 and still not recevies data from remote side then set is_as_tready_out=1 to avoid dead lock issue.
-      else  is_as_tready_out <= is_as_tready_remote;        // when txen == 1 and rx_received_data==1 (received data from remote side) then is_as_tready_out come from is_as_tready_remote (remote side)
+      else  begin
+          is_as_tready_out <= is_as_tready_remote;        // when txen == 1 and rx_received_data==1 (received data from remote side) then is_as_tready_out come from is_as_tready_remote (remote side)
+          is_as_tready_out_1T <= is_as_tready;            
+      end
     end
   end
 
