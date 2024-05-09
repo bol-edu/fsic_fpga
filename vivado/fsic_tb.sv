@@ -19,6 +19,8 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
+`define SHOW_HEART_BEAT 1
+ 
 import axi_vip_pkg::*;
 import design_1_axi_vip_0_0_pkg::*;
 import design_1_axi_vip_1_0_pkg::*;
@@ -67,6 +69,27 @@ module fsic_tb();
     design_1_axi_vip_1_0_slv_mem_t  slave_agent;
     design_1_axi_vip_2_0_slv_mem_t  slave_agent2;
     design_1_axi_vip_3_0_slv_mem_t  slave_agent3;
+
+    `ifdef SHOW_HEART_BEAT
+      reg [31:0] repeat_cnt;
+      reg finish_flag;
+      reg timeout_flag;
+      initial begin
+        $timeformat (-9, 3, " ns", 13); 
+        //$dumpfile("top_bench.vcd");
+        //$dumpvars(0, top_bench);
+        finish_flag = 0; 
+        repeat_cnt = 0; 
+        timeout_flag = 0;
+        do begin
+          repeat_cnt = repeat_cnt + 1; 
+          repeat (100000) @(posedge sys_clock);
+          $display("%t MSG %m, +100000 cycles, finish_flag=%b,  repeat_cnt=%04d", $time, finish_flag, repeat_cnt);
+        end  
+        while(finish_flag == 0 && repeat_cnt <= 330 );
+        timeout_flag = 1;
+      end   
+    `endif //SHOW_HEART_BEAT
 
     initial begin    
         fork
@@ -1077,8 +1100,9 @@ module fsic_tb();
             while (keepChk) begin
                 #10us
                 axil_cycles_gen(ReadCyc, PL_UPDMA, offset, data, 0);
-                if(data == 32'h0000_0001) begin
-                    $display($time, "=> Buffer transfer done. offset %h = %h, PASS", offset, data);
+                if(data == 32'h0000_0001 || timeout_flag==1 ) begin
+                    if ( timeout_flag ) $display($time, "=> ERROR: Time Out - force quiti!!!");
+                    else $display($time, "=> Buffer transfer done. offset %h = %h, PASS", offset, data);
                     keepChk = 0;
 
                     fd = $fopen ("../../../../../updma_output.log", "w");
