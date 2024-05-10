@@ -114,57 +114,57 @@ assign axi_rdata_bus[0] = ( (user_prj_sel == 5'b00000) && cc_up_enable) ? rdata_
 
 //user project 1 
 assign awvalid_1 = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? axi_awvalid : 0;
-assign axi_awready_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? awready_0 : 0;
+assign axi_awready_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? awready_1 : 0;
 assign awaddr = axi_awaddr[11:0];
 assign wstrb_1 = axi_wstrb;    //[TODO] share wstrb for all user projects.
 
 assign wvalid_1 = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? axi_wvalid : 0;
-assign axi_wready_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? wready_0 : 0;
+assign axi_wready_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? wready_1 : 0;
 assign wdata = axi_wdata;
 
 assign arvalid_1 = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? axi_arvalid : 0;
-assign axi_arready_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? arready_0 : 0;
+assign axi_arready_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? arready_1 : 0;
 assign araddr = axi_araddr;
 
-assign axi_rvalid_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? rvalid_0 : 0;
+assign axi_rvalid_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? rvalid_1 : 0;
 assign rready = axi_rready;
-assign axi_rdata_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? rdata_0 : 0;
+assign axi_rdata_bus[1] = ( (user_prj_sel == 5'b00001) && cc_up_enable) ? rdata_1 : 0;
 
 //user project 2 
 assign awvalid_2 = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? axi_awvalid : 0;
-assign axi_awready_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? awready_0 : 0;
+assign axi_awready_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? awready_2 : 0;
 assign awaddr = axi_awaddr[11:0];
 assign wstrb_2 = axi_wstrb;    //[TODO] share wstrb for all user projects.
 
 assign wvalid_2 = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? axi_wvalid : 0;
-assign axi_wready_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? wready_0 : 0;
+assign axi_wready_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? wready_2 : 0;
 assign wdata = axi_wdata;
 
 assign arvalid_2 = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? axi_arvalid : 0;
-assign axi_arready_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? arready_0 : 0;
+assign axi_arready_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? arready_2 : 0;
 assign araddr = axi_araddr;
 
-assign axi_rvalid_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? rvalid_0 : 0;
+assign axi_rvalid_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? rvalid_2 : 0;
 assign rready = axi_rready;
-assign axi_rdata_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? rdata_0 : 0;
+assign axi_rdata_bus[2] = ( (user_prj_sel == 5'b00010) && cc_up_enable) ? rdata_2 : 0;
 
 //user project 3 
 assign awvalid_3 = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? axi_awvalid : 0;
-assign axi_awready_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? awready_0 : 0;
+assign axi_awready_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? awready_3 : 0;
 assign awaddr = axi_awaddr[11:0];
 assign wstrb_3 = axi_wstrb;    //[TODO] share wstrb for all user projects.
 
 assign wvalid_3 = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? axi_wvalid : 0;
-assign axi_wready_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? wready_0 : 0;
+assign axi_wready_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? wready_3 : 0;
 assign wdata = axi_wdata;
 
 assign arvalid_3 = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? axi_arvalid : 0;
-assign axi_arready_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? arready_0 : 0;
+assign axi_arready_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? arready_3 : 0;
 assign araddr = axi_araddr;
 
-assign axi_rvalid_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? rvalid_0 : 0;
+assign axi_rvalid_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? rvalid_3 : 0;
 assign rready = axi_rready;
-assign axi_rdata_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? rdata_0 : 0;
+assign axi_rdata_bus[3] = ( (user_prj_sel == 5'b00011) && cc_up_enable) ? rdata_3 : 0;
 
 
 endmodule // AXIL_SLAV
