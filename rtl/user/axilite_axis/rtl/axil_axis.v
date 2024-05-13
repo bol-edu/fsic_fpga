@@ -30,6 +30,9 @@ module AXIL_AXIS #( parameter pADDR_WIDTH   = 12,
                   )
 (
 
+//for post simulation signal in testbench
+  output wire intr_enable_out,
+
 // Clock & Reset - only use axis_clk, axis_rst_n
   input  wire          axi_clk,
   input  wire          axi_reset_n,
@@ -272,7 +275,7 @@ wire ls_aa_mbox_lr = ( s_araddr[14:12] == 3'b010 && s_araddr[11:8] == 4'h0 );   
     //--------------------------------------------------
 reg intr_enable;  // rw: offset:0, bit0  - use addr[2] to select
 reg intr_status;  // ro: offset:4, bit0
-
+assign intr_enable_out = intr_enable;
 // ---------------------------------------
 // Mailbox 
 // - Memory-mapped address (32'h3000_2000~3000_201f)

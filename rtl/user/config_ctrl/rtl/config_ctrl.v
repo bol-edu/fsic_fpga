@@ -114,7 +114,7 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	
 	reg [2:0] m_axi_fsm_reg;
 	
-	reg axi_grant_o_reg = 1'b0;
+	reg axi_grant_o_reg;
 	wire m_axi_request;
 	wire m_axi_request_rw;
 	wire [3:0] m_axi_wstrb;
@@ -148,20 +148,20 @@ module CFG_CTRL #( parameter pADDR_WIDTH   = 12,
 	//////////////////////////////////////
 	// Internal signals for Ports begin //
 	//////////////////////////////////////
-	reg [31: 0] aa_cfg_rdata_o = 32'b0;
-	reg aa_cfg_rvalid_o = 1'b0;
-	reg aa_cfg_awready_o = 1'b0;
-	reg aa_cfg_wready_o = 1'b0;
-	reg aa_cfg_arready_o = 1'b0;
+	reg [31:0] aa_cfg_rdata_o;
+	reg aa_cfg_rvalid_o;
+	reg aa_cfg_awready_o;
+	reg aa_cfg_wready_o;
+	reg aa_cfg_arready_o;
 	
-	reg axi_awvalid_o = 1'b0;
-	reg [14: 0] axi_awaddr_o = 15'b0;
-	reg axi_wvalid_o = 1'b0;
-	reg [31: 0] axi_wdata_o = 32'b0;
-	reg [3: 0] axi_wstrb_o = 4'b0;
-	reg axi_arvalid_o = 1'b0;
-	reg [14: 0] axi_araddr_o = 15'b0;
-	reg axi_rready_o = 1'b0;
+	reg axi_awvalid_o;
+	reg [14:0] axi_awaddr_o;
+	reg axi_wvalid_o;
+	reg [31:0] axi_wdata_o;
+	reg [3:0] axi_wstrb_o;
+	reg axi_arvalid_o;
+	reg [14:0] axi_araddr_o;
+	reg axi_rready_o;
 
 	reg cc_aa_enable_o;
 	reg cc_as_enable_o;

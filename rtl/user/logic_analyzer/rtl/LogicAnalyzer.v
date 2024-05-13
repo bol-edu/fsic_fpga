@@ -449,6 +449,7 @@ module LOGIC_ANLZ #( parameter pADDR_WIDTH   = 15,
         end
     end 
    
+`ifdef USE_skywater_SRAM
     sram #(.pADDR_WIDTH($clog2(FIFO_DEPTH)),
            .pDATA_WIDTH(FIFO_WIDTH)
           ) captured_fifo
@@ -465,5 +466,51 @@ module LOGIC_ANLZ #( parameter pADDR_WIDTH   = 15,
         .addr1(r_ptr),
         .dout1(fifo_rddata1)
     );       
-                     
+
+`endif //USE_skywater_SRAM
+
+`ifdef USE_PDK_SRAM
+    PDK_SRAM2RW128x32 captured_fifo
+    (
+      .CLKA(axi_clk),
+      .CENA(1'b0),
+      .WENA(~fifo_wren),
+      .AA(w_ptr),
+      .DA(fifo_wrdata0),
+      .OENA(1'b0),
+      .QA(fifo_rddata0),
+      .CLKB(axi_clk),
+      .CENB(1'b0),
+      .WENB(1'b1), //always read
+      .AB(r_ptr),      
+      .DB(0),       //data in always 0
+      .OENB(1'b0),
+      .QB(fifo_rddata1)
+    );
+
+
+`endif //USE_PDK_SRAM
+   
+`ifdef USE_EDK_SRAM
+    EDK_SRAM2RW128x32 captured_fifo
+    (	
+      .CE1(axi_clk),
+      .CSB1(1'b0),
+      .WEB1(~fifo_wren),
+      .OEB1(1'b0),
+      .A1(w_ptr),
+      .I1(fifo_wrdata0),
+      .O1(fifo_rddata0),
+      .CE2(axi_clk),
+      .CSB2(1'b0),
+      .WEB2(1'b1), //always read
+      .OEB2(1'b0),
+      .A2(r_ptr),      
+      .I2(0),       //data in always 0
+      .O2(fifo_rddata1)
+    );
+
+`endif //USE_EDK_SRAM
+
 endmodule // LOGIC_ANLZ
+

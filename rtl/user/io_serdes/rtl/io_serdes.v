@@ -86,6 +86,7 @@ module IO_SERDES #(
     input wire   as_is_tvalid,
     input wire   [1:0] as_is_tuser,
     input wire   as_is_tready,    //when local side axis switch Rxfifo size <= threshold then as_is_tready=0, this flow control mechanism is for notify remote side do not provide data with is_as_tvalid=1
+    output wire rxen_out,   //output rxen for post synthsis simultation
 
     output wire      serial_tclk,
     output wire  [pSERIALIO_WIDTH-1: 0] serial_txd,
@@ -423,6 +424,7 @@ module IO_SERDES #(
   `endif //USER_PROJECT_SIDEBAND_SUPPORT
 
   reg  rxen;
+  assign rxen_out = rxen;
 
   always @(negedge ioclk or negedge axis_rst_n)  begin
     if ( !axis_rst_n ) begin
