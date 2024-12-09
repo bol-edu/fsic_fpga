@@ -1,11 +1,20 @@
 # eFabless ChipIgnite Schedule (2023/11) and Preparation
 [eFabless-chipIgnite slide](https://github.com/bol-edu/fsic_fpga/files/12040111/eFabless-chipIgnite.pptx)
 
+# Prerequisites
+install vivado 2022.2
+
 # How to run simulation
+```
+$ source /your_Xilinx_path/Vivado/2022.2/settings64.sh
+```
+my path in /SSD1T/opt/Xilinx
+I use "source /SSD1T/opt/Xilinx/Vivado/2022.2/settings64.sh"
+
 ```
 $ git clone https://github.com/bol-edu/fsic_fpga
 $ cd fsic_fpga/rtl/user/testbench/tc
-$ ./run_xsim
+$ make all
 ```
 
 ## simulation result log file for reference
